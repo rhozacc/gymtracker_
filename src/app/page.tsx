@@ -4,7 +4,8 @@ import Link from "next/link";
 import useSWR from "swr";
 import dynamic from "next/dynamic";
 import { fetcher } from "@/lib/swr";
-import { PROGRAM } from "@/lib/program";
+import { getDayLabel } from "@/lib/program";
+import { useProgram } from "@/lib/useProgram";
 import { calculateStreak, calculateVolume, formatDate } from "@/lib/utils";
 
 const VolumeChart = dynamic(
@@ -22,6 +23,7 @@ interface SessionSummary {
 }
 
 export default function Dashboard() {
+  const { plan } = useProgram();
   const { data: sessions } = useSWR<SessionSummary[]>("/api/sessions", fetcher);
   const { data: volumeData } = useSWR("/api/volume/weekly", fetcher);
 
@@ -31,7 +33,10 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div className="flex items-baseline justify-between">
-        <h1 className="text-xl font-medium">Gym Tracker</h1>
+        <div>
+          <h1 className="text-xl font-medium">Gym Tracker</h1>
+          <span className="text-muted text-xs">{plan.name}</span>
+        </div>
         <div className="text-right">
           <span className="text-3xl font-bold">{streak}</span>
           <span className="text-muted text-sm ml-1">week streak</span>
@@ -46,7 +51,7 @@ export default function Dashboard() {
           <div className="text-muted text-xs mb-1">Last session</div>
           <div className="flex justify-between items-baseline">
             <span className="text-sm">
-              {PROGRAM[lastSession.dayType]?.label || lastSession.dayType}
+              {getDayLabel(lastSession.dayType)}
             </span>
             <span className="text-muted text-xs">
               {formatDate(lastSession.date)}
@@ -62,7 +67,7 @@ export default function Dashboard() {
       <div>
         <div className="text-muted text-xs mb-3">Start session</div>
         <div className="grid grid-cols-1 gap-2">
-          {Object.entries(PROGRAM).map(([key, day]) => (
+          {Object.entries(plan.days).map(([key, day]) => (
             <Link
               key={key}
               href={`/log/${key}`}

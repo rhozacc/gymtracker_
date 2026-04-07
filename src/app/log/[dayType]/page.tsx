@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { PROGRAM } from "@/lib/program";
 import { checkOverload, OverloadResult } from "@/lib/overload";
+import { useProgram } from "@/lib/useProgram";
 import { SetRow, SetInput } from "@/components/SetRow";
 import { OverloadBanner } from "@/components/OverloadBanner";
+import { Toast } from "@/components/Toast";
 
 interface ExerciseState {
   exerciseId: string;
@@ -15,13 +16,17 @@ interface ExerciseState {
 export default function LogPage() {
   const router = useRouter();
   const params = useParams();
+  const { plan } = useProgram();
   const dayType = params.dayType as string;
-  const day = PROGRAM[dayType];
+  const day = plan.days[dayType];
 
   const [exercises, setExercises] = useState<ExerciseState[]>([]);
   const [overloads, setOverloads] = useState<Record<string, OverloadResult>>({});
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(false);
+
+  const hideToast = useCallback(() => setToast(false), []);
 
   useEffect(() => {
     if (!day) return;
@@ -159,14 +164,15 @@ export default function LogPage() {
     });
 
     if (res.ok) {
-      const { id } = await res.json();
-      router.push(`/history/${id}`);
+      setToast(true);
+      setTimeout(() => router.push("/"), 1500);
     }
     setSaving(false);
   }
 
   return (
     <div className="space-y-6">
+      <Toast message="Session saved!" visible={toast} onDone={hideToast} />
       <div>
         <button
           onClick={() => router.back()}

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import useSWR from "swr";
 import { fetcher } from "@/lib/swr";
-import { PROGRAM } from "@/lib/program";
+import { getDayLabel } from "@/lib/program";
 import { formatDate } from "@/lib/utils";
 
 interface SessionSummary {
@@ -47,7 +47,7 @@ export default function HistoryPage() {
         >
           <div className="flex justify-between items-baseline">
             <span className="text-sm font-medium">
-              {PROGRAM[s.dayType]?.label || s.dayType}
+              {getDayLabel(s.dayType)}
             </span>
             <span className="text-muted text-xs">{formatDate(s.date)}</span>
           </div>

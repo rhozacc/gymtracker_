@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { fetcher } from "@/lib/swr";
-import { PROGRAM, getExerciseById } from "@/lib/program";
+import { getExerciseById, getDayLabel, getDayDefinition } from "@/lib/program";
 import { formatDate, calculateVolume } from "@/lib/utils";
 
 interface SetDetail {
@@ -53,7 +53,7 @@ export default function SessionDetailPage() {
   }
 
   const totalVolume = calculateVolume(session.sets);
-  const dayDef = PROGRAM[session.dayType];
+  const dayDef = getDayDefinition(session.dayType);
 
   // Order exercises by the program definition order
   const orderedExercises = dayDef
@@ -73,7 +73,7 @@ export default function SessionDetailPage() {
         </button>
         <div className="flex justify-between items-baseline">
           <h1 className="text-lg font-medium">
-            {dayDef?.label || session.dayType}
+            {getDayLabel(session.dayType)}
           </h1>
           <span className="text-muted text-xs">
             {formatDate(session.date)}

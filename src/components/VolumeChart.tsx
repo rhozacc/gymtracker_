@@ -9,14 +9,15 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { getDayShortLabel } from "@/lib/program";
 
 interface WeekData {
   week: string;
-  upper_a: number;
-  lower: number;
-  full: number;
   total: number;
+  [dayType: string]: number | string;
 }
+
+const BAR_COLORS = ["#f0f0f0", "#c0c0c0", "#888888", "#666666", "#444444"];
 
 function formatWeek(w: string) {
   const d = new Date(w + "T00:00:00Z");
@@ -24,6 +25,15 @@ function formatWeek(w: string) {
 }
 
 export function VolumeChartInner({ data }: { data: WeekData[] }) {
+  // Discover all dayType keys from the data
+  const dayTypes = Array.from(
+    new Set(
+      data.flatMap((d) =>
+        Object.keys(d).filter((k) => k !== "week" && k !== "total")
+      )
+    )
+  );
+
   return (
     <ResponsiveContainer width="100%" height={280}>
       <BarChart data={data}>
@@ -45,27 +55,16 @@ export function VolumeChartInner({ data }: { data: WeekData[] }) {
           formatter={(value: number) => [`${Math.round(value)} kg`]}
         />
         <Legend wrapperStyle={{ fontSize: "11px" }} />
-        <Bar
-          dataKey="upper_a"
-          stackId="vol"
-          fill="#f0f0f0"
-          name="Upper"
-          radius={[0, 0, 0, 0]}
-        />
-        <Bar
-          dataKey="lower"
-          stackId="vol"
-          fill="#888"
-          name="Lower"
-          radius={[0, 0, 0, 0]}
-        />
-        <Bar
-          dataKey="full"
-          stackId="vol"
-          fill="#444"
-          name="Full"
-          radius={[2, 2, 0, 0]}
-        />
+        {dayTypes.map((dt, i) => (
+          <Bar
+            key={dt}
+            dataKey={dt}
+            stackId="vol"
+            fill={BAR_COLORS[i % BAR_COLORS.length]}
+            name={getDayShortLabel(dt)}
+            radius={i === dayTypes.length - 1 ? [2, 2, 0, 0] : [0, 0, 0, 0]}
+          />
+        ))}
       </BarChart>
     </ResponsiveContainer>
   );

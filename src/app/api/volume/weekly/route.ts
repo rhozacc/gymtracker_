@@ -14,10 +14,7 @@ export async function GET() {
     orderBy: { date: "asc" },
   });
 
-  const weeklyData = new Map<
-    string,
-    { upper_a: number; lower: number; full: number }
-  >();
+  const weeklyData = new Map<string, Record<string, number>>();
 
   for (const session of sessions) {
     const d = new Date(session.date);
@@ -29,7 +26,7 @@ export async function GET() {
     const key = weekStart.toISOString().split("T")[0];
 
     if (!weeklyData.has(key)) {
-      weeklyData.set(key, { upper_a: 0, lower: 0, full: 0 });
+      weeklyData.set(key, {});
     }
 
     const vol = session.sets.reduce(
@@ -37,17 +34,14 @@ export async function GET() {
       0
     );
     const entry = weeklyData.get(key)!;
-    const dt = session.dayType as "upper_a" | "lower" | "full";
-    if (dt in entry) {
-      entry[dt] += vol;
-    }
+    entry[session.dayType] = (entry[session.dayType] || 0) + vol;
   }
 
   const result = Array.from(weeklyData.entries())
     .map(([week, data]) => ({
       week,
       ...data,
-      total: data.upper_a + data.lower + data.full,
+      total: Object.values(data).reduce((sum, v) => sum + v, 0),
     }))
     .sort((a, b) => a.week.localeCompare(b.week));
 

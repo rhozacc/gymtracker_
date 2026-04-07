@@ -4,7 +4,8 @@ import { useState } from "react";
 import useSWR from "swr";
 import dynamic from "next/dynamic";
 import { fetcher } from "@/lib/swr";
-import { getAllExercises } from "@/lib/program";
+import { getAllExercises, getAllExercisesForPlan } from "@/lib/program";
+import { useProgram } from "@/lib/useProgram";
 import { StreakCalendar } from "@/components/StreakCalendar";
 
 const VolumeChart = dynamic(
@@ -46,8 +47,10 @@ interface SessionWithSets {
 }
 
 export default function ChartsPage() {
+  const { planId } = useProgram();
+  const planExercises = getAllExercisesForPlan(planId);
   const [selectedExercise, setSelectedExercise] = useState(
-    getAllExercises()[0]?.id || ""
+    planExercises[0]?.id || ""
   );
 
   const { data: volumeData } = useSWR("/api/volume/weekly", fetcher);

@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  date      DateTime @default(now())
+  dayType   String
+  notes     String?
+  sets      Set[]
+  createdAt DateTime @default(now())
+}
+
+model Set {
+  id         String  @id @default(cuid())
+  session    Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId  String
+  exerciseId String
+  setNumber  Int
+  reps       Int
+  weight     Float
+  rir        Int?
+}

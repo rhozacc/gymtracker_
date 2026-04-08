@@ -20,7 +20,6 @@ function BeamSweep({ onDone }: { onDone: () => void }) {
       onAnimationEnd={onDone}
       style={{ animation: "beam-sweep 400ms ease-in-out forwards" }}
     >
-      {/* The beam band — accent gradient that sweeps upward */}
       <div
         className="absolute left-0 right-0 h-full"
         style={{
@@ -39,9 +38,9 @@ export function Nav() {
 
   const handleTap = useCallback(
     (href: string) => {
-      const isAlreadyActive =
+      const isActive =
         href === "/" ? pathname === "/" : pathname.startsWith(href);
-      if (!isAlreadyActive) setBeam(true);
+      if (!isActive) setBeam(true);
     },
     [pathname]
   );
@@ -49,8 +48,8 @@ export function Nav() {
   return (
     <>
       {beam && <BeamSweep onDone={() => setBeam(false)} />}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-border/50">
-        <div className="flex items-stretch h-12 max-w-lg mx-auto pb-[env(safe-area-inset-bottom)]">
+      <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
+        <div className="flex items-center bg-surface border border-border rounded-full p-1.5 gap-0.5 shadow-lg shadow-black/10">
           {tabs.map((tab) => {
             const active =
               tab.href === "/"
@@ -61,23 +60,19 @@ export function Nav() {
                 key={tab.href}
                 href={tab.href}
                 onClick={() => handleTap(tab.href)}
-                className="flex-1 flex flex-col items-center justify-center relative"
+                className={`flex items-center justify-center rounded-full transition-all duration-300 ease-out ${
+                  active
+                    ? "h-9 px-4 bg-accent/10"
+                    : "w-10 h-10"
+                }`}
               >
-                {/* Active dot — like a status LED */}
-                <span
-                  className={`w-1 h-1 rounded-full mb-1 transition-all duration-200 ${
-                    active ? "bg-accent nav-icon-glow" : "bg-transparent"
-                  }`}
-                />
-                <span
-                  className={`transition-all duration-200 ${
-                    active
-                      ? "text-[13px] text-accent font-bold tracking-wide"
-                      : "text-[11px] text-muted tracking-wide"
-                  }`}
-                >
-                  {tab.label}
-                </span>
+                {active ? (
+                  <span className="text-accent text-[13px] font-semibold whitespace-nowrap">
+                    {tab.label}
+                  </span>
+                ) : (
+                  <span className="w-[5px] h-[5px] rounded-full bg-muted" />
+                )}
               </Link>
             );
           })}

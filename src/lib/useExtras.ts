@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useCallback, useMemo } from "react";
+import useSWR from "swr";
+import { fetcher } from "./swr";
 import {
   type ExtrasSelection,
   type ExtraCategory,
@@ -9,30 +11,25 @@ import {
   getSelectedExtras,
 } from "./extras";
 
-const STORAGE_KEY = "gym-extras";
-
-function getStoredSelection(): ExtrasSelection {
-  if (typeof window === "undefined") return DEFAULT_SELECTION;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_SELECTION;
-    const parsed = JSON.parse(raw);
-    return { ...DEFAULT_SELECTION, ...parsed };
-  } catch {
-    return DEFAULT_SELECTION;
-  }
-}
-
 export function useExtras() {
-  const [selection, setSelection] = useState<ExtrasSelection>(getStoredSelection);
+  const { data, mutate } = useSWR<ExtrasSelection>("/api/extras", fetcher);
 
-  const setExtra = useCallback((category: ExtraCategory, optionId: string | null) => {
-    setSelection((prev) => {
-      const next = { ...prev, [category]: optionId };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
-  }, []);
+  const selection: ExtrasSelection = data ?? DEFAULT_SELECTION;
+
+  const setExtra = useCallback(
+    async (category: ExtraCategory, optionId: string | null) => {
+      const next = { ...selection, [category]: optionId };
+      // Optimistic update
+      mutate(next, false);
+      await fetch("/api/extras", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(next),
+      });
+      mutate();
+    },
+    [selection, mutate]
+  );
 
   const selectedExtras: ExtraOption[] = useMemo(
     () => getSelectedExtras(selection),

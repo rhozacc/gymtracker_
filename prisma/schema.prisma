@@ -41,6 +41,13 @@ model Debrief {
   createdAt DateTime @default(now())
 }
 
+model ExtrasConfig {
+  id      String  @id @default("default")
+  abs     String?
+  cardio  String?
+  stretch String?
+}
+
 model Plan {
   id          String   @id @default(cuid())
   slug        String   @unique

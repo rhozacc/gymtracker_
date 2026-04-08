@@ -89,7 +89,7 @@ export default function LogPage() {
           const ol = results[exState.exerciseId];
           const raw = rawSets[exState.exerciseId] || [];
           if (!ol || ol.lastWeight === 0) return exState;
-          const prefillWeightKg = ol.ready ? ol.suggestedWeight : ol.lastWeight;
+          const prefillWeightKg = ol.status === "go_up" ? ol.suggestedWeight : ol.lastWeight;
           const prefillWeight = kgToDisplay(prefillWeightKg, unit).toString();
           return {
             ...exState,
@@ -280,8 +280,8 @@ export default function LogPage() {
                 </div>
               )}
 
-              {ol?.ready && (
-                <OverloadBanner suggestedWeight={kgToDisplay(ol.suggestedWeight, unit)} unit={unit} />
+              {(ol?.status === "go_up" || ol?.status === "almost_ready") && (
+                <OverloadBanner suggestedWeight={kgToDisplay(ol.suggestedWeight, unit)} unit={unit} variant={ol.status} />
               )}
 
               <div className="space-y-2 mb-2">

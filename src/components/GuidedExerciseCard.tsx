@@ -137,9 +137,9 @@ export function GuidedExerciseCard({
         </p>
       )}
 
-      {overload?.ready && (
+      {(overload?.status === "go_up" || overload?.status === "almost_ready") && (
         <div className="mt-2 w-full max-w-xs">
-          <OverloadBanner suggestedWeight={kgToDisplay(overload.suggestedWeight, unit)} unit={unit} />
+          <OverloadBanner suggestedWeight={kgToDisplay(overload.suggestedWeight, unit)} unit={unit} variant={overload.status} />
         </div>
       )}
 

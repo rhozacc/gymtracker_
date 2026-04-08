@@ -59,8 +59,15 @@ export function GuidedExerciseCard({
           {exercise.name} — Set {setIndex + 1}
         </h2>
 
-        <div className="text-4xl font-bold mt-6 tabular-nums">
-          {tempWeight} <span className="text-muted text-lg">{unit}</span>
+        <div className="flex items-baseline gap-2 mt-6">
+          <input
+            type="text"
+            inputMode="decimal"
+            value={tempWeight}
+            onChange={(e) => setTempWeight(e.target.value)}
+            className="text-4xl font-bold tabular-nums text-center w-36 bg-transparent border-b-2 border-border focus:border-accent focus:outline-none"
+          />
+          <span className="text-muted text-lg">{unit}</span>
         </div>
 
         <div className="flex gap-2 mt-4 flex-wrap justify-center max-w-xs">
@@ -88,20 +95,9 @@ export function GuidedExerciseCard({
 
         <button
           onClick={() => {
-            const custom = prompt("Enter weight:");
-            if (custom !== null) {
-              const n = parseFloat(custom);
-              if (!isNaN(n) && n >= 0) setTempWeight((Math.round(n * 100) / 100).toString());
-            }
-          }}
-          className="mt-4 w-full max-w-xs h-12 border border-border text-muted rounded text-sm hover:text-accent transition-colors"
-        >
-          Custom
-        </button>
-
-        <button
-          onClick={() => {
-            onChange({ ...setData, weight: tempWeight });
+            const n = parseFloat(tempWeight);
+            const rounded = !isNaN(n) && n >= 0 ? (Math.round(n * 100) / 100).toString() : tempWeight;
+            onChange({ ...setData, weight: rounded });
             setView("main");
           }}
           className="mt-3 w-full max-w-xs h-12 bg-accent text-bg font-medium rounded text-sm hover:opacity-90 transition-opacity"

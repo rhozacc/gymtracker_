@@ -29,6 +29,7 @@ export default function LogPage() {
   const day = plan.days[dayType];
 
   const startedAtRef = useRef<string>(new Date().toISOString());
+  const initializedForDayRef = useRef<string | null>(null);
   const [exercises, setExercises] = useState<ExerciseState[]>([]);
   const [overloads, setOverloads] = useState<Record<string, OverloadResult>>({});
   const [notes, setNotes] = useState("");
@@ -53,6 +54,8 @@ export default function LogPage() {
 
   useEffect(() => {
     if (!day) return;
+    if (initializedForDayRef.current === dayType) return;
+    initializedForDayRef.current = dayType;
 
     // Initialize exercise state
     setExercises(

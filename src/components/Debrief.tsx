@@ -38,8 +38,7 @@ export function Debrief({ sessionId, onDone }: DebriefProps) {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-lg font-medium">Session Complete</h1>
-        <p className="text-muted text-xs mt-1">Quick debrief — how did it go?</p>
+        <p className="text-sm font-medium">Quick debrief — how did it go?</p>
       </div>
 
       {QUESTIONS.map((q) => (

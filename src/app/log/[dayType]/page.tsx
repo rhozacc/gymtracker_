@@ -15,6 +15,14 @@ import { Toast } from "@/components/Toast";
 import { useBeep } from "@/lib/useBeep";
 import { useBackgroundNotification } from "@/lib/useBackgroundNotification";
 
+const BACKUP_KEY = "gym-guided-backup";
+
+interface BackupData {
+  dayType: string;
+  startedAt: string;
+  exercises: { exerciseId: string; sets: SetInput[] }[];
+}
+
 interface ExerciseState {
   exerciseId: string;
   sets: SetInput[];
@@ -36,7 +44,7 @@ export default function LogPage() {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(false);
 
-  // Rest timer state
+  // Rest timer state (standard mode)
   const [showTimer, setShowTimer] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
 
@@ -49,15 +57,72 @@ export default function LogPage() {
   const [debriefMode, setDebriefMode] = useState(false);
   const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
 
+  // Backup recovery banner
+  const [backupFound, setBackupFound] = useState(false);
+
   const hideToast = useCallback(() => setToast(false), []);
   const increments = getIncrements(unit);
+
+  // Check for a backup from a crashed session on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(BACKUP_KEY);
+      if (!raw) return;
+      const backup: BackupData = JSON.parse(raw);
+      if (backup.dayType === dayType) {
+        setBackupFound(true);
+      }
+    } catch {
+      // Ignore corrupt backup
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function restoreBackup() {
+    try {
+      const raw = localStorage.getItem(BACKUP_KEY);
+      if (!raw) return;
+      const backup: BackupData = JSON.parse(raw);
+      if (backup.dayType === dayType && backup.exercises) {
+        startedAtRef.current = backup.startedAt;
+        setExercises(backup.exercises);
+        setBackupFound(false);
+      }
+    } catch {
+      setBackupFound(false);
+    }
+  }
+
+  function discardBackup() {
+    localStorage.removeItem(BACKUP_KEY);
+    setBackupFound(false);
+  }
+
+  // Write exercises to localStorage whenever they change in guided mode
+  // We do this via a ref so we can call it from updateSet without stale closures
+  const guidedModeRef = useRef(false);
+  guidedModeRef.current = guidedMode;
+
+  function writeBackup(updatedExercises: ExerciseState[]) {
+    if (!guidedModeRef.current) return;
+    try {
+      const backup: BackupData = {
+        dayType,
+        startedAt: startedAtRef.current,
+        exercises: updatedExercises,
+      };
+      localStorage.setItem(BACKUP_KEY, JSON.stringify(backup));
+    } catch {
+      // Storage may be full — not critical
+    }
+  }
 
   useEffect(() => {
     if (!day) return;
     if (initializedForDayRef.current === dayType) return;
     initializedForDayRef.current = dayType;
 
-    // Initialize exercise state
+    // Initialize exercise state with default rep range minimum
     setExercises(
       day.exercises.map((ex) => ({
         exerciseId: ex.id,
@@ -70,7 +135,7 @@ export default function LogPage() {
       }))
     );
 
-    // Fetch overload data for each exercise
+    // Fetch overload data and pre-fill weights from last session
     async function fetchOverloads() {
       const results: Record<string, OverloadResult> = {};
       const rawSets: Record<string, { reps: number; weight: number; rir: number | null }[]> = {};
@@ -86,22 +151,34 @@ export default function LogPage() {
       );
       setOverloads(results);
 
-      // Pre-fill weights, reps, and RIR from last session
+      // Per-set weight prefill: if overload is ready use suggested weight for all sets;
+      // otherwise use the per-set weight recorded in the previous session.
       setExercises((prev) =>
         prev.map((exState) => {
           const ol = results[exState.exerciseId];
           const raw = rawSets[exState.exerciseId] || [];
           if (!ol || ol.lastWeight === 0) return exState;
-          const prefillWeightKg = ol.status === "go_up" ? ol.suggestedWeight : ol.lastWeight;
-          const prefillWeight = kgToDisplay(prefillWeightKg, unit).toString();
+
           return {
             ...exState,
-            sets: exState.sets.map((s, i) => ({
-              ...s,
-              weight: s.weight || prefillWeight,
-              reps: s.reps || (raw[i]?.reps?.toString() ?? ""),
-              rir: s.rir || (raw[i]?.rir?.toString() ?? ""),
-            })),
+            sets: exState.sets.map((s, i) => {
+              let prefillKg: number;
+              if (ol.status === "go_up") {
+                // Increment uniformly across all sets
+                prefillKg = ol.suggestedWeight;
+              } else {
+                // Use the per-set weight from last session (fall back to max weight)
+                const lastSetWeight = raw[Math.min(i, raw.length - 1)]?.weight;
+                prefillKg = lastSetWeight ?? ol.lastWeight;
+              }
+              const prefillWeight = kgToDisplay(prefillKg, unit).toString();
+              return {
+                ...s,
+                weight: s.weight || prefillWeight,
+                reps: s.reps || (raw[i]?.reps?.toString() ?? ""),
+                rir: s.rir || (raw[i]?.rir?.toString() ?? ""),
+              };
+            }),
           };
         })
       );
@@ -121,11 +198,10 @@ export default function LogPage() {
   function updateSet(exIdx: number, setIdx: number, data: SetInput) {
     setExercises((prev) => {
       const next = [...prev];
-      next[exIdx] = {
-        ...next[exIdx],
-        sets: [...next[exIdx].sets],
-      };
+      next[exIdx] = { ...next[exIdx], sets: [...next[exIdx].sets] };
       next[exIdx].sets[setIdx] = data;
+      // Persist backup on every change during guided mode
+      writeBackup(next);
       return next;
     });
   }
@@ -157,10 +233,16 @@ export default function LogPage() {
     });
   }
 
-  function markDone(exIdx: number, setIdx: number) {
+  function markDone(exIdx: number) {
     const exercise = day.exercises[exIdx];
     setTimerSeconds(exercise.rest);
     setShowTimer(true);
+  }
+
+  // Called when guided session finishes — show review screen instead of saving immediately
+  function handleGuidedFinish() {
+    setGuidedMode(false);
+    // Backup stays until the user confirms save
   }
 
   async function finish() {
@@ -177,9 +259,7 @@ export default function LogPage() {
       for (const s of ex.sets) {
         const reps = parseInt(s.reps);
         const displayWeight = parseFloat(s.weight);
-        if (isNaN(reps) || isNaN(displayWeight) || reps <= 0 || displayWeight <= 0)
-          continue;
-        // Convert display unit back to kg for storage
+        if (isNaN(reps) || isNaN(displayWeight) || reps <= 0 || displayWeight <= 0) continue;
         const weight = displayToKg(displayWeight, unit);
         allSets.push({
           exerciseId: ex.exerciseId,
@@ -210,12 +290,14 @@ export default function LogPage() {
     if (res.ok) {
       const { id } = await res.json();
       setSavedSessionId(id);
+      // Clear crash-recovery backup after successful save
+      localStorage.removeItem(BACKUP_KEY);
       setDebriefMode(true);
     }
     setSaving(false);
   }
 
-  // Show debrief after session is saved
+  // Debrief screen
   if (debriefMode && savedSessionId) {
     return (
       <div className="py-4">
@@ -231,11 +313,38 @@ export default function LogPage() {
     <div className={`space-y-6 ${!guidedMode ? "pb-32" : ""}`}>
       <Toast message="Session saved!" visible={toast} onDone={hideToast} />
 
+      {/* Standard mode rest timer */}
       {showTimer && timerSeconds > 0 && (
         <RestTimer
           seconds={timerSeconds}
           onDismiss={() => setShowTimer(false)}
         />
+      )}
+
+      {/* Crash-recovery banner */}
+      {backupFound && !guidedMode && (
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded p-3 flex items-start gap-3">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-yellow-400">Previous session recovered</p>
+            <p className="text-xs text-muted mt-0.5">
+              Looks like a session didn&apos;t finish saving. Restore your data?
+            </p>
+          </div>
+          <div className="flex gap-2 shrink-0 mt-0.5">
+            <button
+              onClick={restoreBackup}
+              className="text-xs px-3 py-1.5 bg-yellow-500/20 text-yellow-400 rounded hover:bg-yellow-500/30 transition-colors"
+            >
+              Restore
+            </button>
+            <button
+              onClick={discardBackup}
+              className="text-xs px-3 py-1.5 border border-border text-muted rounded hover:text-accent transition-colors"
+            >
+              Discard
+            </button>
+          </div>
+        </div>
       )}
 
       <div>
@@ -256,78 +365,75 @@ export default function LogPage() {
           unit={unit}
           increments={increments}
           updateSet={updateSet}
-          onFinish={finish}
+          onFinish={handleGuidedFinish}
           onStop={() => setGuidedMode(false)}
         />
       ) : (
-        day.exercises.map((ex, exIdx) => {
-          const ol = overloads[ex.id];
-          const exState = exercises[exIdx];
-          if (!exState) return null;
-
-          return (
-            <div key={ex.id} className="border border-border rounded p-3">
-              <div className="flex justify-between items-baseline mb-1">
-                <h2 className="text-sm font-medium">{ex.name}</h2>
-                <span className="text-muted text-xs">
-                  {ex.sets} &times; {ex.repRange[0]}–{ex.repRange[1]}
-                  <span className="ml-1 text-muted/50">
-                    {ex.rest}s rest
-                  </span>
-                </span>
-              </div>
-
-              {ol?.lastWeight > 0 && (
-                <div className="text-muted text-xs mb-2">
-                  Last: {kgToDisplay(ol.lastWeight, unit)} {unit} &times; [{ol.lastReps.join(", ")}]
-                </div>
-              )}
-
-              {(ol?.status === "go_up" || ol?.status === "almost_ready") && (
-                <OverloadBanner suggestedWeight={kgToDisplay(ol.suggestedWeight, unit)} unit={unit} variant={ol.status} />
-              )}
-
-              <div className="space-y-2 mb-2">
-                <div className="flex items-center gap-1.5 text-muted text-[10px]">
-                  <span className="w-8 shrink-0" />
-                  <span className="w-full text-center">{unit.toUpperCase()}</span>
-                  <span className="w-full text-center">REPS</span>
-                  <span className="w-full text-center">RIR</span>
-                  <span className="w-6 shrink-0" />
-                </div>
-                {exState.sets.map((s, sIdx) => (
-                  <SetRow
-                    key={sIdx}
-                    index={sIdx}
-                    data={s}
-                    onChange={(d) => updateSet(exIdx, sIdx, d)}
-                    onRemove={
-                      exState.sets.length > 1
-                        ? () => removeSet(exIdx, sIdx)
-                        : undefined
-                    }
-                    onDone={() => markDone(exIdx, sIdx)}
-                    increments={increments}
-                    unitLabel={unit}
-                    showIncrements={false}
-                  />
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => addSet(exIdx)}
-                className="text-muted text-xs hover:text-accent"
-              >
-                + Add set
-              </button>
-            </div>
-          );
-        })
-      )}
-
-      {!guidedMode && (
         <>
+          {/* Review / standard edit view */}
+          {day.exercises.map((ex, exIdx) => {
+            const ol = overloads[ex.id];
+            const exState = exercises[exIdx];
+            if (!exState) return null;
+
+            return (
+              <div key={ex.id} className="border border-border rounded p-3">
+                <div className="flex justify-between items-baseline mb-1">
+                  <h2 className="text-sm font-medium">{ex.name}</h2>
+                  <span className="text-muted text-xs">
+                    {ex.sets} &times; {ex.repRange[0]}–{ex.repRange[1]}
+                    <span className="ml-1 text-muted/50">{ex.rest}s rest</span>
+                  </span>
+                </div>
+
+                {ol?.lastWeight > 0 && (
+                  <div className="text-muted text-xs mb-2">
+                    Last: {kgToDisplay(ol.lastWeight, unit)} {unit} &times; [{ol.lastReps.join(", ")}]
+                  </div>
+                )}
+
+                {(ol?.status === "go_up" || ol?.status === "almost_ready") && (
+                  <OverloadBanner suggestedWeight={kgToDisplay(ol.suggestedWeight, unit)} unit={unit} variant={ol.status} />
+                )}
+
+                <div className="space-y-2 mb-2">
+                  <div className="flex items-center gap-1.5 text-muted text-[10px]">
+                    <span className="w-8 shrink-0" />
+                    <span className="w-full text-center">{unit.toUpperCase()}</span>
+                    <span className="w-full text-center">REPS</span>
+                    <span className="w-full text-center">RIR</span>
+                    <span className="w-6 shrink-0" />
+                  </div>
+                  {exState.sets.map((s, sIdx) => (
+                    <SetRow
+                      key={sIdx}
+                      index={sIdx}
+                      data={s}
+                      onChange={(d) => updateSet(exIdx, sIdx, d)}
+                      onRemove={
+                        exState.sets.length > 1
+                          ? () => removeSet(exIdx, sIdx)
+                          : undefined
+                      }
+                      onDone={() => markDone(exIdx)}
+                      increments={increments}
+                      unitLabel={unit}
+                      showIncrements={false}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => addSet(exIdx)}
+                  className="text-muted text-xs hover:text-accent"
+                >
+                  + Add set
+                </button>
+              </div>
+            );
+          })}
+
           <div>
             <textarea
               placeholder="Session notes (optional)"
@@ -347,6 +453,7 @@ export default function LogPage() {
         </>
       )}
 
+      {/* Start Guided Session button — only shown when not in guided mode */}
       {!guidedMode && (
         <div className="fixed bottom-14 left-0 right-0 z-40 px-4 pb-4 pt-3 bg-surface border-t border-border animate-slide-up">
           <div className="max-w-lg mx-auto">
@@ -354,6 +461,17 @@ export default function LogPage() {
               onClick={() => {
                 initAudio();
                 requestPermission();
+                // Write initial backup before guided mode starts
+                const backup: BackupData = {
+                  dayType,
+                  startedAt: startedAtRef.current,
+                  exercises,
+                };
+                try {
+                  localStorage.setItem(BACKUP_KEY, JSON.stringify(backup));
+                } catch {
+                  // ignore
+                }
                 setGuidedMode(true);
               }}
               className="w-full h-14 bg-accent text-bg font-medium rounded-lg text-base hover:opacity-90 transition-opacity"

@@ -35,7 +35,7 @@ function enrichPlans(raw: DbPlanRaw[]): DbPlan[] {
 
 const GOAL_STYLES: Record<string, { label: string; color: string }> = {
   bulk: { label: "Bulk", color: "text-orange-400 border-orange-400/40 bg-orange-400/10" },
-  maintain: { label: "Maintain", color: "text-blue-400 border-blue-400/40 bg-blue-400/10" },
+  balanced: { label: "Balanced", color: "text-blue-400 border-blue-400/40 bg-blue-400/10" },
   lean: { label: "Lean", color: "text-emerald-400 border-emerald-400/40 bg-emerald-400/10" },
 };
 
@@ -167,7 +167,7 @@ export default function PlanPage() {
 
   // Group plans by goal for display
   function groupByGoal(plans: DbPlan[]): { goal: string; plans: DbPlan[] }[] {
-    const goalOrder = ["bulk", "maintain", "lean", ""];
+    const goalOrder = ["bulk", "balanced", "lean", ""];
     const groups: Record<string, DbPlan[]> = {};
     for (const p of plans) {
       const g = p.goal || "";
@@ -181,7 +181,7 @@ export default function PlanPage() {
 
   const goalLabels: Record<string, string> = {
     bulk: "Bulk — Build size & strength",
-    maintain: "Maintain — Balanced training",
+    balanced: "Balanced — Well-rounded training",
     lean: "Lean — Cut & define",
     "": "Other",
   };

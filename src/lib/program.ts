@@ -13,7 +13,7 @@ export interface DayDefinition {
 }
 
 export type PlanCategory = "men" | "women" | "";
-export type PlanGoal = "bulk" | "maintain" | "lean" | "";
+export type PlanGoal = "bulk" | "balanced" | "lean" | "";
 
 export interface PlanDefinition {
   id: string;
@@ -32,7 +32,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     name: "Upper / Lower",
     description: "3-day rotation: Upper A (strength), Lower A (strength), Upper B (hypertrophy)",
     category: "men",
-    goal: "maintain",
+    goal: "bulk",
     days: {
       upper_a: {
         label: "Day 1 — Upper A (strength)",
@@ -76,7 +76,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     name: "Push / Pull / Legs",
     description: "3-day split targeting push, pull, and leg movements",
     category: "men",
-    goal: "maintain",
+    goal: "bulk",
     days: {
       push: {
         label: "Day 1 — Push",
@@ -122,7 +122,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     name: "Gym Bro",
     description: "5-day classic bodybuilding split",
     category: "men",
-    goal: "bulk",
+    goal: "balanced",
     days: {
       chest: {
         label: "Day 1 — Chest",
@@ -186,7 +186,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     name: "Arnold Split",
     description: "3-day antagonist pairing split",
     category: "men",
-    goal: "bulk",
+    goal: "balanced",
     days: {
       chest_back: {
         label: "Day 1 — Chest & Back",
@@ -371,7 +371,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     name: "Strong Curves",
     description: "4-day balanced split — build strength with posterior chain and shoulder focus",
     category: "women",
-    goal: "maintain",
+    goal: "balanced",
     days: {
       sc_glutes_hams: {
         label: "Day 1 — Glutes & Hamstrings",
@@ -523,7 +523,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     name: "Upper / Lower",
     description: "3-day balanced rotation — moderate volume with progressive overload",
     category: "women",
-    goal: "maintain",
+    goal: "balanced",
     days: {
       wul_lower_a: {
         label: "Day 1 — Lower A (Glutes & Hams)",
@@ -557,6 +557,51 @@ export const PLANS: Record<string, PlanDefinition> = {
           { id: "wul_step_up", name: "Step-up", sets: 3, repRange: [10, 12], increment: 2.5, rest: 60 },
           { id: "wul_leg_extension", name: "Leg extension", sets: 3, repRange: [12, 15], increment: 5, rest: 60 },
           { id: "wul_back_extension", name: "Back extension", sets: 3, repRange: [12, 15], increment: 5, rest: 45 },
+        ],
+      },
+    },
+  },
+
+  womens_ppl: {
+    id: "womens_ppl",
+    name: "Push / Pull / Legs",
+    description: "3-day compound-heavy split — structured for progressive overload and building",
+    category: "women",
+    goal: "bulk",
+    days: {
+      wppl_push: {
+        label: "Day 1 — Push",
+        exercises: [
+          { id: "wppl_bench", name: "Bench press", sets: 4, repRange: [6, 8], increment: 2.5, rest: 90 },
+          { id: "wppl_db_ohp", name: "DB shoulder press", sets: 3, repRange: [8, 10], increment: 2.5, rest: 75 },
+          { id: "wppl_incline_db", name: "Incline DB press", sets: 3, repRange: [10, 12], increment: 2.5, rest: 60 },
+          { id: "wppl_cable_fly", name: "Cable fly", sets: 3, repRange: [12, 15], increment: 2.5, rest: 45 },
+          { id: "wppl_lateral_raise", name: "Lateral raise", sets: 3, repRange: [12, 15], increment: 2.5, rest: 45 },
+          { id: "wppl_tricep_pushdown", name: "Triceps pushdown", sets: 3, repRange: [12, 15], increment: 2.5, rest: 45 },
+        ],
+      },
+      wppl_pull: {
+        label: "Day 2 — Pull",
+        exercises: [
+          { id: "wppl_barbell_row", name: "Barbell row", sets: 4, repRange: [6, 8], increment: 2.5, rest: 90 },
+          { id: "wppl_lat_pulldown", name: "Lat pulldown", sets: 4, repRange: [8, 10], increment: 2.5, rest: 75 },
+          { id: "wppl_cable_row", name: "Seated cable row", sets: 3, repRange: [10, 12], increment: 2.5, rest: 60 },
+          { id: "wppl_face_pull", name: "Face pull", sets: 3, repRange: [15, 20], increment: 2.5, rest: 45 },
+          { id: "wppl_rear_delt", name: "Rear delt fly", sets: 3, repRange: [15, 20], increment: 2.5, rest: 45 },
+          { id: "wppl_bicep_curl", name: "Biceps curl", sets: 3, repRange: [10, 12], increment: 2.5, rest: 45 },
+          { id: "wppl_hammer_curl", name: "Hammer curl", sets: 3, repRange: [12, 15], increment: 2.5, rest: 45 },
+        ],
+      },
+      wppl_legs: {
+        label: "Day 3 — Legs",
+        exercises: [
+          { id: "wppl_squat", name: "Barbell squat", sets: 4, repRange: [6, 8], increment: 2.5, rest: 120 },
+          { id: "wppl_hip_thrust", name: "Barbell hip thrust", sets: 4, repRange: [8, 10], increment: 5, rest: 75 },
+          { id: "wppl_rdl", name: "Romanian deadlift", sets: 3, repRange: [8, 10], increment: 5, rest: 75 },
+          { id: "wppl_bulgarian", name: "Bulgarian split squat", sets: 3, repRange: [10, 12], increment: 2.5, rest: 60 },
+          { id: "wppl_leg_curl", name: "Leg curl", sets: 3, repRange: [12, 15], increment: 2.5, rest: 60 },
+          { id: "wppl_leg_extension", name: "Leg extension", sets: 3, repRange: [12, 15], increment: 5, rest: 60 },
+          { id: "wppl_calf_raise", name: "Calf raise", sets: 4, repRange: [10, 12], increment: 2.5, rest: 45 },
         ],
       },
     },

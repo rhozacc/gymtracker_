@@ -70,6 +70,22 @@ input[type="number"]::-webkit-outer-spin-button {
   filter: drop-shadow(0 0 6px var(--color-accent)) drop-shadow(0 0 12px color-mix(in srgb, var(--color-accent) 40%, transparent));
 }
 
+/* Bar chart glow — dark mode only */
+[data-theme="dark"] .recharts-bar-rectangle path {
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-accent) 60%, transparent));
+}
+
+/* Streak calendar active cell glow — dark mode only */
+[data-theme="dark"] .streak-cell-active {
+  box-shadow: 0 0 6px color-mix(in srgb, var(--color-accent) 50%, transparent);
+}
+
+/* Chart tooltip backdrop blur — dark mode only */
+[data-theme="dark"] .chart-tooltip {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
 /* Beam sweep — accent band moves bottom to top */
 @keyframes beam-sweep {
   0% { transform: translateY(0); }

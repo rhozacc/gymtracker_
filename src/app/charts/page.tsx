@@ -12,6 +12,7 @@ import { estimateE1RM } from "@/lib/e1rm";
 import { getMuscleGroup, MUSCLE_GROUPS } from "@/lib/muscleGroups";
 import { StreakCalendar } from "@/components/StreakCalendar";
 import { ExerciseSelect } from "@/components/ExerciseSelect";
+import { useInView } from "@/hooks/useInView";
 
 const chartLoading = (
   <div className="h-[280px] bg-surface rounded animate-pulse" />
@@ -71,6 +72,27 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     <p className="text-[10px] font-medium uppercase tracking-widest text-muted mb-4">
       {children}
     </p>
+  );
+}
+
+function ChartSection({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  const { ref, inView } = useInView();
+  return (
+    <div
+      ref={ref}
+      className={`border border-border rounded-lg p-4 space-y-6 transition-all duration-500 ${
+        inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+      }`}
+    >
+      <SectionLabel>{label}</SectionLabel>
+      {children}
+    </div>
   );
 }
 
@@ -221,12 +243,11 @@ export default function ChartsPage() {
   }, [chartSessions]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <h1 className="text-lg font-medium">Trends</h1>
 
       {/* ── STRENGTH ── */}
-      <div>
-        <SectionLabel>Strength</SectionLabel>
+      <ChartSection label="Strength">
         <section>
           <h2 className="text-muted text-xs mb-3">
             Estimated 1RM ({unit})
@@ -238,11 +259,10 @@ export default function ChartsPage() {
           />
           <E1rmChart data={e1rmData} unit={unit} />
         </section>
-      </div>
+      </ChartSection>
 
       {/* ── VOLUME ── */}
-      <div className="border-t border-border pt-6">
-        <SectionLabel>Volume</SectionLabel>
+      <ChartSection label="Volume">
         <section>
           <h2 className="text-muted text-xs mb-3">Weekly volume</h2>
           {volumeData && volumeData.length > 0 ? (
@@ -253,39 +273,37 @@ export default function ChartsPage() {
             </p>
           )}
         </section>
-        <section className="mt-8">
+        <section>
           <h2 className="text-muted text-xs mb-3">Sets per muscle group</h2>
           <MuscleVolumeChart data={muscleVolumeData} />
         </section>
-      </div>
+      </ChartSection>
 
       {/* ── SESSION ── */}
-      <div className="border-t border-border pt-6">
-        <SectionLabel>Session</SectionLabel>
+      <ChartSection label="Session">
         <section>
           <h2 className="text-muted text-xs mb-3">Session duration</h2>
           <DurationChart data={durationData} />
         </section>
-        <section className="mt-8">
+        <section>
           <h2 className="text-muted text-xs mb-3">
             Activity (last 12 weeks)
           </h2>
           <StreakCalendar sessions={sessionSummaries} />
         </section>
-      </div>
+      </ChartSection>
 
       {/* ── RECOVERY ── */}
-      <div className="border-t border-border pt-6">
-        <SectionLabel>Recovery</SectionLabel>
+      <ChartSection label="Recovery">
         <section>
           <h2 className="text-muted text-xs mb-3">Debrief trends</h2>
           <DebriefChart data={debriefData} />
         </section>
-        <section className="mt-8">
+        <section>
           <h2 className="text-muted text-xs mb-3">Average RIR</h2>
           <RirChart data={rirData} />
         </section>
-      </div>
+      </ChartSection>
     </div>
   );
 }

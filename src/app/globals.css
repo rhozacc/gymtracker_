@@ -65,6 +65,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Full-screen accent flash on tab switch */
 @keyframes nav-flash {
-  0% { opacity: 0.35; }
+  0% { opacity: 0.25; }
+  30% { opacity: 0.18; }
   100% { opacity: 0; }
 }

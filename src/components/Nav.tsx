@@ -17,7 +17,7 @@ function Flash({ onDone }: { onDone: () => void }) {
   return createPortal(
     <div
       className="fixed inset-0 z-[200] pointer-events-none bg-accent"
-      style={{ animation: "nav-flash 250ms ease-out forwards" }}
+      style={{ animation: "nav-flash 400ms ease-out forwards" }}
       onAnimationEnd={onDone}
     />,
     document.body
@@ -40,7 +40,7 @@ export function Nav() {
   return (
     <>
       {flash && <Flash onDone={() => setFlash(false)} />}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-surface/80 backdrop-blur-lg border-t border-border/50">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-border/50">
         <div className="flex items-stretch h-12 max-w-lg mx-auto pb-[env(safe-area-inset-bottom)]">
           {tabs.map((tab) => {
             const active =

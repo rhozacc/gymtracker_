@@ -90,6 +90,10 @@ export default function Dashboard() {
   const touchStartY = useRef<number>(0);
   const isDraggingRef = useRef(false);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const gridRef = useRef<HTMLDivElement>(null);
+  // Keep drag/over state in refs so non-passive touchmove handler sees latest values
+  const dragIdxRef = useRef<number | null>(null);
+  const overIdxRef = useRef<number | null>(null);
 
   const clearHold = useCallback(() => {
     if (holdTimerRef.current) {
@@ -98,66 +102,79 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Use touch events for iOS compatibility (pointer events trigger iOS callout)
+  function startDrag(idx: number) {
+    isDraggingRef.current = true;
+    dragIdxRef.current = idx;
+    overIdxRef.current = idx;
+    setDragIdx(idx);
+    setOverIdx(idx);
+    if (navigator.vibrate) navigator.vibrate(30);
+  }
+
+  function finishDrag() {
+    clearHold();
+    const d = dragIdxRef.current;
+    const o = overIdxRef.current;
+    if (d !== null && o !== null && d !== o) {
+      setDayKeys((prev) => {
+        const newKeys = [...prev];
+        const [removed] = newKeys.splice(d, 1);
+        newKeys.splice(o, 0, removed);
+        localStorage.setItem(DAY_ORDER_KEY(plan.id), JSON.stringify(newKeys));
+        return newKeys;
+      });
+    }
+    isDraggingRef.current = false;
+    dragIdxRef.current = null;
+    overIdxRef.current = null;
+    setDragIdx(null);
+    setOverIdx(null);
+  }
+
   function handleTouchStart(idx: number, e: React.TouchEvent) {
     const touch = e.touches[0];
     touchStartY.current = touch.clientY;
     clearHold();
-    holdTimerRef.current = setTimeout(() => {
-      isDraggingRef.current = true;
-      setDragIdx(idx);
-      setOverIdx(idx);
-      if (navigator.vibrate) navigator.vibrate(30);
-    }, 400);
+    holdTimerRef.current = setTimeout(() => startDrag(idx), 400);
   }
 
-  function handleTouchMove(e: React.TouchEvent) {
-    const touch = e.touches[0];
-    if (!isDraggingRef.current) {
-      // Cancel hold if finger moves too much before hold completes
-      if (Math.abs(touch.clientY - touchStartY.current) > 10) {
-        clearHold();
-      }
-      return;
-    }
-    // Prevent scroll while dragging
-    e.preventDefault();
-    const y = touch.clientY;
-    for (let i = 0; i < cardRefs.current.length; i++) {
-      const el = cardRefs.current[i];
-      if (!el) continue;
-      const rect = el.getBoundingClientRect();
-      if (y >= rect.top && y <= rect.bottom) {
-        setOverIdx(i);
-        break;
-      }
-    }
-  }
+  // Attach touchmove as NON-PASSIVE so preventDefault() actually stops scroll on iOS
+  useEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
 
-  function handleTouchEnd() {
-    clearHold();
-    if (dragIdx !== null && overIdx !== null && dragIdx !== overIdx) {
-      const newKeys = [...dayKeys];
-      const [removed] = newKeys.splice(dragIdx, 1);
-      newKeys.splice(overIdx, 0, removed);
-      setDayKeys(newKeys);
-      localStorage.setItem(DAY_ORDER_KEY(plan.id), JSON.stringify(newKeys));
+    function onTouchMove(e: TouchEvent) {
+      const touch = e.touches[0];
+      if (!isDraggingRef.current) {
+        if (Math.abs(touch.clientY - touchStartY.current) > 10) {
+          clearHold();
+        }
+        return;
+      }
+      e.preventDefault(); // works because { passive: false }
+      const y = touch.clientY;
+      for (let i = 0; i < cardRefs.current.length; i++) {
+        const el = cardRefs.current[i];
+        if (!el) continue;
+        const rect = el.getBoundingClientRect();
+        if (y >= rect.top && y <= rect.bottom) {
+          overIdxRef.current = i;
+          setOverIdx(i);
+          break;
+        }
+      }
     }
-    isDraggingRef.current = false;
-    setDragIdx(null);
-    setOverIdx(null);
-  }
+
+    grid.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => grid.removeEventListener("touchmove", onTouchMove);
+  }, [clearHold]);
 
   // Also support mouse drag for desktop
   function handleMouseDown(idx: number, e: React.MouseEvent) {
     if (e.button !== 0) return;
     touchStartY.current = e.clientY;
     clearHold();
-    holdTimerRef.current = setTimeout(() => {
-      isDraggingRef.current = true;
-      setDragIdx(idx);
-      setOverIdx(idx);
-    }, 400);
+    holdTimerRef.current = setTimeout(() => startDrag(idx), 400);
   }
 
   // Compute visual order for rendering (preview the reorder while dragging)
@@ -256,11 +273,11 @@ export default function Dashboard() {
           <span className="text-muted/50">— hold &amp; drag to reorder</span>
         </div>
         <div
+          ref={gridRef}
           className="grid grid-cols-1 gap-2"
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
-          onMouseUp={handleTouchEnd}
+          onTouchEnd={finishDrag}
+          onTouchCancel={finishDrag}
+          onMouseUp={finishDrag}
         >
           {displayKeys.map((key, i) => {
             const day = plan.days[key];

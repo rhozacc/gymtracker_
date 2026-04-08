@@ -158,7 +158,7 @@ export function GuidedExerciseCard({
           value={tempName}
           onChange={(e) => setTempName(e.target.value)}
           autoFocus
-          className="mt-6 text-xl font-medium text-center w-full max-w-xs bg-transparent border-b-2 border-border focus:border-accent focus:outline-none py-1"
+          className="mt-6 text-xl font-medium text-center w-full max-w-xs bg-transparent text-text border-b-2 border-border focus:border-accent focus:outline-none py-1"
         />
 
         <button

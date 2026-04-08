@@ -16,6 +16,9 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
+// Inline script to set theme before first paint (prevents flash)
+const themeScript = `(function(){var t=localStorage.getItem('gym-theme');if(!t){t=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'}document.documentElement.setAttribute('data-theme',t)})()`;
+
 export default function RootLayout({
   children,
 }: {
@@ -24,8 +27,11 @@ export default function RootLayout({
   const hasDb = !!process.env.POSTGRES_URL;
 
   return (
-    <html lang="en" className={GeistSans.className}>
-      <body className="min-h-screen bg-bg text-accent antialiased">
+    <html lang="en" className={GeistSans.className} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body className="min-h-screen bg-bg text-text antialiased">
         {hasDb ? (
           <PinGate>
             <main className="max-w-lg mx-auto px-4 pt-4 pb-20">{children}</main>

@@ -8,7 +8,7 @@ export function SetupGuide() {
         <p className="text-muted text-sm">
           Your app is deployed but needs a Postgres database. Follow these steps:
         </p>
-        <ol className="text-sm space-y-3 list-decimal list-inside text-accent">
+        <ol className="text-sm space-y-3 list-decimal list-inside text-text">
           <li>
             Go to the{" "}
             <a

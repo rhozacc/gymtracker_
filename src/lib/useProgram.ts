@@ -23,7 +23,17 @@ function getStoredPlanSlug(): string {
 }
 
 function dbPlanToDefinition(p: DbPlan): PlanDefinition {
-  return { id: p.slug, name: p.name, description: p.description, days: p.days };
+  // Merge category/goal from built-in PLANS constant (not stored in DB)
+  const builtIn = PLANS[p.slug];
+  return {
+    id: p.slug,
+    name: p.name,
+    description: p.description,
+    fit: builtIn?.fit || "",
+    category: (builtIn?.category || "") as PlanDefinition["category"],
+    goal: (builtIn?.goal || "") as PlanDefinition["goal"],
+    days: p.days,
+  };
 }
 
 export function useProgram() {

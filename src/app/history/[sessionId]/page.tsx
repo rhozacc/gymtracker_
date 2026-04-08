@@ -18,6 +18,12 @@ interface SetDetail {
   rir: number | null;
 }
 
+interface ExtraDetail {
+  id: string;
+  label: string;
+  minutes: number;
+}
+
 interface SessionDetail {
   id: string;
   date: string;
@@ -25,6 +31,7 @@ interface SessionDetail {
   notes: string | null;
   startedAt: string | null;
   endedAt: string | null;
+  extras: ExtraDetail[] | null;
   sets: SetDetail[];
   debrief: { energy: number; pump: number; mood: number } | null;
 }
@@ -152,6 +159,23 @@ export default function SessionDetailPage() {
           </div>
         );
       })}
+
+      {session.extras && Array.isArray(session.extras) && session.extras.length > 0 && (
+        <div className="border border-border rounded p-3">
+          <div className="text-muted text-xs mb-2">Extras</div>
+          <div className="flex flex-wrap gap-2">
+            {(session.extras as ExtraDetail[]).map((extra) => (
+              <span
+                key={extra.id}
+                className="inline-flex items-center gap-1.5 bg-accent/5 border border-border rounded-full px-3 py-1 text-xs"
+              >
+                <span className="font-medium">{extra.label}</span>
+                <span className="text-muted">{extra.minutes} min</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {session.debrief && (
         <div className="border border-border rounded p-3">

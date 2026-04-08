@@ -225,7 +225,7 @@ export default function LogPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${!guidedMode ? "pb-32" : ""}`}>
       <Toast message="Session saved!" visible={toast} onDone={hideToast} />
 
       {showTimer && timerSeconds > 0 && (
@@ -242,21 +242,7 @@ export default function LogPage() {
         >
           &larr; Back
         </button>
-        <div className="flex items-center justify-between">
-          <h1 className="text-lg font-medium">{day.label}</h1>
-          {!guidedMode && (
-            <button
-              onClick={() => {
-                initAudio();
-                requestPermission();
-                setGuidedMode(true);
-              }}
-              className="px-4 py-1.5 bg-accent text-bg text-xs font-medium rounded-full hover:opacity-90 transition-opacity"
-            >
-              Guided Session
-            </button>
-          )}
-        </div>
+        <h1 className="text-lg font-medium">{day.label}</h1>
       </div>
 
       {guidedMode ? (
@@ -320,6 +306,7 @@ export default function LogPage() {
                     onDone={() => markDone(exIdx, sIdx)}
                     increments={increments}
                     unitLabel={unit}
+                    showIncrements={false}
                   />
                 ))}
               </div>
@@ -355,6 +342,26 @@ export default function LogPage() {
             {saving ? "Saving..." : "Finish Session"}
           </button>
         </>
+      )}
+
+      {!guidedMode && (
+        <div className="fixed bottom-14 left-0 right-0 z-40 px-4 pb-4 pt-3 bg-surface border-t border-border animate-slide-up">
+          <div className="max-w-lg mx-auto">
+            <button
+              onClick={() => {
+                initAudio();
+                requestPermission();
+                setGuidedMode(true);
+              }}
+              className="w-full h-14 bg-accent text-bg font-medium rounded-lg text-base hover:opacity-90 transition-opacity"
+            >
+              Start Guided Session
+            </button>
+            <p className="text-muted text-xs text-center mt-2">
+              Step-by-step with rest timers
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );

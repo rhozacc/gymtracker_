@@ -15,6 +15,7 @@ interface SetRowProps {
   onDone: () => void;
   increments: number[];
   unitLabel: string;
+  showIncrements?: boolean;
 }
 
 export function SetRow({
@@ -25,6 +26,7 @@ export function SetRow({
   onDone,
   increments,
   unitLabel,
+  showIncrements = true,
 }: SetRowProps) {
   function adjustWeight(delta: number) {
     const current = parseFloat(data.weight) || 0;
@@ -100,30 +102,31 @@ export function SetRow({
         )}
       </div>
 
-      {/* Row 2: weight increment buttons — minus left, plus right */}
-      <div className="flex gap-1 mt-1.5 overflow-x-auto pb-1 pl-9">
-        {increments.map((inc) => (
-          <button
-            key={`minus-${inc}`}
-            type="button"
-            onClick={() => adjustWeight(-inc)}
-            className="h-7 min-w-[36px] px-1 bg-surface border border-border rounded text-[10px] text-muted active:bg-border transition-colors shrink-0"
-          >
-            −{inc}
-          </button>
-        ))}
-        <span className="w-px bg-border shrink-0" />
-        {increments.map((inc) => (
-          <button
-            key={`plus-${inc}`}
-            type="button"
-            onClick={() => adjustWeight(inc)}
-            className="h-7 min-w-[36px] px-1 bg-surface border border-border rounded text-[10px] text-accent active:bg-border transition-colors shrink-0"
-          >
-            +{inc}
-          </button>
-        ))}
-      </div>
+      {showIncrements && (
+        <div className="flex gap-1 mt-1.5 overflow-x-auto pb-1 pl-9">
+          {increments.map((inc) => (
+            <button
+              key={`minus-${inc}`}
+              type="button"
+              onClick={() => adjustWeight(-inc)}
+              className="h-7 min-w-[36px] px-1 bg-surface border border-border rounded text-[10px] text-muted active:bg-border transition-colors shrink-0"
+            >
+              −{inc}
+            </button>
+          ))}
+          <span className="w-px bg-border shrink-0" />
+          {increments.map((inc) => (
+            <button
+              key={`plus-${inc}`}
+              type="button"
+              onClick={() => adjustWeight(inc)}
+              className="h-7 min-w-[36px] px-1 bg-surface border border-border rounded text-[10px] text-accent active:bg-border transition-colors shrink-0"
+            >
+              +{inc}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

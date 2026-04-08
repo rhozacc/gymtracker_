@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Exercise } from "@/lib/program";
 import { OverloadResult } from "@/lib/overload";
 import { type WeightUnit, kgToDisplay } from "@/lib/units";
@@ -9,33 +9,61 @@ import { OverloadBanner } from "@/components/OverloadBanner";
 
 interface GuidedExerciseCardProps {
   exercise: Exercise;
+  exerciseName: string; // may be overridden by parent
   setIndex: number;
   totalSets: number;
   setData: SetInput;
   overload?: OverloadResult;
   unit: WeightUnit;
   increments: number[];
+  fromRest?: boolean; // true when arriving from rest timer → green flash
   onChange: (data: SetInput) => void;
   onDone: () => void;
   onSkip: () => void;
   onStop: () => void;
+  onNameChange: (name: string) => void;
+  onRestAnimationDone?: () => void;
 }
 
 export function GuidedExerciseCard({
   exercise,
+  exerciseName,
   setIndex,
   totalSets,
   setData,
   overload,
   unit,
   increments,
+  fromRest,
   onChange,
   onDone,
   onSkip,
   onStop,
+  onNameChange,
+  onRestAnimationDone,
 }: GuidedExerciseCardProps) {
-  const [view, setView] = useState<"main" | "weight">("main");
+  const [view, setView] = useState<"main" | "weight" | "editName">("main");
   const [tempWeight, setTempWeight] = useState(setData.weight);
+  const [tempName, setTempName] = useState(exerciseName);
+  const [greenFlash, setGreenFlash] = useState(false);
+
+  // Sync tempName if exerciseName changes externally
+  useEffect(() => {
+    setTempName(exerciseName);
+  }, [exerciseName]);
+
+  // Green flash when arriving from rest
+  useEffect(() => {
+    if (fromRest) {
+      setGreenFlash(true);
+      const t = setTimeout(() => {
+        setGreenFlash(false);
+        onRestAnimationDone?.();
+      }, 900);
+      return () => clearTimeout(t);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromRest]);
 
   const selectedReps = parseInt(setData.reps) || null;
   const selectedRir = setData.rir !== "" ? parseInt(setData.rir) : null;
@@ -46,17 +74,18 @@ export function GuidedExerciseCard({
     setTempWeight((Math.round(newVal * 100) / 100).toString());
   }
 
-  function handleDone() {
-    if (!setData.weight || !setData.reps) return;
-    onDone();
-  }
+  // Dynamic rep range: start 10 below repRange[0] (min 1), end at repRange[1]
+  const repStart = Math.max(1, exercise.repRange[0] - 10);
+  const repEnd = exercise.repRange[1];
+  const repButtons = Array.from({ length: repEnd - repStart + 1 }, (_, i) => repStart + i);
 
+  // ── Weight editing view ──────────────────────────────────────────────────
   if (view === "weight") {
     return (
       <div className="flex flex-col items-center py-8 px-4">
         <p className="text-muted text-xs uppercase tracking-wide">Adjust Weight</p>
         <h2 className="text-lg font-medium mt-2">
-          {exercise.name} — Set {setIndex + 1}
+          {exerciseName} — Set {setIndex + 1}
         </h2>
 
         <div className="flex items-baseline gap-2 mt-6">
@@ -118,13 +147,78 @@ export function GuidedExerciseCard({
     );
   }
 
+  // ── Exercise name editing view ───────────────────────────────────────────
+  if (view === "editName") {
+    return (
+      <div className="flex flex-col items-center py-8 px-4">
+        <p className="text-muted text-xs uppercase tracking-wide">Edit Exercise Name</p>
+
+        <input
+          type="text"
+          value={tempName}
+          onChange={(e) => setTempName(e.target.value)}
+          autoFocus
+          className="mt-6 text-xl font-medium text-center w-full max-w-xs bg-transparent border-b-2 border-border focus:border-accent focus:outline-none py-1"
+        />
+
+        <button
+          onClick={() => {
+            if (tempName.trim()) onNameChange(tempName.trim());
+            setView("main");
+          }}
+          className="mt-6 w-full max-w-xs h-12 bg-accent text-bg font-medium rounded text-sm hover:opacity-90 transition-opacity"
+        >
+          Save
+        </button>
+
+        <button
+          onClick={() => {
+            setTempName(exerciseName);
+            setView("main");
+          }}
+          className="mt-3 text-muted text-sm hover:text-accent"
+        >
+          Cancel
+        </button>
+      </div>
+    );
+  }
+
+  // ── Main logging view ────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col items-center py-6 px-4">
+    <div
+      className={`flex flex-col items-center py-6 px-4 transition-colors duration-700 ${
+        greenFlash ? "bg-green-500/10" : ""
+      }`}
+    >
       {/* Header */}
       <p className="text-muted text-xs uppercase tracking-wide">Current Exercise</p>
-      <h2 className="text-2xl font-medium mt-1">{exercise.name}</h2>
-      <p className="text-muted text-sm mt-1">
-        Set {setIndex + 1} of {totalSets} &middot; {exercise.repRange[0]}–{exercise.repRange[1]} reps
+
+      {/* Exercise name with edit icon */}
+      <div className="flex items-center gap-2 mt-1">
+        <h2 className="text-2xl font-medium">{exerciseName}</h2>
+        <button
+          onClick={() => {
+            setTempName(exerciseName);
+            setView("editName");
+          }}
+          className="text-muted hover:text-accent transition-colors p-1"
+          aria-label="Edit exercise name"
+        >
+          {/* Pencil icon */}
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </button>
+      </div>
+
+      {/* Set info — bigger font */}
+      <p className="text-muted text-lg font-medium mt-1">
+        Set {setIndex + 1} of {totalSets}
+        <span className="text-sm font-normal ml-2 opacity-70">
+          · {exercise.repRange[0]}–{exercise.repRange[1]} reps
+        </span>
       </p>
 
       {overload && overload.lastWeight > 0 && (
@@ -154,11 +248,11 @@ export function GuidedExerciseCard({
         <span className="text-muted text-xs ml-1 opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
       </button>
 
-      {/* Reps grid */}
+      {/* Dynamic reps grid */}
       <div className="mt-5 w-full max-w-xs">
         <p className="text-muted text-[10px] uppercase tracking-wide text-center mb-2">Reps</p>
         <div className="grid grid-cols-5 gap-1.5">
-          {Array.from({ length: 15 }, (_, i) => i + 1).map((n) => (
+          {repButtons.map((n) => (
             <button
               key={n}
               onClick={() => onChange({ ...setData, reps: n.toString() })}
@@ -198,7 +292,10 @@ export function GuidedExerciseCard({
 
       {/* Done button */}
       <button
-        onClick={handleDone}
+        onClick={() => {
+          if (!setData.weight || !setData.reps) return;
+          onDone();
+        }}
         disabled={!setData.weight || !setData.reps}
         className="mt-6 w-full max-w-xs h-14 bg-accent text-bg font-medium rounded text-sm hover:opacity-90 transition-opacity disabled:opacity-30"
       >

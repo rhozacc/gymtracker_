@@ -1,10 +1,20 @@
 "use client";
 
+import { getDayShortLabel } from "@/lib/program";
+
 interface Props {
   sessions: { date: string; dayType: string }[];
 }
 
 const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
+
+const DAY_TYPE_COLORS = [
+  "var(--color-chart-bar-1)",
+  "var(--color-chart-bar-2)",
+  "var(--color-chart-bar-3)",
+  "var(--color-chart-bar-4)",
+  "var(--color-chart-bar-5)",
+];
 
 export function StreakCalendar({ sessions }: Props) {
   const weeks = 12;
@@ -17,6 +27,16 @@ export function StreakCalendar({ sessions }: Props) {
     const key = new Date(s.date).toISOString().split("T")[0];
     sessionDates.set(key, s.dayType);
   }
+
+  // Build dayType -> color mapping (stable order based on first appearance)
+  const uniqueDayTypes: string[] = [];
+  for (const s of sessions) {
+    if (!uniqueDayTypes.includes(s.dayType)) uniqueDayTypes.push(s.dayType);
+  }
+  const dayTypeColorMap = new Map<string, string>();
+  uniqueDayTypes.forEach((dt, i) => {
+    dayTypeColorMap.set(dt, DAY_TYPE_COLORS[i % DAY_TYPE_COLORS.length]);
+  });
 
   // Find the Monday `weeks` weeks ago
   const startDay = new Date(today);
@@ -36,27 +56,8 @@ export function StreakCalendar({ sessions }: Props) {
     cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
 
-  function getCellColor(dayType: string | null, future: boolean) {
-    if (future) return "bg-bg";
-    if (!dayType) return "bg-surface";
-    return "bg-accent";
-  }
-
   return (
     <div>
-      <div className="grid grid-cols-[auto_repeat(12,1fr)] gap-[3px]">
-        {/* Day labels column */}
-        {DAY_LABELS.map((label, i) => (
-          <div
-            key={`label-${i}`}
-            className="text-muted text-[9px] flex items-center justify-end pr-1 h-[18px]"
-          >
-            {i % 2 === 0 ? label : ""}
-          </div>
-        ))}
-        {/* This won't work right with CSS grid — need to restructure */}
-      </div>
-      {/* Simpler approach: column-based */}
       <div className="flex gap-[3px]">
         <div className="flex flex-col gap-[3px] mr-1">
           {DAY_LABELS.map((label, i) => (
@@ -72,21 +73,59 @@ export function StreakCalendar({ sessions }: Props) {
           <div key={weekIdx} className="flex flex-col gap-[3px]">
             {Array.from({ length: 7 }, (_, dayIdx) => {
               const cell = cells[weekIdx * 7 + dayIdx];
-              if (!cell) return <div key={dayIdx} className="w-[18px] h-[18px]" />;
+              if (!cell)
+                return <div key={dayIdx} className="w-[18px] h-[18px]" />;
+
+              if (cell.future) {
+                return (
+                  <div
+                    key={dayIdx}
+                    className="w-[18px] h-[18px] rounded-[3px] bg-bg"
+                    title={cell.date}
+                  />
+                );
+              }
+
+              if (!cell.dayType) {
+                return (
+                  <div
+                    key={dayIdx}
+                    className="w-[18px] h-[18px] rounded-[3px] bg-surface"
+                    title={cell.date}
+                  />
+                );
+              }
+
               return (
                 <div
                   key={dayIdx}
-                  className={`w-[18px] h-[18px] rounded-[3px] ${getCellColor(
-                    cell.dayType,
-                    cell.future
-                  )}`}
-                  title={`${cell.date}${cell.dayType ? ` — ${cell.dayType}` : ""}`}
+                  className="w-[18px] h-[18px] rounded-[3px]"
+                  style={{
+                    backgroundColor:
+                      dayTypeColorMap.get(cell.dayType) || "var(--color-accent)",
+                  }}
+                  title={`${cell.date} — ${getDayShortLabel(cell.dayType)}`}
                 />
               );
             })}
           </div>
         ))}
       </div>
+      {uniqueDayTypes.length > 0 && (
+        <div className="flex flex-wrap gap-3 mt-3">
+          {uniqueDayTypes.map((dt) => (
+            <div key={dt} className="flex items-center gap-1.5">
+              <div
+                className="w-3 h-3 rounded-[2px]"
+                style={{ backgroundColor: dayTypeColorMap.get(dt) }}
+              />
+              <span className="text-muted text-[10px]">
+                {getDayShortLabel(dt)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

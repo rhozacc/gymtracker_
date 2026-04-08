@@ -1,40 +1,46 @@
 # Gym Tracker
 
-Minimal personal gym tracker with progressive overload detection. Dark, dense, mobile-first. Built for logging sessions in the gym on your phone.
+Personal gym tracker with progressive overload detection. Dark, mobile-first, PIN-protected.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/rhozacc/gymtracker_&env=APP_PIN&envDescription=4-digit+PIN+to+protect+your+app&project-name=gymtracker&stores=[{"type":"neon"}])
+
+> Clicking the button provisions a Neon Postgres database automatically. You only need to set your PIN.
 
 ## Features
 
-- Hardcoded 3-day upper/lower/full body split
+- 4 built-in training plans (Upper/Lower, Push/Pull/Legs, Gym Bro 5-day, Arnold Split) + custom plan builder
 - Progressive overload detection — tells you when to increase weight
-- Volume tracking with weekly charts
-- Session history with detailed set logs
+- Session logging with per-set tracking (weight, reps, RIR)
+- Rest timer between sets
+- Post-session debrief (energy, pump, mood)
+- Weekly volume charts
 - Activity streak calendar
-- PIN-protected (single user, no auth library)
+- Session history with detail views
+- Unit toggle (kg/lbs)
+- PIN-protected single-user (no auth library)
+- Dark mode
 
 ## Stack
 
-Next.js 14 (App Router) / TypeScript / Tailwind CSS / Prisma / Vercel Postgres / Recharts
+Next.js 14 (App Router) / TypeScript / Tailwind CSS / Prisma / Neon Postgres / Recharts / SWR
 
 ## Deploy to Vercel
 
-1. Fork or clone this repo
-2. Create a new project on [Vercel](https://vercel.com)
-3. In the Vercel dashboard, go to **Storage** and create a **Postgres** database. Link it to your project — this auto-sets `POSTGRES_PRISMA_URL` and `POSTGRES_URL_NON_POOLING`
-4. Add an environment variable: `APP_PIN` = your 4-digit PIN (e.g. `1234`)
-5. Deploy
-6. After the first deploy, run the database migration:
+1. Click the deploy button above — this forks the repo, provisions a Neon database, and deploys
+2. Set `APP_PIN` to a 4-digit PIN when prompted
+3. After the first deploy, push the database schema:
    ```bash
    npx vercel env pull .env.local
    npx prisma db push
    ```
-   Or trigger a redeploy — the schema will be pushed on first use.
+   Or copy `POSTGRES_PRISMA_URL` from the Vercel dashboard (Settings > Environment Variables), set it locally, and run `npx prisma db push`.
 
 ## Local Development
 
 ```bash
-git clone <repo-url> && cd gymtracker
+git clone https://github.com/rhozacc/gymtracker_.git && cd gymtracker_
 cp .env.example .env.local
-# Fill in your Postgres connection strings and PIN in .env.local
+# Fill in your Postgres connection strings and PIN
 npm install
 npx prisma db push
 npm run dev
@@ -46,6 +52,8 @@ Open [http://localhost:3000](http://localhost:3000).
 
 | Variable | Description |
 |----------|-------------|
-| `POSTGRES_PRISMA_URL` | Vercel Postgres pooled connection string |
-| `POSTGRES_URL_NON_POOLING` | Vercel Postgres direct connection string |
+| `POSTGRES_PRISMA_URL` | Neon pooled connection string (auto-set by Vercel Marketplace) |
+| `POSTGRES_URL_NON_POOLING` | Neon direct connection string (auto-set by Vercel Marketplace) |
 | `APP_PIN` | 4-digit PIN to access the app |
+
+When deploying via the button, the Postgres variables are provisioned automatically. You only need to set `APP_PIN`.

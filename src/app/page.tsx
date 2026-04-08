@@ -43,7 +43,7 @@ function getNextDayType(
 export default function Dashboard() {
   const { plan } = useProgram();
   const { unit } = useUnit();
-  const { data: sessions } = useSWR<SessionSummary[]>("/api/sessions", fetcher);
+  const { data: sessions, error: sessionsError } = useSWR<SessionSummary[]>("/api/sessions", fetcher);
   const { data: volumeData } = useSWR("/api/volume/weekly", fetcher);
 
   const streak = sessions ? calculateStreak(sessions) : 0;
@@ -52,6 +52,15 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {sessionsError && (
+        <div className="border border-red-500/30 bg-red-950/20 rounded p-3 text-sm">
+          <span className="text-red-400 font-medium">No database connected.</span>
+          <span className="text-muted ml-1">
+            Sessions won&apos;t be saved. Add a Neon Postgres database in your Vercel project settings.
+          </span>
+        </div>
+      )}
+
       <div className="flex items-baseline justify-between">
         <div>
           <h1 className="text-xl font-medium">Gym Tracker</h1>

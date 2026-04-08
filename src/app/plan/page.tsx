@@ -132,6 +132,9 @@ function PlanCard({
           </div>
         </div>
         <p className="text-muted text-xs">{plan.description}</p>
+        {plan.fit && (
+          <p className="text-xs text-foreground/70 mt-1">{plan.fit}</p>
+        )}
         {!expanded && (
           <div className="flex flex-wrap gap-2 mt-2">
             {days.map((day) => {
@@ -154,13 +157,6 @@ function PlanCard({
       {/* Expanded detail */}
       {expanded && (
         <div className="px-4 pb-4 space-y-4">
-          {/* Fit description */}
-          {plan.fit && (
-            <p className="text-xs text-foreground/80 bg-bg rounded-md px-3 py-2 border border-border">
-              {plan.fit}
-            </p>
-          )}
-
           {/* Day-by-day exercises */}
           {days.map((day) => {
             const shortLabel = day.label.includes("—")

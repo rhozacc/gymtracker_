@@ -19,6 +19,7 @@ export interface PlanDefinition {
   id: string;
   name: string;
   description: string;
+  fit: string;
   category: PlanCategory;
   goal: PlanGoal;
   days: Record<string, DayDefinition>;
@@ -31,6 +32,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     id: "upper_lower",
     name: "Upper / Lower",
     description: "3-day rotation: Upper A (strength), Lower A (strength), Upper B (hypertrophy)",
+    fit: "Good if you dropped from 4+ days to 3. Mixes strength and size work without overloading any single session.",
     category: "men",
     goal: "bulk",
     days: {
@@ -75,6 +77,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     id: "ppl",
     name: "Push / Pull / Legs",
     description: "3-day split targeting push, pull, and leg movements",
+    fit: "The workhorse split. Run it 3 days or double up to 6. Clear structure, easy to progress, hard to mess up.",
     category: "men",
     goal: "bulk",
     days: {
@@ -121,6 +124,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     id: "gym_bro",
     name: "Gym Bro",
     description: "5-day classic bodybuilding split",
+    fit: "One muscle group per day, 5 days a week. Simple to follow and easy to stay consistent with. Great if you like routine.",
     category: "men",
     goal: "balanced",
     days: {
@@ -185,6 +189,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     id: "arnold",
     name: "Arnold Split",
     description: "3-day antagonist pairing split",
+    fit: "Pairs opposing muscles (chest+back, biceps+triceps). Efficient sessions, good pump, and only 3 days.",
     category: "men",
     goal: "balanced",
     days: {
@@ -228,6 +233,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     id: "mens_lean_cut",
     name: "Lean Cut",
     description: "3-day high-rep metabolic split with shorter rest — built for cutting phases",
+    fit: "In a calorie deficit and want to keep intensity high. Short rest, high reps, maximum work in minimum time.",
     category: "men",
     goal: "lean",
     days: {
@@ -274,6 +280,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     id: "mens_strength",
     name: "Strength Foundation",
     description: "4-day powerbuilding program — heavy compounds with accessory work",
+    fit: "Want to get strong first, look good second. Heavy squats, bench, deads, OHP — each gets its own day.",
     category: "men",
     goal: "bulk",
     days: {
@@ -324,6 +331,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     id: "mens_full_body",
     name: "Full Body",
     description: "3-day full body sessions — hit every muscle group each workout with compound lifts",
+    fit: "Best bang for your buck on limited time. Three sessions, everything gets hit each one. Ideal for busy schedules.",
     category: "men",
     goal: "balanced",
     days: {
@@ -369,6 +377,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     id: "womens_sculpt",
     name: "Sculpt",
     description: "3-day high-rep toning split — glute and core emphasis with shorter rest",
+    fit: "Want to tighten up with a glute and core focus. Higher reps, shorter rest, 3 days a week.",
     category: "women",
     goal: "lean",
     days: {
@@ -413,6 +422,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     id: "womens_strong_curves",
     name: "Strong Curves",
     description: "4-day balanced split — build strength with posterior chain and shoulder focus",
+    fit: "The all-rounder. 4 days, great glute and shoulder work, steady progression. Works whether you're gaining or maintaining.",
     category: "women",
     goal: "balanced",
     days: {
@@ -467,6 +477,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     id: "womens_power_build",
     name: "Power Build",
     description: "4-day progressive overload program — compound-heavy for strength and size gains",
+    fit: "Ready to lift heavy and chase PRs. Squat, hip thrust, bench, row — structured to get stronger every week.",
     category: "women",
     goal: "bulk",
     days: {
@@ -522,6 +533,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     id: "womens_lean_tone",
     name: "Lean & Tone",
     description: "3-day full body circuit-style — higher reps, minimal rest, maximum burn",
+    fit: "High calorie burn per session. Circuit-style with minimal rest — good for cutting or if you like fast-paced workouts.",
     category: "women",
     goal: "lean",
     days: {
@@ -565,6 +577,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     id: "womens_upper_lower",
     name: "Upper / Lower",
     description: "3-day balanced rotation — moderate volume with progressive overload",
+    fit: "New to structured training or want something straightforward. 3 days, moderate volume, solid foundation.",
     category: "women",
     goal: "balanced",
     days: {
@@ -609,6 +622,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     id: "womens_ppl",
     name: "Push / Pull / Legs",
     description: "3-day compound-heavy split — structured for progressive overload and building",
+    fit: "Comfortable with barbell lifts and want a clear building split. Push/pull/legs structure keeps it simple.",
     category: "women",
     goal: "bulk",
     days: {

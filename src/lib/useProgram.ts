@@ -29,6 +29,7 @@ function dbPlanToDefinition(p: DbPlan): PlanDefinition {
     id: p.slug,
     name: p.name,
     description: p.description,
+    fit: builtIn?.fit || "",
     category: (builtIn?.category || "") as PlanDefinition["category"],
     goal: (builtIn?.goal || "") as PlanDefinition["goal"],
     days: p.days,

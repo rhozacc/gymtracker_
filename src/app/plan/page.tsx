@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useProgram } from "@/lib/useProgram";
 import { useUnit } from "@/lib/useUnit";
-import { PLANS } from "@/lib/program";
+import { PLANS, type Exercise } from "@/lib/program";
 import useSWR from "swr";
 import { fetcher } from "@/lib/swr";
 
@@ -16,19 +16,55 @@ interface DbPlanRaw {
   days: Record<string, { label: string; exercises: { id: string }[] }>;
 }
 
-interface DbPlan extends DbPlanRaw {
-  category: string;
-  goal: string;
+interface DbPlanDay {
+  label: string;
+  exercises: Exercise[];
 }
 
-/** Merge category/goal from built-in PLANS constant onto DB results */
+interface DbPlan {
+  slug: string;
+  name: string;
+  description: string;
+  fit: string;
+  builtIn: boolean;
+  category: string;
+  goal: string;
+  days: Record<string, DbPlanDay>;
+}
+
+/** Merge category/goal/fit and full exercise data from built-in PLANS */
 function enrichPlans(raw: DbPlanRaw[]): DbPlan[] {
   return raw.map((p) => {
     const builtIn = PLANS[p.slug];
+    // For built-in plans, use the full PLANS data (has sets/reps/etc)
+    // For custom plans, map exercises with defaults
+    const days: Record<string, DbPlanDay> = {};
+    for (const [key, day] of Object.entries(p.days)) {
+      if (builtIn?.days[key]) {
+        days[key] = builtIn.days[key];
+      } else {
+        days[key] = {
+          label: day.label,
+          exercises: day.exercises.map((e: Record<string, unknown>) => ({
+            id: (e.id as string) || "",
+            name: (e.name as string) || (e.id as string || "").replace(/_/g, " "),
+            sets: (e.sets as number) || 3,
+            repRange: (e.repRange as [number, number]) || [8, 12],
+            increment: (e.increment as number) ?? 2.5,
+            rest: (e.rest as number) || 60,
+          })),
+        };
+      }
+    }
     return {
-      ...p,
+      slug: p.slug,
+      name: p.name,
+      description: p.description,
+      fit: builtIn?.fit || "",
+      builtIn: p.builtIn,
       category: builtIn?.category || "",
       goal: builtIn?.goal || "",
+      days,
     };
   });
 }
@@ -52,24 +88,30 @@ function GoalBadge({ goal }: { goal: string }) {
 function PlanCard({
   plan,
   active,
+  expanded,
+  onToggle,
   onSelect,
   onDelete,
 }: {
   plan: DbPlan;
   active: boolean;
+  expanded: boolean;
+  onToggle: () => void;
   onSelect: () => void;
   onDelete: () => void;
 }) {
   const days = Object.values(plan.days);
+
   return (
     <div
-      className={`border rounded-lg p-4 transition-colors ${
+      className={`border rounded-lg transition-colors ${
         active
           ? "border-accent bg-surface"
           : "border-border hover:border-muted"
       }`}
     >
-      <button onClick={onSelect} className="w-full text-left">
+      {/* Header — tap to expand/collapse */}
+      <button onClick={onToggle} className="w-full text-left p-4">
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-sm font-medium">{plan.name}</h2>
           <div className="flex items-center gap-2">
@@ -84,41 +126,99 @@ function PlanCard({
                 Active
               </span>
             )}
+            <span className={`text-muted text-xs transition-transform ${expanded ? "rotate-180" : ""}`}>
+              ▾
+            </span>
           </div>
         </div>
-        <p className="text-muted text-xs mb-3">{plan.description}</p>
-        <div className="flex flex-wrap gap-2">
+        <p className="text-muted text-xs">{plan.description}</p>
+        {!expanded && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {days.map((day) => {
+              const shortLabel = day.label.includes("—")
+                ? day.label.split("—")[1].trim()
+                : day.label;
+              return (
+                <span
+                  key={day.label}
+                  className="text-[10px] text-muted bg-bg border border-border rounded px-2 py-0.5"
+                >
+                  {shortLabel}
+                </span>
+              );
+            })}
+          </div>
+        )}
+      </button>
+
+      {/* Expanded detail */}
+      {expanded && (
+        <div className="px-4 pb-4 space-y-4">
+          {/* Fit description */}
+          {plan.fit && (
+            <p className="text-xs text-foreground/80 bg-bg rounded-md px-3 py-2 border border-border">
+              {plan.fit}
+            </p>
+          )}
+
+          {/* Day-by-day exercises */}
           {days.map((day) => {
             const shortLabel = day.label.includes("—")
               ? day.label.split("—")[1].trim()
               : day.label;
             return (
-              <span
-                key={day.label}
-                className="text-[10px] text-muted bg-bg border border-border rounded px-2 py-0.5"
-              >
-                {shortLabel}{" "}
-                <span className="text-muted/60">{day.exercises.length}</span>
-              </span>
+              <div key={day.label}>
+                <div className="text-xs font-medium text-muted mb-2">
+                  {shortLabel}
+                </div>
+                <div className="space-y-1">
+                  {day.exercises.map((ex) => (
+                    <div
+                      key={ex.id}
+                      className="flex items-center justify-between text-xs py-1"
+                    >
+                      <span className="text-foreground/90">{ex.name}</span>
+                      <span className="text-muted tabular-nums">
+                        {ex.sets} x {ex.repRange[0]}–{ex.repRange[1]}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             );
           })}
-        </div>
-      </button>
 
-      {!plan.builtIn && (
-        <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-          <Link
-            href={`/plan/custom?edit=${plan.slug}`}
-            className="text-xs text-muted hover:text-accent transition-colors"
-          >
-            Edit
-          </Link>
-          <button
-            onClick={onDelete}
-            className="text-xs text-muted hover:text-red-500 transition-colors"
-          >
-            Delete
-          </button>
+          {/* Actions */}
+          <div className="flex items-center gap-2 pt-2 border-t border-border">
+            {active ? (
+              <span className="text-xs text-accent font-medium py-1.5">
+                Currently active
+              </span>
+            ) : (
+              <button
+                onClick={onSelect}
+                className="text-xs font-medium text-accent border border-accent rounded-md px-3 py-1.5 hover:bg-accent/10 transition-colors"
+              >
+                Use this plan
+              </button>
+            )}
+            {!plan.builtIn && (
+              <>
+                <Link
+                  href={`/plan/custom?edit=${plan.slug}`}
+                  className="text-xs text-muted hover:text-accent transition-colors ml-auto"
+                >
+                  Edit
+                </Link>
+                <button
+                  onClick={onDelete}
+                  className="text-xs text-muted hover:text-red-500 transition-colors"
+                >
+                  Delete
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -133,10 +233,14 @@ export default function PlanPage() {
   const { data: rawPlans, mutate } = useSWR<DbPlanRaw[]>("/api/plans", fetcher);
   const dbPlans = rawPlans ? enrichPlans(rawPlans) : undefined;
 
-  // Auto-select tab based on active plan's category
   const initialTab: CategoryTab =
     plan.category === "women" ? "women" : plan.category === "men" ? "men" : "men";
   const [tab, setTab] = useState<CategoryTab>(initialTab);
+  const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
+
+  function toggleExpand(slug: string) {
+    setExpandedSlug((prev) => (prev === slug ? null : slug));
+  }
 
   async function handleDelete(slug: string) {
     if (!confirm("Delete this custom plan?")) return;
@@ -149,7 +253,6 @@ export default function PlanPage() {
   const menPlans = dbPlans?.filter((p) => p.builtIn && p.category === "men") ?? [];
   const womenPlans = dbPlans?.filter((p) => p.builtIn && p.category === "women") ?? [];
   const customPlans = dbPlans?.filter((p) => !p.builtIn) ?? [];
-  // Plans without a category (legacy) go into men's tab
   const uncategorized = dbPlans?.filter((p) => p.builtIn && !p.category) ?? [];
   const allMen = [...menPlans, ...uncategorized];
 
@@ -165,7 +268,6 @@ export default function PlanPage() {
     return customPlans;
   }
 
-  // Group plans by goal for display
   function groupByGoal(plans: DbPlan[]): { goal: string; plans: DbPlan[] }[] {
     const goalOrder = ["bulk", "balanced", "lean", ""];
     const groups: Record<string, DbPlan[]> = {};
@@ -186,12 +288,26 @@ export default function PlanPage() {
     "": "Other",
   };
 
+  function renderPlans(plans: DbPlan[]) {
+    return plans.map((p) => (
+      <PlanCard
+        key={p.slug}
+        plan={p}
+        active={p.slug === planId}
+        expanded={expandedSlug === p.slug}
+        onToggle={() => toggleExpand(p.slug)}
+        onSelect={() => setPlan(p.slug)}
+        onDelete={() => handleDelete(p.slug)}
+      />
+    ));
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-lg font-medium">Training Plans</h1>
         <p className="text-muted text-xs mt-1">
-          Pick your goal and split. History from other plans is always preserved.
+          Tap a plan to see exercises. History from other plans is always preserved.
         </p>
       </div>
 
@@ -200,7 +316,7 @@ export default function PlanPage() {
         {tabs.map((t) => (
           <button
             key={t.key}
-            onClick={() => setTab(t.key)}
+            onClick={() => { setTab(t.key); setExpandedSlug(null); }}
             className={`flex-1 text-xs py-2 rounded-md transition-colors ${
               tab === t.key
                 ? "bg-surface text-accent font-medium"
@@ -212,16 +328,16 @@ export default function PlanPage() {
         ))}
       </div>
 
-      {/* Loading state */}
+      {/* Loading */}
       {!dbPlans && (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 bg-surface rounded animate-pulse" />
+            <div key={i} className="h-20 bg-surface rounded animate-pulse" />
           ))}
         </div>
       )}
 
-      {/* Plan list grouped by goal */}
+      {/* Plans grouped by goal */}
       {dbPlans && tab !== "custom" && (
         <div className="space-y-6">
           {groupByGoal(currentPlans()).map(({ goal, plans }) => (
@@ -232,23 +348,13 @@ export default function PlanPage() {
                   {goalLabels[goal] || goal}
                 </span>
               </div>
-              <div className="space-y-3">
-                {plans.map((p) => (
-                  <PlanCard
-                    key={p.slug}
-                    plan={p}
-                    active={p.slug === planId}
-                    onSelect={() => setPlan(p.slug)}
-                    onDelete={() => handleDelete(p.slug)}
-                  />
-                ))}
-              </div>
+              <div className="space-y-3">{renderPlans(plans)}</div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Custom plans (ungrouped) */}
+      {/* Custom plans */}
       {dbPlans && tab === "custom" && (
         <div className="space-y-3">
           {customPlans.length === 0 && (
@@ -256,15 +362,7 @@ export default function PlanPage() {
               No custom plans yet. Create one below!
             </p>
           )}
-          {customPlans.map((p) => (
-            <PlanCard
-              key={p.slug}
-              plan={p}
-              active={p.slug === planId}
-              onSelect={() => setPlan(p.slug)}
-              onDelete={() => handleDelete(p.slug)}
-            />
-          ))}
+          {renderPlans(customPlans)}
         </div>
       )}
 

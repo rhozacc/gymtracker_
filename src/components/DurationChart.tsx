@@ -43,6 +43,7 @@ export function DurationChartInner({ data }: { data: DataPoint[] }) {
           unit=" min"
         />
         <Tooltip
+          cursor={false}
           contentStyle={{
             background: "var(--color-chart-tooltip-bg)",
             border: "1px solid var(--color-chart-tooltip-border)",

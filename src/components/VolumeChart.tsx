@@ -52,6 +52,7 @@ export function VolumeChartInner({ data, unit = "kg" }: { data: WeekData[]; unit
         />
         <YAxis stroke="var(--color-chart-axis)" fontSize={10} tickFormatter={(v) => `${Math.round(kgToDisplay(v, unit) / 1000)}k`} />
         <Tooltip
+          cursor={false}
           contentStyle={{
             background: "var(--color-chart-tooltip-bg)",
             border: "1px solid var(--color-chart-tooltip-border)",

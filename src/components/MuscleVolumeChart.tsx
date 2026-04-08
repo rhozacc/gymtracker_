@@ -51,6 +51,7 @@ export function MuscleVolumeChartInner({ data }: { data: WeekData[] }) {
           allowDecimals={false}
         />
         <Tooltip
+          cursor={false}
           contentStyle={{
             background: "var(--color-chart-tooltip-bg)",
             border: "1px solid var(--color-chart-tooltip-border)",

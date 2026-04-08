@@ -14,6 +14,8 @@ interface DbPlan {
   name: string;
   description: string;
   builtIn: boolean;
+  category: string;
+  goal: string;
   days: Record<string, DayDefinition>;
 }
 
@@ -23,7 +25,14 @@ function getStoredPlanSlug(): string {
 }
 
 function dbPlanToDefinition(p: DbPlan): PlanDefinition {
-  return { id: p.slug, name: p.name, description: p.description, days: p.days };
+  return {
+    id: p.slug,
+    name: p.name,
+    description: p.description,
+    category: (p.category || "") as PlanDefinition["category"],
+    goal: (p.goal || "") as PlanDefinition["goal"],
+    days: p.days,
+  };
 }
 
 export function useProgram() {

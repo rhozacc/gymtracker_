@@ -10,6 +10,8 @@ async function syncBuiltInPlans() {
       update: {
         name: p.name,
         description: p.description,
+        category: p.category || "",
+        goal: p.goal || "",
         days: p.days as object,
       },
       create: {
@@ -17,6 +19,8 @@ async function syncBuiltInPlans() {
         name: p.name,
         description: p.description,
         builtIn: true,
+        category: p.category || "",
+        goal: p.goal || "",
         days: p.days as object,
       },
     })

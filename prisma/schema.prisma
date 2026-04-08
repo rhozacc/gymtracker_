@@ -47,6 +47,8 @@ model Plan {
   name        String
   description String   @default("")
   builtIn     Boolean  @default(false)
+  category    String   @default("")
+  goal        String   @default("")
   days        Json
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

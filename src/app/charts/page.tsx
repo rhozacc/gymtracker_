@@ -222,7 +222,7 @@ export default function ChartsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-medium">Charts</h1>
+      <h1 className="text-lg font-medium">Trends</h1>
 
       {/* ── STRENGTH ── */}
       <div>

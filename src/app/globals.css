@@ -21,6 +21,10 @@
   --color-chart-bar-4: #aaaaaa;
   --color-chart-bar-5: #cccccc;
 
+  /* Multi-line chart colors */
+  --color-chart-line-2: #d4622b;
+  --color-chart-line-3: #6b8aff;
+
   /* Timer track */
   --color-timer-track: #e0e0e0;
 }
@@ -43,6 +47,9 @@
   --color-chart-bar-4: #666666;
   --color-chart-bar-5: #444444;
 
+  --color-chart-line-2: #ff6b6b;
+  --color-chart-line-3: #6b8aff;
+
   --color-timer-track: #222222;
 }
 
@@ -56,4 +63,15 @@ input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+/* Nav icon glow — dark mode only */
+[data-theme="dark"] .nav-icon-glow {
+  filter: drop-shadow(0 0 6px var(--color-accent)) drop-shadow(0 0 12px color-mix(in srgb, var(--color-accent) 40%, transparent));
+}
+
+/* Beam sweep — accent band moves bottom to top */
+@keyframes beam-sweep {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-100vh); }
 }

@@ -663,6 +663,50 @@ export const PLANS: Record<string, PlanDefinition> = {
       },
     },
   },
+
+  womens_full_body: {
+    id: "womens_full_body",
+    name: "Full Body",
+    description: "3-day full body sessions — compound lifts with glute and shoulder emphasis each workout",
+    fit: "Limited days but want to hit everything. Three sessions per week, full body each time — efficient and balanced.",
+    category: "women",
+    goal: "balanced",
+    days: {
+      wfb_day1: {
+        label: "Day 1 — Full Body A",
+        exercises: [
+          { id: "wfb_squat", name: "Barbell squat", sets: 4, repRange: [6, 8], increment: 2.5, rest: 120 },
+          { id: "wfb_db_bench", name: "DB bench press", sets: 3, repRange: [8, 10], increment: 2.5, rest: 75 },
+          { id: "wfb_hip_thrust", name: "Barbell hip thrust", sets: 4, repRange: [8, 10], increment: 5, rest: 75 },
+          { id: "wfb_lat_pulldown", name: "Lat pulldown", sets: 3, repRange: [10, 12], increment: 2.5, rest: 60 },
+          { id: "wfb_lateral_raise", name: "Lateral raise", sets: 3, repRange: [12, 15], increment: 2.5, rest: 45 },
+          { id: "wfb_plank", name: "Plank hold", sets: 3, repRange: [30, 45], increment: 0, rest: 45 },
+        ],
+      },
+      wfb_day2: {
+        label: "Day 2 — Full Body B",
+        exercises: [
+          { id: "wfb_rdl", name: "Romanian deadlift", sets: 4, repRange: [8, 10], increment: 5, rest: 90 },
+          { id: "wfb_ohp", name: "DB shoulder press", sets: 3, repRange: [8, 10], increment: 2.5, rest: 75 },
+          { id: "wfb_bulgarian", name: "Bulgarian split squat", sets: 3, repRange: [10, 12], increment: 2.5, rest: 60 },
+          { id: "wfb_cable_row", name: "Seated cable row", sets: 3, repRange: [10, 12], increment: 2.5, rest: 60 },
+          { id: "wfb_cable_fly", name: "Cable fly", sets: 3, repRange: [12, 15], increment: 2.5, rest: 45 },
+          { id: "wfb_leg_curl", name: "Leg curl", sets: 3, repRange: [12, 15], increment: 2.5, rest: 60 },
+        ],
+      },
+      wfb_day3: {
+        label: "Day 3 — Full Body C",
+        exercises: [
+          { id: "wfb_sumo_dl", name: "Sumo deadlift", sets: 4, repRange: [6, 8], increment: 5, rest: 120 },
+          { id: "wfb_incline_db", name: "Incline DB press", sets: 3, repRange: [10, 12], increment: 2.5, rest: 60 },
+          { id: "wfb_hip_thrust_b", name: "Hip thrust (banded)", sets: 3, repRange: [12, 15], increment: 5, rest: 60 },
+          { id: "wfb_pulldown_close", name: "Close-grip pulldown", sets: 3, repRange: [10, 12], increment: 2.5, rest: 60 },
+          { id: "wfb_face_pull", name: "Face pull", sets: 3, repRange: [15, 20], increment: 2.5, rest: 45 },
+          { id: "wfb_glute_bridge", name: "Glute bridge", sets: 3, repRange: [15, 20], increment: 5, rest: 45 },
+        ],
+      },
+    },
+  },
 };
 
 export const PLAN_IDS = Object.keys(PLANS);

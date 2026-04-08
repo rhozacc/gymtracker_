@@ -9,13 +9,11 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { getDayShortLabel } from "@/lib/program";
-import { type WeightUnit, kgToDisplay } from "@/lib/units";
+import { MUSCLE_GROUPS } from "@/lib/muscleGroups";
 
 interface WeekData {
   week: string;
-  total: number;
-  [dayType: string]: number | string;
+  [muscleGroup: string]: number | string;
 }
 
 const BAR_VARS = [
@@ -31,15 +29,12 @@ function formatWeek(w: string) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-export function VolumeChartInner({ data, unit = "kg" }: { data: WeekData[]; unit?: WeightUnit }) {
-  // Discover all dayType keys from the data
-  const dayTypes = Array.from(
-    new Set(
-      data.flatMap((d) =>
-        Object.keys(d).filter((k) => k !== "week" && k !== "total")
-      )
-    )
-  );
+export function MuscleVolumeChartInner({ data }: { data: WeekData[] }) {
+  if (data.length === 0) {
+    return (
+      <p className="text-muted text-sm text-center py-8">No data yet.</p>
+    );
+  }
 
   return (
     <ResponsiveContainer width="100%" height={280}>
@@ -50,7 +45,11 @@ export function VolumeChartInner({ data, unit = "kg" }: { data: WeekData[]; unit
           stroke="var(--color-chart-axis)"
           fontSize={10}
         />
-        <YAxis stroke="var(--color-chart-axis)" fontSize={10} tickFormatter={(v) => `${Math.round(kgToDisplay(v, unit) / 1000)}k`} />
+        <YAxis
+          stroke="var(--color-chart-axis)"
+          fontSize={10}
+          allowDecimals={false}
+        />
         <Tooltip
           cursor={false}
           contentStyle={{
@@ -60,17 +59,22 @@ export function VolumeChartInner({ data, unit = "kg" }: { data: WeekData[]; unit
             fontSize: "12px",
           }}
           labelFormatter={formatWeek}
-          formatter={(value: number) => [`${Math.round(kgToDisplay(value, unit))} ${unit}`]}
+          formatter={(value: number, name: string) => [
+            `${value} sets`,
+            name,
+          ]}
         />
         <Legend wrapperStyle={{ fontSize: "11px" }} />
-        {dayTypes.map((dt, i) => (
+        {MUSCLE_GROUPS.map((mg, i) => (
           <Bar
-            key={dt}
-            dataKey={dt}
+            key={mg}
+            dataKey={mg}
             stackId="vol"
             fill={BAR_VARS[i % BAR_VARS.length]}
-            name={getDayShortLabel(dt)}
-            radius={i === dayTypes.length - 1 ? [2, 2, 0, 0] : [0, 0, 0, 0]}
+            name={mg}
+            radius={
+              i === MUSCLE_GROUPS.length - 1 ? [2, 2, 0, 0] : [0, 0, 0, 0]
+            }
           />
         ))}
       </BarChart>

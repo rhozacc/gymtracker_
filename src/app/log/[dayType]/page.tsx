@@ -5,13 +5,15 @@ import { useRouter, useParams } from "next/navigation";
 import { checkOverload, OverloadResult } from "@/lib/overload";
 import { useProgram } from "@/lib/useProgram";
 import { useUnit } from "@/lib/useUnit";
-import { kgToDisplay, displayToKg, getIncrements } from "@/lib/units";
+import { kgToDisplay, displayToKg, getIncrements, type WeightUnit } from "@/lib/units";
 import { SetRow, SetInput } from "@/components/SetRow";
 import { OverloadBanner } from "@/components/OverloadBanner";
 import { RestTimer } from "@/components/RestTimer";
 import { GuidedSession } from "@/components/GuidedSession";
 import { ExtrasSession } from "@/components/ExtrasSession";
 import { Debrief } from "@/components/Debrief";
+import { PostSessionExtras } from "@/components/PostSessionExtras";
+import { PostWorkoutSummary, computeSummary } from "@/components/PostWorkoutSummary";
 import { Toast } from "@/components/Toast";
 import { ExerciseRenameModal } from "@/components/ExerciseRenameModal";
 import { useExtras } from "@/lib/useExtras";
@@ -56,16 +58,20 @@ export default function LogPage() {
   const { initAudio } = useBeep();
   const { requestPermission } = useBackgroundNotification();
 
-  // Extras state
+  // Guided extras state (during workout, before review)
   const { selectedExtras } = useExtras();
-  const [extrasMode, setExtrasMode] = useState(false);
+  const [guidedExtrasMode, setGuidedExtrasMode] = useState(false);
 
-  // Debrief state
+  // Post-session flow: extras → summary + debrief
+  const [extrasMode, setExtrasMode] = useState(false);
   const [debriefMode, setDebriefMode] = useState(false);
   const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
 
   // Backup recovery banner
   const [backupFound, setBackupFound] = useState(false);
+
+  // Post-workout summary
+  const [summaryData, setSummaryData] = useState<ReturnType<typeof computeSummary> | null>(null);
 
   // Exercise rename modal
   const [renameTarget, setRenameTarget] = useState<{
@@ -256,7 +262,7 @@ export default function LogPage() {
   function handleGuidedFinish() {
     // If extras are selected, run them before dropping to review
     if (selectedExtras.length > 0) {
-      setExtrasMode(true);
+      setGuidedExtrasMode(true);
       return;
     }
     setGuidedMode(false);
@@ -264,7 +270,7 @@ export default function LogPage() {
   }
 
   function handleExtrasFinish() {
-    setExtrasMode(false);
+    setGuidedExtrasMode(false);
     setGuidedMode(false);
   }
 
@@ -315,13 +321,19 @@ export default function LogPage() {
       setSavedSessionId(id);
       // Clear crash-recovery backup after successful save
       localStorage.removeItem(BACKUP_KEY);
-      setDebriefMode(true);
+      // Compute summary before showing debrief
+      const exLookup: Record<string, string> = {};
+      for (const ex of day.exercises) exLookup[ex.id] = ex.name;
+      setSummaryData(
+        computeSummary(exercises, overloads, exLookup, startedAtRef.current, unit, displayToKg)
+      );
+      setExtrasMode(true);
     }
     setSaving(false);
   }
 
-  // Extras screen (after guided session, before review)
-  if (extrasMode && guidedMode) {
+  // Guided extras screen (after guided session, before review)
+  if (guidedExtrasMode && guidedMode) {
     return (
       <ExtrasSession
         extras={selectedExtras}
@@ -331,14 +343,43 @@ export default function LogPage() {
     );
   }
 
-  // Debrief screen
-  if (debriefMode && savedSessionId) {
+  // Post-session extras screen (abs, cardio, stretching)
+  if (extrasMode && savedSessionId) {
     return (
       <div className="py-4">
-        <Debrief
+        <PostSessionExtras
           sessionId={savedSessionId}
-          onDone={() => router.push("/")}
+          onDone={() => {
+            setExtrasMode(false);
+            setDebriefMode(true);
+          }}
         />
+      </div>
+    );
+  }
+
+  // Debrief screen with post-workout summary
+  if (debriefMode && savedSessionId) {
+    return (
+      <div className="py-4 space-y-6">
+        <h1 className="text-lg font-medium">Session Complete</h1>
+        {summaryData && (
+          <PostWorkoutSummary
+            durationMs={summaryData.durationMs}
+            totalVolumeKg={summaryData.totalVolumeKg}
+            setCount={summaryData.setCount}
+            exerciseCount={summaryData.exerciseCount}
+            unit={unit}
+            weightUps={summaryData.weightUps}
+            topE1rm={summaryData.topE1rm}
+          />
+        )}
+        <div className="border-t border-border pt-6">
+          <Debrief
+            sessionId={savedSessionId}
+            onDone={() => router.push("/")}
+          />
+        </div>
       </div>
     );
   }

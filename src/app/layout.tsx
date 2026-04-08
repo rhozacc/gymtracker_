@@ -44,7 +44,7 @@ export default function RootLayout({
         <ServiceWorkerRegistrar />
         {hasDb ? (
           <PinGate>
-            <main className="max-w-lg mx-auto px-4 pt-4 pb-24">{children}</main>
+            <main className="max-w-lg mx-auto px-4 pt-4 pb-20">{children}</main>
             <Nav />
           </PinGate>
         ) : (

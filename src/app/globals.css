@@ -62,3 +62,9 @@ input[type="number"]::-webkit-outer-spin-button {
 [data-theme="dark"] .nav-icon-glow {
   filter: drop-shadow(0 0 6px var(--color-accent)) drop-shadow(0 0 12px color-mix(in srgb, var(--color-accent) 40%, transparent));
 }
+
+/* Full-screen accent flash on tab switch */
+@keyframes nav-flash {
+  0% { opacity: 0.35; }
+  100% { opacity: 0; }
+}

@@ -153,10 +153,10 @@ export default function PlanPage() {
   const uncategorized = dbPlans?.filter((p) => p.builtIn && !p.category) ?? [];
   const allMen = [...menPlans, ...uncategorized];
 
-  const tabs: { key: CategoryTab; label: string; count: number }[] = [
-    { key: "men", label: "Men's", count: allMen.length },
-    { key: "women", label: "Women's", count: womenPlans.length },
-    { key: "custom", label: "Custom", count: customPlans.length },
+  const tabs: { key: CategoryTab; label: string }[] = [
+    { key: "men", label: "Men's" },
+    { key: "women", label: "Women's" },
+    { key: "custom", label: "Custom" },
   ];
 
   function currentPlans(): DbPlan[] {
@@ -208,9 +208,6 @@ export default function PlanPage() {
             }`}
           >
             {t.label}
-            {t.count > 0 && (
-              <span className="text-muted/60 ml-1">{t.count}</span>
-            )}
           </button>
         ))}
       </div>

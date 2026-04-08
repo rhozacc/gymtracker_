@@ -320,6 +320,49 @@ export const PLANS: Record<string, PlanDefinition> = {
     },
   },
 
+  mens_full_body: {
+    id: "mens_full_body",
+    name: "Full Body",
+    description: "3-day full body sessions — hit every muscle group each workout with compound lifts",
+    category: "men",
+    goal: "balanced",
+    days: {
+      fb_day_a: {
+        label: "Day 1 — Full Body A",
+        exercises: [
+          { id: "fb_squat", name: "Barbell squat", sets: 4, repRange: [6, 8], increment: 2.5, rest: 120 },
+          { id: "fb_bench", name: "Bench press", sets: 4, repRange: [6, 8], increment: 2.5, rest: 90 },
+          { id: "fb_barbell_row", name: "Barbell row", sets: 4, repRange: [8, 10], increment: 2.5, rest: 75 },
+          { id: "fb_ohp", name: "Overhead press", sets: 3, repRange: [8, 10], increment: 2.5, rest: 75 },
+          { id: "fb_bicep_curl", name: "Biceps curl", sets: 3, repRange: [10, 12], increment: 2.5, rest: 60 },
+          { id: "fb_calf_raise", name: "Calf raise", sets: 3, repRange: [12, 15], increment: 2.5, rest: 45 },
+        ],
+      },
+      fb_day_b: {
+        label: "Day 2 — Full Body B",
+        exercises: [
+          { id: "fb_deadlift", name: "Deadlift", sets: 4, repRange: [4, 6], increment: 5, rest: 150 },
+          { id: "fb_incline_db", name: "Incline DB press", sets: 3, repRange: [8, 10], increment: 2.5, rest: 75 },
+          { id: "fb_pullup", name: "Weighted pull-up", sets: 3, repRange: [6, 8], increment: 2.5, rest: 90 },
+          { id: "fb_lateral_raise", name: "Lateral raise", sets: 3, repRange: [12, 15], increment: 2.5, rest: 45 },
+          { id: "fb_leg_curl", name: "Leg curl", sets: 3, repRange: [10, 12], increment: 2.5, rest: 60 },
+          { id: "fb_tricep_pushdown", name: "Triceps pushdown", sets: 3, repRange: [10, 12], increment: 2.5, rest: 60 },
+        ],
+      },
+      fb_day_c: {
+        label: "Day 3 — Full Body C",
+        exercises: [
+          { id: "fb_front_squat", name: "Front squat", sets: 4, repRange: [6, 8], increment: 2.5, rest: 120 },
+          { id: "fb_db_bench", name: "DB bench press", sets: 3, repRange: [8, 10], increment: 2.5, rest: 75 },
+          { id: "fb_cable_row", name: "Cable row", sets: 4, repRange: [10, 12], increment: 2.5, rest: 60 },
+          { id: "fb_rdl", name: "Romanian deadlift", sets: 3, repRange: [8, 10], increment: 5, rest: 75 },
+          { id: "fb_face_pull", name: "Face pull", sets: 3, repRange: [15, 20], increment: 2.5, rest: 45 },
+          { id: "fb_hammer_curl", name: "Hammer curl", sets: 3, repRange: [10, 12], increment: 2.5, rest: 60 },
+        ],
+      },
+    },
+  },
+
   // ─── WOMEN'S PLANS ─────────────────────────────────────────────
 
   womens_sculpt: {

@@ -12,6 +12,12 @@ import { useTheme } from "@/lib/useTheme";
 import { kgToDisplay } from "@/lib/units";
 import { calculateStreak, formatDate } from "@/lib/utils";
 import { StreakCalendar } from "@/components/StreakCalendar";
+import {
+  isBiometricSupported,
+  isBiometricEnrolled,
+  registerBiometric,
+  disableBiometric,
+} from "@/lib/webauthn";
 
 const VolumeChart = dynamic(
   () => import("@/components/VolumeChart").then((m) => m.VolumeChartInner),
@@ -94,6 +100,45 @@ export default function Dashboard() {
   // Keep drag/over state in refs so non-passive touchmove handler sees latest values
   const dragIdxRef = useRef<number | null>(null);
   const overIdxRef = useRef<number | null>(null);
+
+  // ── Biometric state ────────────────────────────────────────────────────
+  const [bioEnabled, setBioEnabled] = useState<boolean | null>(null);
+  const [bioSupported, setBioSupported] = useState(false);
+  const [bioConfirm, setBioConfirm] = useState(false);
+  const [bioPin, setBioPin] = useState("");
+  const [bioBusy, setBioBusy] = useState(false);
+  const [bioError, setBioError] = useState("");
+
+  useEffect(() => {
+    isBiometricSupported().then(setBioSupported);
+    isBiometricEnrolled().then(setBioEnabled);
+  }, []);
+
+  async function handleBioToggle() {
+    if (bioEnabled) {
+      setBioConfirm(true);
+      setBioError("");
+    } else {
+      setBioBusy(true);
+      const ok = await registerBiometric();
+      setBioBusy(false);
+      if (ok) setBioEnabled(true);
+    }
+  }
+
+  async function confirmDisableBio() {
+    setBioBusy(true);
+    setBioError("");
+    const ok = await disableBiometric(bioPin);
+    setBioBusy(false);
+    if (ok) {
+      setBioEnabled(false);
+      setBioConfirm(false);
+      setBioPin("");
+    } else {
+      setBioError("Wrong PIN");
+    }
+  }
 
   const clearHold = useCallback(() => {
     if (holdTimerRef.current) {
@@ -228,6 +273,27 @@ export default function Dashboard() {
               </svg>
             )}
           </button>
+          {/* Biometric toggle */}
+          {bioSupported && bioEnabled !== null && (
+            <button
+              onClick={handleBioToggle}
+              disabled={bioBusy}
+              className={`w-8 h-8 rounded-full border flex items-center justify-center text-sm transition-colors disabled:opacity-50 ${
+                bioEnabled
+                  ? "border-accent text-accent"
+                  : "border-border text-muted hover:border-accent"
+              }`}
+              aria-label={bioEnabled ? "Disable biometric login" : "Enable biometric login"}
+              title={bioEnabled ? "Biometric login enabled" : "Enable biometric login"}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 10V4a2 2 0 0 0-4 0v6" />
+                <path d="M18 8a6 6 0 0 1-12 0" />
+                <path d="M12 14a2 2 0 1 0 0 4" />
+                <path d="M6 12a6 6 0 0 0 12 0" />
+              </svg>
+            </button>
+          )}
           <div>
             <h1 className="text-xl font-medium">Gym Tracker</h1>
             <span className="text-muted text-xs">{plan.name}</span>
@@ -344,6 +410,45 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Biometric disable confirmation */}
+      {bioConfirm && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-bg/90">
+          <div className="bg-surface border border-border rounded-lg p-6 max-w-xs w-full mx-4 text-center">
+            <h2 className="text-sm font-medium mb-2">Disable biometric login?</h2>
+            <p className="text-muted text-xs mb-4">Enter your PIN to confirm</p>
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={4}
+              value={bioPin}
+              onChange={(e) => {
+                setBioPin(e.target.value.replace(/\D/g, "").slice(0, 4));
+                setBioError("");
+              }}
+              placeholder="PIN"
+              className="w-full h-10 bg-bg border border-border text-text text-center text-lg rounded mb-2 focus:border-accent focus:outline-none"
+              autoFocus
+            />
+            {bioError && <p className="text-red-500 text-xs mb-2">{bioError}</p>}
+            <div className="flex gap-3 mt-3">
+              <button
+                onClick={() => { setBioConfirm(false); setBioPin(""); setBioError(""); }}
+                className="flex-1 h-10 border border-border text-muted rounded text-sm hover:text-accent transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDisableBio}
+                disabled={bioPin.length < 4 || bioBusy}
+                className="flex-1 h-10 bg-red-500 text-white font-medium rounded text-sm hover:bg-red-400 disabled:opacity-50 transition-colors"
+              >
+                {bioBusy ? "..." : "Disable"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

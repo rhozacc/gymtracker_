@@ -11,6 +11,7 @@ import { OverloadBanner } from "@/components/OverloadBanner";
 import { RestTimer } from "@/components/RestTimer";
 import { GuidedSession } from "@/components/GuidedSession";
 import { Debrief } from "@/components/Debrief";
+import { PostSessionExtras } from "@/components/PostSessionExtras";
 import { PostWorkoutSummary, computeSummary } from "@/components/PostWorkoutSummary";
 import { Toast } from "@/components/Toast";
 import { ExerciseRenameModal } from "@/components/ExerciseRenameModal";
@@ -55,7 +56,8 @@ export default function LogPage() {
   const { initAudio } = useBeep();
   const { requestPermission } = useBackgroundNotification();
 
-  // Debrief state
+  // Post-session flow: extras → summary + debrief
+  const [extrasMode, setExtrasMode] = useState(false);
   const [debriefMode, setDebriefMode] = useState(false);
   const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
 
@@ -309,9 +311,24 @@ export default function LogPage() {
       setSummaryData(
         computeSummary(exercises, overloads, exLookup, startedAtRef.current, unit, displayToKg)
       );
-      setDebriefMode(true);
+      setExtrasMode(true);
     }
     setSaving(false);
+  }
+
+  // Post-session extras screen (abs, cardio, stretching)
+  if (extrasMode && savedSessionId) {
+    return (
+      <div className="py-4">
+        <PostSessionExtras
+          sessionId={savedSessionId}
+          onDone={() => {
+            setExtrasMode(false);
+            setDebriefMode(true);
+          }}
+        />
+      </div>
+    );
   }
 
   // Debrief screen with post-workout summary

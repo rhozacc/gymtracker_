@@ -30,6 +30,30 @@ export async function GET(
   });
 }
 
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const body = await request.json();
+
+  const session = await prisma.session.findUnique({
+    where: { id: params.id },
+  });
+
+  if (!session) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const updated = await prisma.session.update({
+    where: { id: params.id },
+    data: {
+      extras: body.extras ?? undefined,
+    },
+  });
+
+  return NextResponse.json({ id: updated.id });
+}
+
 export async function DELETE(
   _request: Request,
   { params }: { params: { id: string } }

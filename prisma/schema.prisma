@@ -49,6 +49,23 @@ model ExtrasConfig {
   stretch String?
 }
 
+model WebAuthnCredential {
+  id           String   @id @default(cuid())
+  credentialId String   @unique
+  publicKey    Bytes
+  counter      BigInt   @default(0)
+  transports   String[] @default([])
+  createdAt    DateTime @default(now())
+}
+
+model WebAuthnChallenge {
+  id        String   @id @default(cuid())
+  challenge String   @unique
+  type      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
 model Plan {
   id          String   @id @default(cuid())
   slug        String   @unique

@@ -2,9 +2,7 @@
 
 Personal gym tracker with progressive overload detection. Dark, mobile-first, PIN-protected.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/rhozacc/gymtracker_&env=APP_PIN&envDescription=4-digit+PIN+to+protect+your+app&project-name=gymtracker&stores=[{"type":"neon"}])
-
-> Clicking the button provisions a Neon Postgres database automatically. You only need to set your PIN.
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/rhozacc/gymtracker_&env=APP_PIN&envDescription=4-digit+PIN+to+protect+your+app&project-name=gymtracker)
 
 **Demo PIN: `0000`** — try it on the live deployment. Deploy your own copy for a private instance with your own PIN.
 
@@ -28,14 +26,14 @@ Next.js 14 (App Router) / TypeScript / Tailwind CSS / Prisma / Neon Postgres / R
 
 ## Deploy to Vercel
 
-1. Click the deploy button above — this forks the repo, provisions a Neon database, and deploys
+1. Click the deploy button above
 2. Set `APP_PIN` to a 4-digit PIN when prompted
-3. After the first deploy, push the database schema:
+3. Add a Neon Postgres database from the [Vercel Marketplace](https://vercel.com/marketplace/neon) and link it to your project — this auto-sets `POSTGRES_PRISMA_URL` and `POSTGRES_URL_NON_POOLING`
+4. Push the database schema:
    ```bash
    npx vercel env pull .env.local
    npx prisma db push
    ```
-   Or copy `POSTGRES_PRISMA_URL` from the Vercel dashboard (Settings > Environment Variables), set it locally, and run `npx prisma db push`.
 
 ## Local Development
 

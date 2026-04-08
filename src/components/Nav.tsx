@@ -10,7 +10,6 @@ const tabs = [
   { href: "/plan", label: "Plan" },
   { href: "/history", label: "Log" },
   { href: "/charts", label: "Trends" },
-  { href: "/me", label: "Me" },
 ];
 
 function BeamSweep({ onDone }: { onDone: () => void }) {

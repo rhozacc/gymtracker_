@@ -42,6 +42,13 @@ model Debrief {
   createdAt DateTime @default(now())
 }
 
+model ExtrasConfig {
+  id      String  @id @default("default")
+  abs     String?
+  cardio  String?
+  stretch String?
+}
+
 model WebAuthnCredential {
   id           String   @id @default(cuid())
   credentialId String   @unique

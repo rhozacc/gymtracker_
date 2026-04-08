@@ -10,11 +10,13 @@ import { SetRow, SetInput } from "@/components/SetRow";
 import { OverloadBanner } from "@/components/OverloadBanner";
 import { RestTimer } from "@/components/RestTimer";
 import { GuidedSession } from "@/components/GuidedSession";
+import { ExtrasSession } from "@/components/ExtrasSession";
 import { Debrief } from "@/components/Debrief";
 import { PostSessionExtras } from "@/components/PostSessionExtras";
 import { PostWorkoutSummary, computeSummary } from "@/components/PostWorkoutSummary";
 import { Toast } from "@/components/Toast";
 import { ExerciseRenameModal } from "@/components/ExerciseRenameModal";
+import { useExtras } from "@/lib/useExtras";
 import { useBeep } from "@/lib/useBeep";
 import { useBackgroundNotification } from "@/lib/useBackgroundNotification";
 
@@ -55,6 +57,10 @@ export default function LogPage() {
   const [guidedMode, setGuidedMode] = useState(false);
   const { initAudio } = useBeep();
   const { requestPermission } = useBackgroundNotification();
+
+  // Guided extras state (during workout, before review)
+  const { selectedExtras } = useExtras();
+  const [guidedExtrasMode, setGuidedExtrasMode] = useState(false);
 
   // Post-session flow: extras → summary + debrief
   const [extrasMode, setExtrasMode] = useState(false);
@@ -254,8 +260,18 @@ export default function LogPage() {
 
   // Called when guided session finishes — show review screen instead of saving immediately
   function handleGuidedFinish() {
+    // If extras are selected, run them before dropping to review
+    if (selectedExtras.length > 0) {
+      setGuidedExtrasMode(true);
+      return;
+    }
     setGuidedMode(false);
     // Backup stays until the user confirms save
+  }
+
+  function handleExtrasFinish() {
+    setGuidedExtrasMode(false);
+    setGuidedMode(false);
   }
 
   async function finish() {
@@ -314,6 +330,17 @@ export default function LogPage() {
       setExtrasMode(true);
     }
     setSaving(false);
+  }
+
+  // Guided extras screen (after guided session, before review)
+  if (guidedExtrasMode && guidedMode) {
+    return (
+      <ExtrasSession
+        extras={selectedExtras}
+        onFinish={handleExtrasFinish}
+        onSkip={handleExtrasFinish}
+      />
+    );
   }
 
   // Post-session extras screen (abs, cardio, stretching)

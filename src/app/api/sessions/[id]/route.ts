@@ -29,3 +29,20 @@ export async function GET(
     createdAt: session.createdAt.toISOString(),
   });
 }
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await prisma.session.findUnique({
+    where: { id: params.id },
+  });
+
+  if (!session) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  await prisma.session.delete({ where: { id: params.id } });
+
+  return NextResponse.json({ deleted: true });
+}

@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import { fetcher } from "@/lib/swr";
 import { getDayLabel } from "@/lib/program";
 import { useUnit } from "@/lib/useUnit";
@@ -21,14 +22,51 @@ interface SessionSummary {
 
 export default function HistoryPage() {
   const { unit } = useUnit();
+  const [confirmNuke, setConfirmNuke] = useState(false);
+  const [nuking, setNuking] = useState(false);
   const { data: sessions, isLoading } = useSWR<SessionSummary[]>(
     "/api/sessions",
     fetcher
   );
 
+  const handleDeleteAll = async () => {
+    setNuking(true);
+    await fetch("/api/sessions", { method: "DELETE" });
+    await mutate("/api/sessions");
+    setNuking(false);
+    setConfirmNuke(false);
+  };
+
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-medium">History</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-lg font-medium">History</h1>
+        {sessions && sessions.length > 0 && !confirmNuke && (
+          <button
+            onClick={() => setConfirmNuke(true)}
+            className="text-red-400 text-xs hover:text-red-300"
+          >
+            Delete all
+          </button>
+        )}
+        {confirmNuke && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDeleteAll}
+              disabled={nuking}
+              className="text-red-400 text-xs font-medium hover:text-red-300 disabled:opacity-50"
+            >
+              {nuking ? "Deleting..." : "Confirm nuke"}
+            </button>
+            <button
+              onClick={() => setConfirmNuke(false)}
+              className="text-muted text-xs hover:text-accent"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+      </div>
 
       {isLoading && (
         <div className="space-y-2">

@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import { fetcher } from "@/lib/swr";
 import { getExerciseById, getDayLabel, getDayDefinition } from "@/lib/program";
 import { useUnit } from "@/lib/useUnit";
@@ -32,6 +33,8 @@ export default function SessionDetailPage() {
   const router = useRouter();
   const params = useParams();
   const { unit } = useUnit();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const { data: session, isLoading } = useSWR<SessionDetail>(
     `/api/sessions/${params.sessionId}`,
     fetcher
@@ -176,6 +179,38 @@ export default function SessionDetailPage() {
           <p className="text-sm whitespace-pre-wrap">{session.notes}</p>
         </div>
       )}
+
+      <div className="pt-4 border-t border-border">
+        {!confirmDelete ? (
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="text-red-400 text-sm hover:text-red-300"
+          >
+            Delete session
+          </button>
+        ) : (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={async () => {
+                setDeleting(true);
+                await fetch(`/api/sessions/${session.id}`, { method: "DELETE" });
+                await mutate("/api/sessions");
+                router.replace("/history");
+              }}
+              disabled={deleting}
+              className="text-red-400 text-sm font-medium hover:text-red-300 disabled:opacity-50"
+            >
+              {deleting ? "Deleting..." : "Confirm delete"}
+            </button>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="text-muted text-sm hover:text-accent"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

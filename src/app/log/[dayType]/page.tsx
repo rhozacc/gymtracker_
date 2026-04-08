@@ -10,9 +10,11 @@ import { SetRow, SetInput } from "@/components/SetRow";
 import { OverloadBanner } from "@/components/OverloadBanner";
 import { RestTimer } from "@/components/RestTimer";
 import { GuidedSession } from "@/components/GuidedSession";
+import { ExtrasSession } from "@/components/ExtrasSession";
 import { Debrief } from "@/components/Debrief";
 import { Toast } from "@/components/Toast";
 import { ExerciseRenameModal } from "@/components/ExerciseRenameModal";
+import { useExtras } from "@/lib/useExtras";
 import { useBeep } from "@/lib/useBeep";
 import { useBackgroundNotification } from "@/lib/useBackgroundNotification";
 
@@ -53,6 +55,10 @@ export default function LogPage() {
   const [guidedMode, setGuidedMode] = useState(false);
   const { initAudio } = useBeep();
   const { requestPermission } = useBackgroundNotification();
+
+  // Extras state
+  const { selectedExtras } = useExtras();
+  const [extrasMode, setExtrasMode] = useState(false);
 
   // Debrief state
   const [debriefMode, setDebriefMode] = useState(false);
@@ -248,8 +254,18 @@ export default function LogPage() {
 
   // Called when guided session finishes — show review screen instead of saving immediately
   function handleGuidedFinish() {
+    // If extras are selected, run them before dropping to review
+    if (selectedExtras.length > 0) {
+      setExtrasMode(true);
+      return;
+    }
     setGuidedMode(false);
     // Backup stays until the user confirms save
+  }
+
+  function handleExtrasFinish() {
+    setExtrasMode(false);
+    setGuidedMode(false);
   }
 
   async function finish() {
@@ -302,6 +318,17 @@ export default function LogPage() {
       setDebriefMode(true);
     }
     setSaving(false);
+  }
+
+  // Extras screen (after guided session, before review)
+  if (extrasMode && guidedMode) {
+    return (
+      <ExtrasSession
+        extras={selectedExtras}
+        onFinish={handleExtrasFinish}
+        onSkip={handleExtrasFinish}
+      />
+    );
   }
 
   // Debrief screen

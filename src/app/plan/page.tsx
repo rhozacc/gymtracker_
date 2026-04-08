@@ -129,6 +129,17 @@ export default function PlanPage() {
       </Link>
 
       <div className="border-t border-border pt-6">
+        <h2 className="text-sm font-medium mb-2">What is RIR?</h2>
+        <p className="text-muted text-xs leading-relaxed">
+          <span className="text-accent font-medium">RIR (Reps in Reserve)</span> is
+          how many more reps you could have done before failure. RIR 0 means you
+          hit failure, RIR 2 means you had 2 reps left in the tank. Tracking RIR
+          helps gauge effort so you can progressively push closer to failure over
+          time without always training to it.
+        </p>
+      </div>
+
+      <div className="border-t border-border pt-6">
         <h2 className="text-sm font-medium mb-2">Weight Unit</h2>
         <div className="flex gap-2">
           <button

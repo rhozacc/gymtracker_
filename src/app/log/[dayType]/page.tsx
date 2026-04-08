@@ -9,8 +9,11 @@ import { kgToDisplay, displayToKg, getIncrements } from "@/lib/units";
 import { SetRow, SetInput } from "@/components/SetRow";
 import { OverloadBanner } from "@/components/OverloadBanner";
 import { RestTimer } from "@/components/RestTimer";
+import { GuidedSession } from "@/components/GuidedSession";
 import { Debrief } from "@/components/Debrief";
 import { Toast } from "@/components/Toast";
+import { useBeep } from "@/lib/useBeep";
+import { useBackgroundNotification } from "@/lib/useBackgroundNotification";
 
 interface ExerciseState {
   exerciseId: string;
@@ -35,6 +38,11 @@ export default function LogPage() {
   // Rest timer state
   const [showTimer, setShowTimer] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
+
+  // Guided mode state
+  const [guidedMode, setGuidedMode] = useState(false);
+  const { initAudio } = useBeep();
+  const { requestPermission } = useBackgroundNotification();
 
   // Debrief state
   const [debriefMode, setDebriefMode] = useState(false);
@@ -234,89 +242,120 @@ export default function LogPage() {
         >
           &larr; Back
         </button>
-        <h1 className="text-lg font-medium">{day.label}</h1>
-      </div>
-
-      {day.exercises.map((ex, exIdx) => {
-        const ol = overloads[ex.id];
-        const exState = exercises[exIdx];
-        if (!exState) return null;
-
-        return (
-          <div key={ex.id} className="border border-border rounded p-3">
-            <div className="flex justify-between items-baseline mb-1">
-              <h2 className="text-sm font-medium">{ex.name}</h2>
-              <span className="text-muted text-xs">
-                {ex.sets} &times; {ex.repRange[0]}–{ex.repRange[1]}
-                <span className="ml-1 text-muted/50">
-                  {ex.rest}s rest
-                </span>
-              </span>
-            </div>
-
-            {ol?.lastWeight > 0 && (
-              <div className="text-muted text-xs mb-2">
-                Last: {kgToDisplay(ol.lastWeight, unit)} {unit} &times; [{ol.lastReps.join(", ")}]
-              </div>
-            )}
-
-            {ol?.ready && (
-              <OverloadBanner suggestedWeight={kgToDisplay(ol.suggestedWeight, unit)} unit={unit} />
-            )}
-
-            <div className="space-y-2 mb-2">
-              <div className="flex items-center gap-1.5 text-muted text-[10px]">
-                <span className="w-8 shrink-0" />
-                <span className="w-full text-center">{unit.toUpperCase()}</span>
-                <span className="w-full text-center">REPS</span>
-                <span className="w-full text-center">RIR</span>
-                <span className="w-6 shrink-0" />
-              </div>
-              {exState.sets.map((s, sIdx) => (
-                <SetRow
-                  key={sIdx}
-                  index={sIdx}
-                  data={s}
-                  onChange={(d) => updateSet(exIdx, sIdx, d)}
-                  onRemove={
-                    exState.sets.length > 1
-                      ? () => removeSet(exIdx, sIdx)
-                      : undefined
-                  }
-                  onDone={() => markDone(exIdx, sIdx)}
-                  increments={increments}
-                  unitLabel={unit}
-                />
-              ))}
-            </div>
-
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-medium">{day.label}</h1>
+          {!guidedMode && (
             <button
-              type="button"
-              onClick={() => addSet(exIdx)}
-              className="text-muted text-xs hover:text-accent"
+              onClick={() => {
+                initAudio();
+                requestPermission();
+                setGuidedMode(true);
+              }}
+              className="px-4 py-1.5 bg-accent text-bg text-xs font-medium rounded-full hover:opacity-90 transition-opacity"
             >
-              + Add set
+              Guided Session
             </button>
-          </div>
-        );
-      })}
-
-      <div>
-        <textarea
-          placeholder="Session notes (optional)"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          className="w-full h-20 bg-surface border border-border text-accent text-sm rounded p-3 resize-none focus:border-accent focus:outline-none"
-        />
+          )}
+        </div>
       </div>
 
-      <button
-        onClick={finish}
-        disabled={saving}
-        className="w-full h-12 bg-accent text-bg font-medium rounded text-sm hover:bg-white disabled:opacity-50 transition-colors"
-      >
-        {saving ? "Saving..." : "Finish Session"}
-      </button>
+      {guidedMode ? (
+        <GuidedSession
+          day={day}
+          exercises={exercises}
+          overloads={overloads}
+          unit={unit}
+          increments={increments}
+          updateSet={updateSet}
+          onFinish={finish}
+          onStop={() => setGuidedMode(false)}
+        />
+      ) : (
+        day.exercises.map((ex, exIdx) => {
+          const ol = overloads[ex.id];
+          const exState = exercises[exIdx];
+          if (!exState) return null;
+
+          return (
+            <div key={ex.id} className="border border-border rounded p-3">
+              <div className="flex justify-between items-baseline mb-1">
+                <h2 className="text-sm font-medium">{ex.name}</h2>
+                <span className="text-muted text-xs">
+                  {ex.sets} &times; {ex.repRange[0]}–{ex.repRange[1]}
+                  <span className="ml-1 text-muted/50">
+                    {ex.rest}s rest
+                  </span>
+                </span>
+              </div>
+
+              {ol?.lastWeight > 0 && (
+                <div className="text-muted text-xs mb-2">
+                  Last: {kgToDisplay(ol.lastWeight, unit)} {unit} &times; [{ol.lastReps.join(", ")}]
+                </div>
+              )}
+
+              {ol?.ready && (
+                <OverloadBanner suggestedWeight={kgToDisplay(ol.suggestedWeight, unit)} unit={unit} />
+              )}
+
+              <div className="space-y-2 mb-2">
+                <div className="flex items-center gap-1.5 text-muted text-[10px]">
+                  <span className="w-8 shrink-0" />
+                  <span className="w-full text-center">{unit.toUpperCase()}</span>
+                  <span className="w-full text-center">REPS</span>
+                  <span className="w-full text-center">RIR</span>
+                  <span className="w-6 shrink-0" />
+                </div>
+                {exState.sets.map((s, sIdx) => (
+                  <SetRow
+                    key={sIdx}
+                    index={sIdx}
+                    data={s}
+                    onChange={(d) => updateSet(exIdx, sIdx, d)}
+                    onRemove={
+                      exState.sets.length > 1
+                        ? () => removeSet(exIdx, sIdx)
+                        : undefined
+                    }
+                    onDone={() => markDone(exIdx, sIdx)}
+                    increments={increments}
+                    unitLabel={unit}
+                  />
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => addSet(exIdx)}
+                className="text-muted text-xs hover:text-accent"
+              >
+                + Add set
+              </button>
+            </div>
+          );
+        })
+      )}
+
+      {!guidedMode && (
+        <>
+          <div>
+            <textarea
+              placeholder="Session notes (optional)"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full h-20 bg-surface border border-border text-accent text-sm rounded p-3 resize-none focus:border-accent focus:outline-none"
+            />
+          </div>
+
+          <button
+            onClick={finish}
+            disabled={saving}
+            className="w-full h-12 bg-accent text-bg font-medium rounded text-sm hover:bg-white disabled:opacity-50 transition-colors"
+          >
+            {saving ? "Saving..." : "Finish Session"}
+          </button>
+        </>
+      )}
     </div>
   );
 }

@@ -1,17 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+
+interface NextExerciseInfo {
+  name: string;
+  weight: string;
+  reps: string;
+  setNumber: number;
+  totalSets: number;
+}
 
 interface RestTimerProps {
   seconds: number;
   onDismiss: () => void;
+  onTimerEnd?: () => void;
+  nextExercise?: NextExerciseInfo;
 }
 
-export function RestTimer({ seconds, onDismiss }: RestTimerProps) {
+export function RestTimer({ seconds, onDismiss, onTimerEnd, nextExercise }: RestTimerProps) {
   const [remaining, setRemaining] = useState(seconds);
   const [flash, setFlash] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const timerEndFired = useRef(false);
 
   useEffect(() => {
     setMounted(true);
@@ -31,6 +42,10 @@ export function RestTimer({ seconds, onDismiss }: RestTimerProps) {
 
   useEffect(() => {
     if (remaining <= 0) {
+      if (!timerEndFired.current) {
+        timerEndFired.current = true;
+        onTimerEnd?.();
+      }
       setFlash(true);
       const t1 = setTimeout(() => setFlash(false), 400);
       const t2 = setTimeout(() => setFlash(true), 600);
@@ -45,7 +60,7 @@ export function RestTimer({ seconds, onDismiss }: RestTimerProps) {
       setRemaining((r) => r - 1);
     }, 1000);
     return () => clearInterval(interval);
-  }, [remaining]);
+  }, [remaining, onTimerEnd]);
 
   if (!mounted) return null;
 
@@ -97,15 +112,25 @@ export function RestTimer({ seconds, onDismiss }: RestTimerProps) {
         {done ? "GO" : display}
       </div>
 
-      <p className={`text-sm mt-2 ${flash ? "text-bg/60" : "text-muted"}`}>
+      <p className={`text-sm mt-2 ${flash ? "text-black/70" : "text-muted"}`}>
         {done ? "Time to lift" : "Rest"}
       </p>
+
+      {nextExercise && !done && (
+        <div className="mt-6 text-center">
+          <p className="text-muted text-xs uppercase tracking-wide">Next up</p>
+          <p className="text-accent text-sm font-medium mt-1">{nextExercise.name}</p>
+          <p className="text-muted text-xs mt-0.5">
+            {nextExercise.weight} &times; {nextExercise.reps} &mdash; Set {nextExercise.setNumber} of {nextExercise.totalSets}
+          </p>
+        </div>
+      )}
 
       <button
         onClick={onDismiss}
         className={`mt-10 px-8 py-3 border rounded text-sm transition-colors ${
           flash
-            ? "border-bg/30 text-bg/60"
+            ? "border-black/30 text-black/70"
             : "border-border text-muted hover:text-accent hover:border-muted"
         }`}
       >

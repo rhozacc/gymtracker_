@@ -4,10 +4,17 @@ import "./globals.css";
 import { PinGate } from "@/components/PinGate";
 import { SetupGuide } from "@/components/SetupGuide";
 import { Nav } from "@/components/Nav";
+import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 
 export const metadata: Metadata = {
   title: "Gym Tracker",
   description: "Minimal gym tracker with progressive overload",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Gym Tracker",
+  },
 };
 
 export const viewport: Viewport = {
@@ -30,8 +37,11 @@ export default function RootLayout({
     <html lang="en" className={GeistSans.className} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <link rel="apple-touch-icon" href="/icon.svg" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
       <body className="min-h-screen bg-bg text-text antialiased">
+        <ServiceWorkerRegistrar />
         {hasDb ? (
           <PinGate>
             <main className="max-w-lg mx-auto px-4 pt-4 pb-20">{children}</main>

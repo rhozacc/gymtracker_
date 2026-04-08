@@ -6,6 +6,8 @@ import dynamic from "next/dynamic";
 import { fetcher } from "@/lib/swr";
 import { getAllExercises, getAllExercisesForPlan } from "@/lib/program";
 import { useProgram } from "@/lib/useProgram";
+import { useUnit } from "@/lib/useUnit";
+import { kgToDisplay } from "@/lib/units";
 import { StreakCalendar } from "@/components/StreakCalendar";
 
 const VolumeChart = dynamic(
@@ -48,6 +50,7 @@ interface SessionWithSets {
 
 export default function ChartsPage() {
   const { planId } = useProgram();
+  const { unit } = useUnit();
   const planExercises = getAllExercisesForPlan(planId);
   const [selectedExercise, setSelectedExercise] = useState(
     planExercises[0]?.id || ""
@@ -85,7 +88,8 @@ export default function ChartsPage() {
       const avgWeight =
         exSets.reduce((sum: number, s: SetData) => sum + s.weight, 0) /
         exSets.length;
-      points.push({ date: session.date, avgWeight: Math.round(avgWeight * 10) / 10 });
+      const displayWeight = kgToDisplay(avgWeight, unit);
+      points.push({ date: session.date, avgWeight: Math.round(displayWeight * 10) / 10 });
     }
 
     return points.reverse();
@@ -98,7 +102,7 @@ export default function ChartsPage() {
       <div>
         <h2 className="text-muted text-xs mb-3">Weekly volume</h2>
         {volumeData && volumeData.length > 0 ? (
-          <VolumeChart data={volumeData} />
+          <VolumeChart data={volumeData} unit={unit} />
         ) : (
           <div className="text-muted text-sm text-center py-8 border border-border rounded">
             No data yet.
@@ -107,7 +111,7 @@ export default function ChartsPage() {
       </div>
 
       <div>
-        <h2 className="text-muted text-xs mb-3">Exercise progression</h2>
+        <h2 className="text-muted text-xs mb-3">Exercise progression ({unit})</h2>
         <select
           value={selectedExercise}
           onChange={(e) => setSelectedExercise(e.target.value)}
@@ -119,7 +123,7 @@ export default function ChartsPage() {
             </option>
           ))}
         </select>
-        <ProgressionChart data={progressionData} />
+        <ProgressionChart data={progressionData} unit={unit} />
       </div>
 
       <div>

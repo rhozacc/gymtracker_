@@ -33,6 +33,15 @@ export function getISOWeekString(date: Date): string {
   return ws.toISOString().split("T")[0];
 }
 
+export function formatDuration(startedAt: string, endedAt: string): string {
+  const ms = new Date(endedAt).getTime() - new Date(startedAt).getTime();
+  const mins = Math.round(ms / 60000);
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
 export function calculateStreak(
   sessions: { date: string | Date }[]
 ): number {

@@ -2,9 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-bg: #f5f5f5;
+  --color-surface: #ffffff;
+  --color-border: #e0e0e0;
+  --color-accent: #111111;
+  --color-muted: #888888;
+
+  /* Chart colors */
+  --color-chart-axis: #999999;
+  --color-chart-tooltip-bg: #ffffff;
+  --color-chart-tooltip-border: #e0e0e0;
+  --color-chart-line: #111111;
+  --color-chart-bar-1: #111111;
+  --color-chart-bar-2: #444444;
+  --color-chart-bar-3: #777777;
+  --color-chart-bar-4: #999999;
+  --color-chart-bar-5: #bbbbbb;
+
+  /* Timer track */
+  --color-timer-track: #e0e0e0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0a0a0a;
+    --color-surface: #111111;
+    --color-border: #222222;
+    --color-accent: #f0f0f0;
+    --color-muted: #666666;
+
+    --color-chart-axis: #666666;
+    --color-chart-tooltip-bg: #111111;
+    --color-chart-tooltip-border: #222222;
+    --color-chart-line: #f0f0f0;
+    --color-chart-bar-1: #f0f0f0;
+    --color-chart-bar-2: #c0c0c0;
+    --color-chart-bar-3: #888888;
+    --color-chart-bar-4: #666666;
+    --color-chart-bar-5: #444444;
+
+    --color-timer-track: #222222;
+  }
+}
+
 body {
-  background-color: #0a0a0a;
-  color: #f0f0f0;
+  background-color: var(--color-bg);
+  color: var(--color-accent);
 }
 
 /* Hide number input spinners */

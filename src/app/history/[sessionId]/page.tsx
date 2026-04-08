@@ -4,7 +4,9 @@ import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { fetcher } from "@/lib/swr";
 import { getExerciseById, getDayLabel, getDayDefinition } from "@/lib/program";
-import { formatDate, calculateVolume } from "@/lib/utils";
+import { useUnit } from "@/lib/useUnit";
+import { kgToDisplay } from "@/lib/units";
+import { formatDate, calculateVolume, formatDuration } from "@/lib/utils";
 
 interface SetDetail {
   id: string;
@@ -20,12 +22,16 @@ interface SessionDetail {
   date: string;
   dayType: string;
   notes: string | null;
+  startedAt: string | null;
+  endedAt: string | null;
   sets: SetDetail[];
+  debrief: { energy: number; pump: number; mood: number } | null;
 }
 
 export default function SessionDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const { unit } = useUnit();
   const { data: session, isLoading } = useSWR<SessionDetail>(
     `/api/sessions/${params.sessionId}`,
     fetcher
@@ -54,6 +60,10 @@ export default function SessionDetailPage() {
 
   const totalVolume = calculateVolume(session.sets);
   const dayDef = getDayDefinition(session.dayType);
+  const duration =
+    session.startedAt && session.endedAt
+      ? formatDuration(session.startedAt, session.endedAt)
+      : null;
 
   // Order exercises by the program definition order
   const orderedExercises = dayDef
@@ -81,7 +91,8 @@ export default function SessionDetailPage() {
         </div>
         <div className="text-muted text-xs mt-1">
           {session.sets.length} sets &middot;{" "}
-          {Math.round(totalVolume).toLocaleString()} kg total volume
+          {Math.round(kgToDisplay(totalVolume, unit)).toLocaleString()} {unit} total volume
+          {duration && <span className="ml-2">&middot; {duration}</span>}
         </div>
       </div>
 
@@ -106,7 +117,7 @@ export default function SessionDetailPage() {
                   </span>
                 )}
                 <span className="text-muted text-xs">
-                  {Math.round(exVolume)} kg
+                  {Math.round(kgToDisplay(exVolume, unit))} {unit}
                 </span>
               </div>
             </div>
@@ -124,7 +135,9 @@ export default function SessionDetailPage() {
                 {exSets.map((s) => (
                   <tr key={s.id} className="border-t border-border/50">
                     <td className="py-1 text-muted">{s.setNumber}</td>
-                    <td className="py-1 text-right">{s.weight} kg</td>
+                    <td className="py-1 text-right">
+                      {kgToDisplay(s.weight, unit)} {unit}
+                    </td>
                     <td className="py-1 text-right">{s.reps}</td>
                     <td className="py-1 text-right text-muted">
                       {s.rir !== null ? s.rir : "—"}
@@ -136,6 +149,26 @@ export default function SessionDetailPage() {
           </div>
         );
       })}
+
+      {session.debrief && (
+        <div className="border border-border rounded p-3">
+          <div className="text-muted text-xs mb-2">Debrief</div>
+          <div className="grid grid-cols-3 gap-3 text-xs">
+            <div>
+              <span className="text-muted">Energy</span>
+              <div className="text-accent font-medium">{session.debrief.energy}/5</div>
+            </div>
+            <div>
+              <span className="text-muted">Pump</span>
+              <div className="text-accent font-medium">{session.debrief.pump}/5</div>
+            </div>
+            <div>
+              <span className="text-muted">Mood</span>
+              <div className="text-accent font-medium">{session.debrief.mood}/5</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {session.notes && (
         <div className="border border-border rounded p-3">

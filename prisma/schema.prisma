@@ -9,12 +9,15 @@ datasource db {
 }
 
 model Session {
-  id        String   @id @default(cuid())
-  date      DateTime @default(now())
+  id        String    @id @default(cuid())
+  date      DateTime  @default(now())
   dayType   String
   notes     String?
+  startedAt DateTime?
+  endedAt   DateTime?
   sets      Set[]
-  createdAt DateTime @default(now())
+  debrief   Debrief?
+  createdAt DateTime  @default(now())
 }
 
 model Set {
@@ -26,4 +29,25 @@ model Set {
   reps       Int
   weight     Float
   rir        Int?
+}
+
+model Debrief {
+  id        String   @id @default(cuid())
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId String   @unique
+  energy    Int
+  pump      Int
+  mood      Int
+  createdAt DateTime @default(now())
+}
+
+model Plan {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String   @default("")
+  builtIn     Boolean  @default(false)
+  days        Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

@@ -8,13 +8,14 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { type WeightUnit } from "@/lib/units";
 
 interface DataPoint {
   date: string;
   avgWeight: number;
 }
 
-export function ProgressionChartInner({ data }: { data: DataPoint[] }) {
+export function ProgressionChartInner({ data, unit = "kg" }: { data: DataPoint[]; unit?: WeightUnit }) {
   if (data.length === 0) {
     return (
       <p className="text-muted text-sm text-center py-8">
@@ -28,7 +29,7 @@ export function ProgressionChartInner({ data }: { data: DataPoint[] }) {
       <LineChart data={data}>
         <XAxis
           dataKey="date"
-          stroke="#666"
+          stroke="var(--color-chart-axis)"
           fontSize={10}
           tickFormatter={(d) =>
             new Date(d).toLocaleDateString("en-US", {
@@ -37,11 +38,11 @@ export function ProgressionChartInner({ data }: { data: DataPoint[] }) {
             })
           }
         />
-        <YAxis stroke="#666" fontSize={10} unit=" kg" />
+        <YAxis stroke="var(--color-chart-axis)" fontSize={10} unit={` ${unit}`} />
         <Tooltip
           contentStyle={{
-            background: "#111",
-            border: "1px solid #222",
+            background: "var(--color-chart-tooltip-bg)",
+            border: "1px solid var(--color-chart-tooltip-border)",
             borderRadius: "4px",
             fontSize: "12px",
           }}
@@ -52,14 +53,14 @@ export function ProgressionChartInner({ data }: { data: DataPoint[] }) {
               day: "numeric",
             })
           }
-          formatter={(value: number) => [`${value.toFixed(1)} kg`, "Avg Weight"]}
+          formatter={(value: number) => [`${value.toFixed(1)} ${unit}`, "Avg Weight"]}
         />
         <Line
           type="monotone"
           dataKey="avgWeight"
-          stroke="#f0f0f0"
+          stroke="var(--color-chart-line)"
           strokeWidth={2}
-          dot={{ fill: "#f0f0f0", r: 3 }}
+          dot={{ fill: "var(--color-chart-line)", r: 3 }}
         />
       </LineChart>
     </ResponsiveContainer>

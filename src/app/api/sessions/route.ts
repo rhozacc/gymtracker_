@@ -17,6 +17,8 @@ export async function GET() {
     date: s.date.toISOString(),
     dayType: s.dayType,
     notes: s.notes,
+    startedAt: s.startedAt?.toISOString() ?? null,
+    endedAt: s.endedAt?.toISOString() ?? null,
     setCount: s._count.sets,
     totalVolume: s.sets.reduce((sum, set) => sum + set.reps * set.weight, 0),
     createdAt: s.createdAt.toISOString(),
@@ -33,6 +35,8 @@ export async function POST(request: Request) {
       date: new Date(body.date),
       dayType: body.dayType,
       notes: body.notes || null,
+      startedAt: body.startedAt ? new Date(body.startedAt) : null,
+      endedAt: body.endedAt ? new Date(body.endedAt) : null,
       sets: {
         create: body.sets.map(
           (s: {

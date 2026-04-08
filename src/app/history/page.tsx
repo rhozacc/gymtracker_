@@ -4,18 +4,23 @@ import Link from "next/link";
 import useSWR from "swr";
 import { fetcher } from "@/lib/swr";
 import { getDayLabel } from "@/lib/program";
-import { formatDate } from "@/lib/utils";
+import { useUnit } from "@/lib/useUnit";
+import { kgToDisplay } from "@/lib/units";
+import { formatDate, formatDuration } from "@/lib/utils";
 
 interface SessionSummary {
   id: string;
   date: string;
   dayType: string;
   notes: string | null;
+  startedAt: string | null;
+  endedAt: string | null;
   setCount: number;
   totalVolume: number;
 }
 
 export default function HistoryPage() {
+  const { unit } = useUnit();
   const { data: sessions, isLoading } = useSWR<SessionSummary[]>(
     "/api/sessions",
     fetcher
@@ -39,27 +44,35 @@ export default function HistoryPage() {
         </p>
       )}
 
-      {sessions?.map((s) => (
-        <Link
-          key={s.id}
-          href={`/history/${s.id}`}
-          className="block border border-border rounded p-3 hover:border-muted transition-colors"
-        >
-          <div className="flex justify-between items-baseline">
-            <span className="text-sm font-medium">
-              {getDayLabel(s.dayType)}
-            </span>
-            <span className="text-muted text-xs">{formatDate(s.date)}</span>
-          </div>
-          <div className="text-muted text-xs mt-1">
-            {s.setCount} sets &middot;{" "}
-            {Math.round(s.totalVolume).toLocaleString()} kg
-          </div>
-          {s.notes && (
-            <div className="text-muted text-xs mt-1 truncate">{s.notes}</div>
-          )}
-        </Link>
-      ))}
+      {sessions?.map((s) => {
+        const duration =
+          s.startedAt && s.endedAt
+            ? formatDuration(s.startedAt, s.endedAt)
+            : null;
+        return (
+          <Link
+            key={s.id}
+            href={`/history/${s.id}`}
+            className="block border border-border rounded p-3 hover:border-muted transition-colors"
+          >
+            <div className="flex justify-between items-baseline">
+              <span className="text-sm font-medium">
+                {getDayLabel(s.dayType)}
+              </span>
+              <span className="text-muted text-xs">{formatDate(s.date)}</span>
+            </div>
+            <div className="text-muted text-xs mt-1">
+              {s.setCount} sets &middot;{" "}
+              {Math.round(kgToDisplay(s.totalVolume, unit)).toLocaleString()}{" "}
+              {unit}
+              {duration && <span className="ml-2">&middot; {duration}</span>}
+            </div>
+            {s.notes && (
+              <div className="text-muted text-xs mt-1 truncate">{s.notes}</div>
+            )}
+          </Link>
+        );
+      })}
     </div>
   );
 }

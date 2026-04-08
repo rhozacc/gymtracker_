@@ -13,6 +13,7 @@ export async function GET(
       sets: {
         orderBy: [{ exerciseId: "asc" }, { setNumber: "asc" }],
       },
+      debrief: true,
     },
   });
 
@@ -23,6 +24,8 @@ export async function GET(
   return NextResponse.json({
     ...session,
     date: session.date.toISOString(),
+    startedAt: session.startedAt?.toISOString() ?? null,
+    endedAt: session.endedAt?.toISOString() ?? null,
     createdAt: session.createdAt.toISOString(),
   });
 }

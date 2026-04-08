@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { checkOverload, OverloadResult } from "@/lib/overload";
 import { useProgram } from "@/lib/useProgram";
+import { useUnit } from "@/lib/useUnit";
+import { kgToDisplay, displayToKg, getIncrements } from "@/lib/units";
 import { SetRow, SetInput } from "@/components/SetRow";
 import { OverloadBanner } from "@/components/OverloadBanner";
+import { RestTimer } from "@/components/RestTimer";
+import { Debrief } from "@/components/Debrief";
 import { Toast } from "@/components/Toast";
 
 interface ExerciseState {
@@ -17,16 +21,27 @@ export default function LogPage() {
   const router = useRouter();
   const params = useParams();
   const { plan } = useProgram();
+  const { unit } = useUnit();
   const dayType = params.dayType as string;
   const day = plan.days[dayType];
 
+  const startedAtRef = useRef<string>(new Date().toISOString());
   const [exercises, setExercises] = useState<ExerciseState[]>([]);
   const [overloads, setOverloads] = useState<Record<string, OverloadResult>>({});
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(false);
 
+  // Rest timer state
+  const [showTimer, setShowTimer] = useState(false);
+  const [timerSeconds, setTimerSeconds] = useState(0);
+
+  // Debrief state
+  const [debriefMode, setDebriefMode] = useState(false);
+  const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
+
   const hideToast = useCallback(() => setToast(false), []);
+  const increments = getIncrements(unit);
 
   useEffect(() => {
     if (!day) return;
@@ -39,6 +54,7 @@ export default function LogPage() {
           reps: "",
           weight: "",
           rir: "",
+          done: false,
         })),
       }))
     );
@@ -46,35 +62,41 @@ export default function LogPage() {
     // Fetch overload data for each exercise
     async function fetchOverloads() {
       const results: Record<string, OverloadResult> = {};
+      const rawSets: Record<string, { reps: number; weight: number; rir: number | null }[]> = {};
+
       await Promise.all(
         day.exercises.map(async (ex) => {
           const res = await fetch(`/api/sets/${ex.id}`);
-          const lastSets = await res.json();
-          const result = checkOverload(ex, lastSets);
+          const lastSetData = await res.json();
+          rawSets[ex.id] = lastSetData;
+          const result = checkOverload(ex, lastSetData);
           results[ex.id] = result;
         })
       );
       setOverloads(results);
 
-      // Pre-fill weights from last session
+      // Pre-fill weights, reps, and RIR from last session
       setExercises((prev) =>
         prev.map((exState) => {
           const ol = results[exState.exerciseId];
+          const raw = rawSets[exState.exerciseId] || [];
           if (!ol || ol.lastWeight === 0) return exState;
-          const prefillWeight = ol.ready
-            ? ol.suggestedWeight.toString()
-            : ol.lastWeight.toString();
+          const prefillWeightKg = ol.ready ? ol.suggestedWeight : ol.lastWeight;
+          const prefillWeight = kgToDisplay(prefillWeightKg, unit).toString();
           return {
             ...exState,
-            sets: exState.sets.map((s) => ({
+            sets: exState.sets.map((s, i) => ({
               ...s,
               weight: s.weight || prefillWeight,
+              reps: s.reps || (raw[i]?.reps?.toString() ?? ""),
+              rir: s.rir || (raw[i]?.rir?.toString() ?? ""),
             })),
           };
         })
       );
     }
     fetchOverloads();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [day, dayType]);
 
   if (!day) {
@@ -105,7 +127,7 @@ export default function LogPage() {
         ...next[exIdx],
         sets: [
           ...next[exIdx].sets,
-          { reps: "", weight: lastSet?.weight || "", rir: "" },
+          { reps: "", weight: lastSet?.weight || "", rir: "", done: false },
         ],
       };
       return next;
@@ -124,6 +146,12 @@ export default function LogPage() {
     });
   }
 
+  function markDone(exIdx: number, setIdx: number) {
+    const exercise = day.exercises[exIdx];
+    setTimerSeconds(exercise.rest);
+    setShowTimer(true);
+  }
+
   async function finish() {
     const allSets: {
       exerciseId: string;
@@ -137,8 +165,11 @@ export default function LogPage() {
       let setNum = 1;
       for (const s of ex.sets) {
         const reps = parseInt(s.reps);
-        const weight = parseFloat(s.weight);
-        if (isNaN(reps) || isNaN(weight) || reps <= 0 || weight <= 0) continue;
+        const displayWeight = parseFloat(s.weight);
+        if (isNaN(reps) || isNaN(displayWeight) || reps <= 0 || displayWeight <= 0)
+          continue;
+        // Convert display unit back to kg for storage
+        const weight = displayToKg(displayWeight, unit);
         allSets.push({
           exerciseId: ex.exerciseId,
           setNumber: setNum++,
@@ -159,20 +190,43 @@ export default function LogPage() {
         date: new Date().toISOString(),
         dayType,
         notes: notes.trim() || undefined,
+        startedAt: startedAtRef.current,
+        endedAt: new Date().toISOString(),
         sets: allSets,
       }),
     });
 
     if (res.ok) {
-      setToast(true);
-      setTimeout(() => router.push("/"), 1500);
+      const { id } = await res.json();
+      setSavedSessionId(id);
+      setDebriefMode(true);
     }
     setSaving(false);
+  }
+
+  // Show debrief after session is saved
+  if (debriefMode && savedSessionId) {
+    return (
+      <div className="py-4">
+        <Debrief
+          sessionId={savedSessionId}
+          onDone={() => router.push("/")}
+        />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <Toast message="Session saved!" visible={toast} onDone={hideToast} />
+
+      {showTimer && timerSeconds > 0 && (
+        <RestTimer
+          seconds={timerSeconds}
+          onDismiss={() => setShowTimer(false)}
+        />
+      )}
+
       <div>
         <button
           onClick={() => router.back()}
@@ -194,26 +248,29 @@ export default function LogPage() {
               <h2 className="text-sm font-medium">{ex.name}</h2>
               <span className="text-muted text-xs">
                 {ex.sets} &times; {ex.repRange[0]}–{ex.repRange[1]}
+                <span className="ml-1 text-muted/50">
+                  {Math.floor(ex.rest / 60)}:{(ex.rest % 60).toString().padStart(2, "0")} rest
+                </span>
               </span>
             </div>
 
             {ol?.lastWeight > 0 && (
               <div className="text-muted text-xs mb-2">
-                Last: {ol.lastWeight} kg &times; [{ol.lastReps.join(", ")}]
+                Last: {kgToDisplay(ol.lastWeight, unit)} {unit} &times; [{ol.lastReps.join(", ")}]
               </div>
             )}
 
             {ol?.ready && (
-              <OverloadBanner suggestedWeight={ol.suggestedWeight} />
+              <OverloadBanner suggestedWeight={kgToDisplay(ol.suggestedWeight, unit)} unit={unit} />
             )}
 
             <div className="space-y-2 mb-2">
-              <div className="flex items-center gap-2 text-muted text-[10px]">
-                <span className="w-6" />
-                <span className="w-full text-center">KG</span>
+              <div className="flex items-center gap-1.5 text-muted text-[10px]">
+                <span className="w-8 shrink-0" />
+                <span className="w-full text-center">{unit.toUpperCase()}</span>
                 <span className="w-full text-center">REPS</span>
                 <span className="w-full text-center">RIR</span>
-                {exState.sets.length > 1 && <span className="w-6" />}
+                <span className="w-6 shrink-0" />
               </div>
               {exState.sets.map((s, sIdx) => (
                 <SetRow
@@ -226,6 +283,9 @@ export default function LogPage() {
                       ? () => removeSet(exIdx, sIdx)
                       : undefined
                   }
+                  onDone={() => markDone(exIdx, sIdx)}
+                  increments={increments}
+                  unitLabel={unit}
                 />
               ))}
             </div>

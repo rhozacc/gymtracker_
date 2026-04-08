@@ -8,6 +8,7 @@ const tabs = [
   { href: "/plan", label: "Plan", icon: "◈" },
   { href: "/history", label: "History", icon: "☰" },
   { href: "/charts", label: "Charts", icon: "▤" },
+  { href: "/me", label: "Me", icon: "●" },
 ];
 
 export function Nav() {

@@ -14,8 +14,6 @@ interface DbPlan {
   name: string;
   description: string;
   builtIn: boolean;
-  category: string;
-  goal: string;
   days: Record<string, DayDefinition>;
 }
 
@@ -25,12 +23,14 @@ function getStoredPlanSlug(): string {
 }
 
 function dbPlanToDefinition(p: DbPlan): PlanDefinition {
+  // Merge category/goal from built-in PLANS constant (not stored in DB)
+  const builtIn = PLANS[p.slug];
   return {
     id: p.slug,
     name: p.name,
     description: p.description,
-    category: (p.category || "") as PlanDefinition["category"],
-    goal: (p.goal || "") as PlanDefinition["goal"],
+    category: (builtIn?.category || "") as PlanDefinition["category"],
+    goal: (builtIn?.goal || "") as PlanDefinition["goal"],
     days: p.days,
   };
 }

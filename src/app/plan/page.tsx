@@ -4,17 +4,33 @@ import Link from "next/link";
 import { useState } from "react";
 import { useProgram } from "@/lib/useProgram";
 import { useUnit } from "@/lib/useUnit";
+import { PLANS } from "@/lib/program";
 import useSWR from "swr";
 import { fetcher } from "@/lib/swr";
 
-interface DbPlan {
+interface DbPlanRaw {
   slug: string;
   name: string;
   description: string;
   builtIn: boolean;
+  days: Record<string, { label: string; exercises: { id: string }[] }>;
+}
+
+interface DbPlan extends DbPlanRaw {
   category: string;
   goal: string;
-  days: Record<string, { label: string; exercises: { id: string }[] }>;
+}
+
+/** Merge category/goal from built-in PLANS constant onto DB results */
+function enrichPlans(raw: DbPlanRaw[]): DbPlan[] {
+  return raw.map((p) => {
+    const builtIn = PLANS[p.slug];
+    return {
+      ...p,
+      category: builtIn?.category || "",
+      goal: builtIn?.goal || "",
+    };
+  });
 }
 
 const GOAL_STYLES: Record<string, { label: string; color: string }> = {
@@ -114,7 +130,8 @@ type CategoryTab = "men" | "women" | "custom";
 export default function PlanPage() {
   const { planId, plan, setPlan, refreshPlans } = useProgram();
   const { unit, setUnit } = useUnit();
-  const { data: dbPlans, mutate } = useSWR<DbPlan[]>("/api/plans", fetcher);
+  const { data: rawPlans, mutate } = useSWR<DbPlanRaw[]>("/api/plans", fetcher);
+  const dbPlans = rawPlans ? enrichPlans(rawPlans) : undefined;
 
   // Auto-select tab based on active plan's category
   const initialTab: CategoryTab =

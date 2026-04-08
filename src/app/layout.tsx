@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import { PinGate } from "@/components/PinGate";
+import { SetupGuide } from "@/components/SetupGuide";
 import { Nav } from "@/components/Nav";
 
 export const metadata: Metadata = {
@@ -20,13 +21,19 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const hasDb = !!process.env.POSTGRES_PRISMA_URL;
+
   return (
     <html lang="en" className={GeistSans.className}>
       <body className="min-h-screen bg-bg text-accent antialiased">
-        <PinGate>
-          <main className="max-w-lg mx-auto px-4 pt-4 pb-20">{children}</main>
-          <Nav />
-        </PinGate>
+        {hasDb ? (
+          <PinGate>
+            <main className="max-w-lg mx-auto px-4 pt-4 pb-20">{children}</main>
+            <Nav />
+          </PinGate>
+        ) : (
+          <SetupGuide />
+        )}
       </body>
     </html>
   );

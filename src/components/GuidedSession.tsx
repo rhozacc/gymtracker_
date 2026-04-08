@@ -75,7 +75,7 @@ export function GuidedSession({
   const [exerciseNameOverrides, setExerciseNameOverrides] = useState<Record<string, string>>({});
 
   const { playBeep } = useBeep();
-  const { notifyIfBackgrounded } = useBackgroundNotification();
+  const { notifyIfBackgrounded, startRestTimer, cancelRestTimer } = useBackgroundNotification();
 
   const currentExercise = day.exercises[state.exerciseIndex];
   const currentExState = exercises[state.exerciseIndex];
@@ -126,6 +126,9 @@ export function GuidedSession({
   }, [playBeep, notifyIfBackgrounded, next, exerciseNameOverrides]);
 
   const handleDismissTimer = useCallback(() => {
+    // Cancel the SW lock-screen notification since we're returning to the app
+    cancelRestTimer();
+
     if (!next) {
       onFinish();
       return;
@@ -145,7 +148,7 @@ export function GuidedSession({
 
     setFromRest(true);
     dispatch({ type: "NEXT_SET", nextExIdx: next.exerciseIndex, nextSetIdx: next.setIndex });
-  }, [next, onFinish, state.exerciseIndex, currentSetData, exercises, updateSet]);
+  }, [next, onFinish, state.exerciseIndex, currentSetData, exercises, updateSet, cancelRestTimer]);
 
   const handleSetDone = useCallback(() => {
     if (!currentSetData || !currentSetData.weight || !currentSetData.reps) return;
@@ -161,7 +164,12 @@ export function GuidedSession({
     }
 
     dispatch({ type: "COMPLETE_SET" });
-  }, [currentSetData, state.exerciseIndex, state.setIndex, updateSet, day.exercises.length, currentExState, onFinish]);
+
+    // Start the SW rest timer so a notification shows on the lock screen
+    const restSecs = currentExercise.rest;
+    const nextInfo = getNextInfo();
+    startRestTimer(restSecs, nextInfo?.info);
+  }, [currentSetData, state.exerciseIndex, state.setIndex, updateSet, day.exercises.length, currentExState, onFinish, currentExercise, getNextInfo, startRestTimer]);
 
   const handleSkipExercise = useCallback(() => {
     const skipToExIdx = state.exerciseIndex + 1;

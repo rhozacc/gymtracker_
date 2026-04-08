@@ -80,7 +80,7 @@ export function StreakCalendar({ sessions }: Props) {
                 return (
                   <div
                     key={dayIdx}
-                    className="w-[18px] h-[18px] rounded-[3px] bg-bg"
+                    className="w-[18px] h-[18px] rounded-[4px] bg-bg"
                     title={cell.date}
                   />
                 );
@@ -90,7 +90,7 @@ export function StreakCalendar({ sessions }: Props) {
                 return (
                   <div
                     key={dayIdx}
-                    className="w-[18px] h-[18px] rounded-[3px] bg-surface"
+                    className="w-[18px] h-[18px] rounded-[4px] bg-surface"
                     title={cell.date}
                   />
                 );
@@ -99,7 +99,7 @@ export function StreakCalendar({ sessions }: Props) {
               return (
                 <div
                   key={dayIdx}
-                  className="w-[18px] h-[18px] rounded-[3px]"
+                  className="w-[18px] h-[18px] rounded-[4px] streak-cell-active"
                   style={{
                     backgroundColor:
                       dayTypeColorMap.get(cell.dayType) || "var(--color-accent)",

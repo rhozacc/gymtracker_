@@ -51,7 +51,7 @@ export default function LogPage() {
       day.exercises.map((ex) => ({
         exerciseId: ex.id,
         sets: Array.from({ length: ex.sets }, () => ({
-          reps: "",
+          reps: ex.repRange[0].toString(),
           weight: "",
           rir: "",
           done: false,
@@ -249,7 +249,7 @@ export default function LogPage() {
               <span className="text-muted text-xs">
                 {ex.sets} &times; {ex.repRange[0]}–{ex.repRange[1]}
                 <span className="ml-1 text-muted/50">
-                  {Math.floor(ex.rest / 60)}:{(ex.rest % 60).toString().padStart(2, "0")} rest
+                  {ex.rest}s rest
                 </span>
               </span>
             </div>

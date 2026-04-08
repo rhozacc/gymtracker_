@@ -2,14 +2,17 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { PLANS } from "@/lib/program";
 
-// Seed built-in plans if the table is empty
-async function ensureSeeded() {
-  const count = await prisma.plan.count();
-  if (count > 0) return;
-
-  const inserts = Object.values(PLANS).map((p) =>
-    prisma.plan.create({
-      data: {
+// Upsert built-in plans so DB always matches hardcoded definitions
+async function syncBuiltInPlans() {
+  const upserts = Object.values(PLANS).map((p) =>
+    prisma.plan.upsert({
+      where: { slug: p.id },
+      update: {
+        name: p.name,
+        description: p.description,
+        days: p.days as object,
+      },
+      create: {
         slug: p.id,
         name: p.name,
         description: p.description,
@@ -18,11 +21,11 @@ async function ensureSeeded() {
       },
     })
   );
-  await Promise.all(inserts);
+  await Promise.all(upserts);
 }
 
 export async function GET() {
-  await ensureSeeded();
+  await syncBuiltInPlans();
   const plans = await prisma.plan.findMany({ orderBy: { createdAt: "asc" } });
   return NextResponse.json(plans);
 }

@@ -88,6 +88,7 @@ export default function Dashboard() {
   const [overIdx, setOverIdx] = useState<number | null>(null);
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartY = useRef<number>(0);
+  const isDraggingRef = useRef(false);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const clearHold = useCallback(() => {
@@ -97,29 +98,31 @@ export default function Dashboard() {
     }
   }, []);
 
-  function handlePointerDown(idx: number, e: React.PointerEvent) {
-    if (e.pointerType === "mouse" && e.button !== 0) return;
-    touchStartY.current = e.clientY;
+  // Use touch events for iOS compatibility (pointer events trigger iOS callout)
+  function handleTouchStart(idx: number, e: React.TouchEvent) {
+    const touch = e.touches[0];
+    touchStartY.current = touch.clientY;
     clearHold();
     holdTimerRef.current = setTimeout(() => {
+      isDraggingRef.current = true;
       setDragIdx(idx);
       setOverIdx(idx);
-      // Vibrate on mobile for haptic feedback
       if (navigator.vibrate) navigator.vibrate(30);
     }, 400);
   }
 
-  function handlePointerMove(e: React.PointerEvent) {
-    // Cancel hold if finger moves too much before hold completes
-    if (dragIdx === null) {
-      if (Math.abs(e.clientY - touchStartY.current) > 10) {
+  function handleTouchMove(e: React.TouchEvent) {
+    const touch = e.touches[0];
+    if (!isDraggingRef.current) {
+      // Cancel hold if finger moves too much before hold completes
+      if (Math.abs(touch.clientY - touchStartY.current) > 10) {
         clearHold();
       }
       return;
     }
+    // Prevent scroll while dragging
     e.preventDefault();
-    // Find which card we're over
-    const y = e.clientY;
+    const y = touch.clientY;
     for (let i = 0; i < cardRefs.current.length; i++) {
       const el = cardRefs.current[i];
       if (!el) continue;
@@ -131,7 +134,7 @@ export default function Dashboard() {
     }
   }
 
-  function handlePointerUp() {
+  function handleTouchEnd() {
     clearHold();
     if (dragIdx !== null && overIdx !== null && dragIdx !== overIdx) {
       const newKeys = [...dayKeys];
@@ -140,14 +143,21 @@ export default function Dashboard() {
       setDayKeys(newKeys);
       localStorage.setItem(DAY_ORDER_KEY(plan.id), JSON.stringify(newKeys));
     }
+    isDraggingRef.current = false;
     setDragIdx(null);
     setOverIdx(null);
   }
 
-  function handlePointerCancel() {
+  // Also support mouse drag for desktop
+  function handleMouseDown(idx: number, e: React.MouseEvent) {
+    if (e.button !== 0) return;
+    touchStartY.current = e.clientY;
     clearHold();
-    setDragIdx(null);
-    setOverIdx(null);
+    holdTimerRef.current = setTimeout(() => {
+      isDraggingRef.current = true;
+      setDragIdx(idx);
+      setOverIdx(idx);
+    }, 400);
   }
 
   // Compute visual order for rendering (preview the reorder while dragging)
@@ -247,10 +257,10 @@ export default function Dashboard() {
         </div>
         <div
           className="grid grid-cols-1 gap-2"
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerCancel}
-          style={{ touchAction: dragIdx !== null ? "none" : "auto" }}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
+          onMouseUp={handleTouchEnd}
         >
           {displayKeys.map((key, i) => {
             const day = plan.days[key];
@@ -259,6 +269,7 @@ export default function Dashboard() {
             const isDragging = dragIdx !== null;
             const isBeingDragged =
               isDragging && dayKeys[dragIdx] === key;
+            const realIdx = dayKeys.indexOf(key);
 
             return (
               <div
@@ -266,14 +277,15 @@ export default function Dashboard() {
                 ref={(el) => {
                   cardRefs.current[i] = el;
                 }}
-                onPointerDown={(e) =>
-                  handlePointerDown(dayKeys.indexOf(key), e)
-                }
+                onTouchStart={(e) => handleTouchStart(realIdx, e)}
+                onMouseDown={(e) => handleMouseDown(realIdx, e)}
+                onContextMenu={(e) => e.preventDefault()}
                 className={`select-none transition-all duration-150 ${
                   isBeingDragged
                     ? "opacity-60 scale-[0.97]"
                     : ""
                 }`}
+                style={{ WebkitTouchCallout: "none" } as React.CSSProperties}
               >
                 <Link
                   href={`/log/${key}`}

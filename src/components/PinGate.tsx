@@ -79,14 +79,14 @@ export function PinGate({ children }: { children: ReactNode }) {
                 ref={(el) => {
                   inputRefs.current[i] = el;
                 }}
-                type="text"
+                type="password"
                 inputMode="numeric"
                 maxLength={1}
                 value={digit}
                 onChange={(e) => handleDigit(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
                 disabled={loading}
-                className="w-14 h-14 bg-surface border border-border text-accent text-center text-2xl font-mono rounded focus:border-accent focus:outline-none disabled:opacity-50"
+                className="w-14 h-14 bg-surface border border-border text-accent text-center text-2xl font-bold rounded focus:border-accent focus:outline-none disabled:opacity-50"
                 autoFocus={i === 0}
               />
             ))}

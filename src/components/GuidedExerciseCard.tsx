@@ -88,10 +88,23 @@ export function GuidedExerciseCard({
 
         <button
           onClick={() => {
+            const custom = prompt("Enter weight:");
+            if (custom !== null) {
+              const n = parseFloat(custom);
+              if (!isNaN(n) && n >= 0) setTempWeight((Math.round(n * 100) / 100).toString());
+            }
+          }}
+          className="mt-4 w-full max-w-xs h-12 border border-border text-muted rounded text-sm hover:text-accent transition-colors"
+        >
+          Custom
+        </button>
+
+        <button
+          onClick={() => {
             onChange({ ...setData, weight: tempWeight });
             setView("main");
           }}
-          className="mt-6 w-full max-w-xs h-12 bg-accent text-bg font-medium rounded text-sm hover:opacity-90 transition-opacity"
+          className="mt-3 w-full max-w-xs h-12 bg-accent text-bg font-medium rounded text-sm hover:opacity-90 transition-opacity"
         >
           Confirm
         </button>

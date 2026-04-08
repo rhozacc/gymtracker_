@@ -1,20 +1,90 @@
 // Gym Tracker Service Worker
-// Handles background rest-timer notifications for iOS/Android lock screen
+// Handles background rest-timer notifications and app shell caching
 
+const APP_VERSION = "1.0.0";
+const CACHE_NAME = `gym-v${APP_VERSION}`;
 const TIMER_TAG = "gym-rest-timer";
 let restTimeout = null;
 
+// App shell files to cache for instant/offline loading
+const APP_SHELL = [
+  "/",
+  "/manifest.json",
+  "/icon.svg",
+];
+
 self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
+  );
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  // Clean up old version caches
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((key) => key.startsWith("gym-v") && key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
+      )
+    ).then(() => self.clients.claim())
+    .then(() => {
+      // Notify all open clients about the new version
+      self.clients.matchAll({ type: "window" }).then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({ type: "SW_UPDATED", version: APP_VERSION });
+        });
+      });
+    })
+  );
+});
+
+// Network-first strategy: try network, fall back to cache for offline support
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+
+  // Only cache GET requests for same-origin navigation & static assets
+  if (request.method !== "GET") return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+
+  // Skip API routes — always go to network
+  if (url.pathname.startsWith("/api/")) return;
+
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        // Cache successful responses for offline use
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      })
+      .catch(() => {
+        // Offline — serve from cache
+        return caches.match(request).then((cached) => {
+          if (cached) return cached;
+          // For navigation requests, serve the cached home page as fallback
+          if (request.mode === "navigate") {
+            return caches.match("/");
+          }
+          return new Response("Offline", { status: 503 });
+        });
+      })
+  );
 });
 
 // Listen for messages from the app
 self.addEventListener("message", (event) => {
   const { type, payload } = event.data || {};
+
+  if (type === "GET_VERSION") {
+    event.source.postMessage({ type: "SW_VERSION", version: APP_VERSION });
+    return;
+  }
 
   if (type === "START_REST_TIMER") {
     // Cancel any existing timer

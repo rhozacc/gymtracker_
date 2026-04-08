@@ -21,7 +21,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const hasDb = !!process.env.POSTGRES_PRISMA_URL;
+  const hasDb = !!process.env.POSTGRES_URL;
 
   return (
     <html lang="en" className={GeistSans.className}>

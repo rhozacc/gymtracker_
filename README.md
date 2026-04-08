@@ -52,8 +52,8 @@ Open [http://localhost:3000](http://localhost:3000).
 
 | Variable | Description |
 |----------|-------------|
-| `POSTGRES_PRISMA_URL` | Neon pooled connection string (auto-set by Vercel Marketplace) |
-| `POSTGRES_URL_NON_POOLING` | Neon direct connection string (auto-set by Vercel Marketplace) |
+| `POSTGRES_URL` | Neon pooled connection string (auto-set by Vercel Marketplace) |
+| `POSTGRES_URL_UNPOOLED` | Neon direct connection string (auto-set by Vercel Marketplace) |
 | `APP_PIN` | 4-digit PIN to access the app |
 
 When deploying via the button, the Postgres variables are provisioned automatically. You only need to set `APP_PIN`.

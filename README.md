@@ -6,6 +6,8 @@ Personal gym tracker with progressive overload detection. Dark, mobile-first, PI
 
 > Clicking the button provisions a Neon Postgres database automatically. You only need to set your PIN.
 
+**Demo PIN: `0000`** — try it on the live deployment. Deploy your own copy for a private instance with your own PIN.
+
 ## Features
 
 - 4 built-in training plans (Upper/Lower, Push/Pull/Legs, Gym Bro 5-day, Arnold Split) + custom plan builder

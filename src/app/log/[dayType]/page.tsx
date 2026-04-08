@@ -12,6 +12,7 @@ import { RestTimer } from "@/components/RestTimer";
 import { GuidedSession } from "@/components/GuidedSession";
 import { Debrief } from "@/components/Debrief";
 import { Toast } from "@/components/Toast";
+import { ExerciseRenameModal } from "@/components/ExerciseRenameModal";
 import { useBeep } from "@/lib/useBeep";
 import { useBackgroundNotification } from "@/lib/useBackgroundNotification";
 
@@ -31,7 +32,7 @@ interface ExerciseState {
 export default function LogPage() {
   const router = useRouter();
   const params = useParams();
-  const { plan } = useProgram();
+  const { plan, planId, refreshPlans } = useProgram();
   const { unit } = useUnit();
   const dayType = params.dayType as string;
   const day = plan.days[dayType];
@@ -59,6 +60,12 @@ export default function LogPage() {
 
   // Backup recovery banner
   const [backupFound, setBackupFound] = useState(false);
+
+  // Exercise rename modal
+  const [renameTarget, setRenameTarget] = useState<{
+    exerciseId: string;
+    exerciseName: string;
+  } | null>(null);
 
   const hideToast = useCallback(() => setToast(false), []);
   const increments = getIncrements(unit);
@@ -379,7 +386,24 @@ export default function LogPage() {
             return (
               <div key={ex.id} className="border border-border rounded p-3">
                 <div className="flex justify-between items-baseline mb-1">
-                  <h2 className="text-sm font-medium">{ex.name}</h2>
+                  <div className="flex items-center gap-1.5">
+                    <h2 className="text-sm font-medium">{ex.name}</h2>
+                    <button
+                      onClick={() =>
+                        setRenameTarget({
+                          exerciseId: ex.id,
+                          exerciseName: ex.name,
+                        })
+                      }
+                      className="text-muted hover:text-accent transition-colors p-0.5"
+                      aria-label="Rename exercise"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                    </button>
+                  </div>
                   <span className="text-muted text-xs">
                     {ex.sets} &times; {ex.repRange[0]}–{ex.repRange[1]}
                     <span className="ml-1 text-muted/50">{ex.rest}s rest</span>
@@ -439,7 +463,7 @@ export default function LogPage() {
               placeholder="Session notes (optional)"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full h-20 bg-surface border border-border text-accent text-sm rounded p-3 resize-none focus:border-accent focus:outline-none"
+              className="w-full h-20 bg-surface border border-border text-text text-sm rounded p-3 resize-none focus:border-accent focus:outline-none"
             />
           </div>
 
@@ -483,6 +507,23 @@ export default function LogPage() {
             </p>
           </div>
         </div>
+      )}
+
+      {/* Exercise rename modal */}
+      {renameTarget && (
+        <ExerciseRenameModal
+          exerciseName={renameTarget.exerciseName}
+          exerciseId={renameTarget.exerciseId}
+          planSlug={planId}
+          dayKey={dayType}
+          onDone={() => {
+            setRenameTarget(null);
+            refreshPlans();
+            // Force page reload to pick up renamed exercise
+            window.location.reload();
+          }}
+          onCancel={() => setRenameTarget(null)}
+        />
       )}
     </div>
   );

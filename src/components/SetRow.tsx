@@ -66,7 +66,7 @@ export function SetRow({
           placeholder={unitLabel}
           value={data.weight}
           onChange={(e) => onChange({ ...data, weight: e.target.value })}
-          className="w-full h-10 bg-surface border border-border text-accent text-center text-sm rounded px-1 focus:border-accent focus:outline-none"
+          className="w-full h-10 bg-surface border border-border text-text text-center text-sm rounded px-1 focus:border-accent focus:outline-none"
         />
         <input
           type="text"
@@ -74,12 +74,12 @@ export function SetRow({
           placeholder="reps"
           value={data.reps}
           onChange={(e) => onChange({ ...data, reps: e.target.value })}
-          className="w-full h-10 bg-surface border border-border text-accent text-center text-sm rounded px-1 focus:border-accent focus:outline-none"
+          className="w-full h-10 bg-surface border border-border text-text text-center text-sm rounded px-1 focus:border-accent focus:outline-none"
         />
         <select
           value={data.rir}
           onChange={(e) => onChange({ ...data, rir: e.target.value })}
-          className="w-full h-10 bg-surface border border-border text-accent text-center text-sm rounded px-0.5 focus:border-accent focus:outline-none appearance-none"
+          className="w-full h-10 bg-surface border border-border text-text text-center text-sm rounded px-0.5 focus:border-accent focus:outline-none appearance-none"
         >
           <option value="">RIR</option>
           <option value="0">0</option>

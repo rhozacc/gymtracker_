@@ -115,7 +115,7 @@ export default function ChartsPage() {
         <select
           value={selectedExercise}
           onChange={(e) => setSelectedExercise(e.target.value)}
-          className="w-full h-10 bg-surface border border-border text-accent text-sm rounded px-3 mb-3 focus:border-accent focus:outline-none"
+          className="w-full h-10 bg-surface border border-border text-text text-sm rounded px-3 mb-3 focus:border-accent focus:outline-none"
         >
           {getAllExercises().map((ex) => (
             <option key={ex.id} value={ex.id}>

@@ -2,26 +2,23 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { PLANS } from "@/lib/program";
 
-// Upsert built-in plans so DB always matches hardcoded definitions
+// Sync built-in plans: create if missing, but don't overwrite user edits (e.g. exercise renames)
 async function syncBuiltInPlans() {
-  const upserts = Object.values(PLANS).map((p) =>
-    prisma.plan.upsert({
-      where: { slug: p.id },
-      update: {
-        name: p.name,
-        description: p.description,
-        days: p.days as object,
-      },
-      create: {
-        slug: p.id,
-        name: p.name,
-        description: p.description,
-        builtIn: true,
-        days: p.days as object,
-      },
-    })
-  );
-  await Promise.all(upserts);
+  const ops = Object.values(PLANS).map(async (p) => {
+    const existing = await prisma.plan.findUnique({ where: { slug: p.id } });
+    if (!existing) {
+      await prisma.plan.create({
+        data: {
+          slug: p.id,
+          name: p.name,
+          description: p.description,
+          builtIn: true,
+          days: p.days as object,
+        },
+      });
+    }
+  });
+  await Promise.all(ops);
 }
 
 export async function GET() {

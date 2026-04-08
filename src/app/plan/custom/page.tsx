@@ -237,14 +237,14 @@ export default function CustomPlanPage() {
           placeholder="Plan name"
           value={planName}
           onChange={(e) => setPlanName(e.target.value)}
-          className="w-full h-10 bg-surface border border-border text-accent text-sm rounded px-3 focus:border-accent focus:outline-none"
+          className="w-full h-10 bg-surface border border-border text-text text-sm rounded px-3 focus:border-accent focus:outline-none"
         />
         <input
           type="text"
           placeholder="Description (optional)"
           value={planDescription}
           onChange={(e) => setPlanDescription(e.target.value)}
-          className="w-full h-10 bg-surface border border-border text-accent text-sm rounded px-3 focus:border-accent focus:outline-none"
+          className="w-full h-10 bg-surface border border-border text-text text-sm rounded px-3 focus:border-accent focus:outline-none"
         />
       </div>
 
@@ -257,7 +257,7 @@ export default function CustomPlanPage() {
               placeholder="e.g. Upper Body"
               value={day.label}
               onChange={(e) => updateDay(dayIdx, "label", e.target.value)}
-              className="flex-1 h-9 bg-surface border border-border text-accent text-sm rounded px-3 focus:border-accent focus:outline-none"
+              className="flex-1 h-9 bg-surface border border-border text-text text-sm rounded px-3 focus:border-accent focus:outline-none"
             />
             {days.length > 1 && (
               <button
@@ -298,7 +298,7 @@ export default function CustomPlanPage() {
                   onChange={(e) =>
                     updateExercise(dayIdx, exIdx, "name", e.target.value)
                   }
-                  className="flex-1 h-9 bg-bg border border-border text-accent text-sm rounded px-2 focus:border-accent focus:outline-none"
+                  className="flex-1 h-9 bg-bg border border-border text-text text-sm rounded px-2 focus:border-accent focus:outline-none"
                 />
                 {day.exercises.length > 1 && (
                   <button
@@ -327,7 +327,7 @@ export default function CustomPlanPage() {
                         parseInt(e.target.value) || 1
                       )
                     }
-                    className="w-full h-8 bg-bg border border-border text-accent text-center text-xs rounded focus:border-accent focus:outline-none"
+                    className="w-full h-8 bg-bg border border-border text-text text-center text-xs rounded focus:border-accent focus:outline-none"
                   />
                 </div>
                 <div>
@@ -346,7 +346,7 @@ export default function CustomPlanPage() {
                         parseInt(e.target.value) || 1
                       )
                     }
-                    className="w-full h-8 bg-bg border border-border text-accent text-center text-xs rounded focus:border-accent focus:outline-none"
+                    className="w-full h-8 bg-bg border border-border text-text text-center text-xs rounded focus:border-accent focus:outline-none"
                   />
                 </div>
                 <div>
@@ -365,7 +365,7 @@ export default function CustomPlanPage() {
                         parseInt(e.target.value) || 1
                       )
                     }
-                    className="w-full h-8 bg-bg border border-border text-accent text-center text-xs rounded focus:border-accent focus:outline-none"
+                    className="w-full h-8 bg-bg border border-border text-text text-center text-xs rounded focus:border-accent focus:outline-none"
                   />
                 </div>
                 <div>
@@ -382,7 +382,7 @@ export default function CustomPlanPage() {
                         parseInt(e.target.value)
                       )
                     }
-                    className="w-full h-8 bg-bg border border-border text-accent text-center text-xs rounded focus:border-accent focus:outline-none appearance-none"
+                    className="w-full h-8 bg-bg border border-border text-text text-center text-xs rounded focus:border-accent focus:outline-none appearance-none"
                   >
                     {REST_OPTIONS.map((o) => (
                       <option key={o.value} value={o.value}>

@@ -4,13 +4,14 @@ import { useState, useMemo } from "react";
 import useSWR from "swr";
 import dynamic from "next/dynamic";
 import { fetcher } from "@/lib/swr";
-import { getAllExercises, getAllExercisesForPlan } from "@/lib/program";
+import { getAllExercises } from "@/lib/program";
 import { useProgram } from "@/lib/useProgram";
 import { useUnit } from "@/lib/useUnit";
 import { kgToDisplay } from "@/lib/units";
 import { estimateE1RM } from "@/lib/e1rm";
 import { getMuscleGroup, MUSCLE_GROUPS } from "@/lib/muscleGroups";
 import { StreakCalendar } from "@/components/StreakCalendar";
+import { ExerciseSelect } from "@/components/ExerciseSelect";
 
 const chartLoading = (
   <div className="h-[280px] bg-surface rounded animate-pulse" />
@@ -65,13 +66,18 @@ interface ChartSession {
   debrief: { energy: number; pump: number; mood: number } | null;
 }
 
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[10px] font-medium uppercase tracking-widest text-muted mb-4">
+      {children}
+    </p>
+  );
+}
+
 export default function ChartsPage() {
   const { planId } = useProgram();
   const { unit } = useUnit();
-  const planExercises = getAllExercisesForPlan(planId);
-  const [selectedExercise, setSelectedExercise] = useState(
-    planExercises[0]?.id || ""
-  );
+  const [selectedExercise, setSelectedExercise] = useState("");
 
   const { data: volumeData } = useSWR("/api/volume/weekly", fetcher);
   const { data: chartSessions } = useSWR<ChartSession[]>(
@@ -81,12 +87,40 @@ export default function ChartsPage() {
 
   // --- Derived data ---
 
+  const exerciseSetCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    if (!chartSessions) return counts;
+    for (const session of chartSessions) {
+      for (const s of session.sets) {
+        counts[s.exerciseId] = (counts[s.exerciseId] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [chartSessions]);
+
+  const exerciseOptions = useMemo(() => {
+    return getAllExercises().map((ex) => ({
+      id: ex.id,
+      name: ex.name,
+      setCount: exerciseSetCounts[ex.id] || 0,
+    }));
+  }, [exerciseSetCounts]);
+
+  // Auto-select top exercise once data loads
+  const effectiveExercise = useMemo(() => {
+    if (selectedExercise) return selectedExercise;
+    const sorted = [...exerciseOptions].sort(
+      (a, b) => b.setCount - a.setCount
+    );
+    return sorted[0]?.id || "";
+  }, [selectedExercise, exerciseOptions]);
+
   const e1rmData = useMemo(() => {
-    if (!chartSessions) return [];
+    if (!chartSessions || !effectiveExercise) return [];
     const points: { date: string; e1rm: number }[] = [];
     for (const session of chartSessions) {
       const exSets = session.sets.filter(
-        (s) => s.exerciseId === selectedExercise
+        (s) => s.exerciseId === effectiveExercise
       );
       if (exSets.length === 0) continue;
       const bestE1rm = Math.max(
@@ -98,7 +132,7 @@ export default function ChartsPage() {
       });
     }
     return points;
-  }, [chartSessions, selectedExercise, unit]);
+  }, [chartSessions, effectiveExercise, unit]);
 
   const muscleVolumeData = useMemo(() => {
     if (!chartSessions) return [];
@@ -116,7 +150,6 @@ export default function ChartsPage() {
       if (!weeklyData.has(key)) weeklyData.set(key, {});
       const entry = weeklyData.get(key)!;
 
-      // Count sets per exercise, then map to muscle group
       const exerciseSets: Record<string, number> = {};
       for (const s of session.sets) {
         exerciseSets[s.exerciseId] = (exerciseSets[s.exerciseId] || 0) + 1;
@@ -188,67 +221,71 @@ export default function ChartsPage() {
   }, [chartSessions]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <h1 className="text-lg font-medium">Charts</h1>
 
-      {/* --- Strength --- */}
-      <section>
-        <h2 className="text-muted text-xs mb-3">
-          Estimated 1RM ({unit})
-        </h2>
-        <select
-          value={selectedExercise}
-          onChange={(e) => setSelectedExercise(e.target.value)}
-          className="w-full h-10 bg-surface border border-border text-text text-sm rounded px-3 mb-3 focus:border-accent focus:outline-none"
-        >
-          {getAllExercises().map((ex) => (
-            <option key={ex.id} value={ex.id}>
-              {ex.name}
-            </option>
-          ))}
-        </select>
-        <E1rmChart data={e1rmData} unit={unit} />
-      </section>
+      {/* ── STRENGTH ── */}
+      <div>
+        <SectionLabel>Strength</SectionLabel>
+        <section>
+          <h2 className="text-muted text-xs mb-3">
+            Estimated 1RM ({unit})
+          </h2>
+          <ExerciseSelect
+            options={exerciseOptions}
+            value={effectiveExercise}
+            onChange={setSelectedExercise}
+          />
+          <E1rmChart data={e1rmData} unit={unit} />
+        </section>
+      </div>
 
-      {/* --- Volume --- */}
-      <section>
-        <h2 className="text-muted text-xs mb-3">Weekly volume</h2>
-        {volumeData && volumeData.length > 0 ? (
-          <VolumeChart data={volumeData} unit={unit} />
-        ) : (
-          <p className="text-muted text-sm text-center py-8 border border-border rounded">
-            No data yet.
-          </p>
-        )}
-      </section>
+      {/* ── VOLUME ── */}
+      <div className="border-t border-border pt-6">
+        <SectionLabel>Volume</SectionLabel>
+        <section>
+          <h2 className="text-muted text-xs mb-3">Weekly volume</h2>
+          {volumeData && volumeData.length > 0 ? (
+            <VolumeChart data={volumeData} unit={unit} />
+          ) : (
+            <p className="text-muted text-sm text-center py-8 border border-border rounded">
+              No data yet.
+            </p>
+          )}
+        </section>
+        <section className="mt-8">
+          <h2 className="text-muted text-xs mb-3">Sets per muscle group</h2>
+          <MuscleVolumeChart data={muscleVolumeData} />
+        </section>
+      </div>
 
-      <section>
-        <h2 className="text-muted text-xs mb-3">Sets per muscle group</h2>
-        <MuscleVolumeChart data={muscleVolumeData} />
-      </section>
+      {/* ── SESSION ── */}
+      <div className="border-t border-border pt-6">
+        <SectionLabel>Session</SectionLabel>
+        <section>
+          <h2 className="text-muted text-xs mb-3">Session duration</h2>
+          <DurationChart data={durationData} />
+        </section>
+        <section className="mt-8">
+          <h2 className="text-muted text-xs mb-3">
+            Activity (last 12 weeks)
+          </h2>
+          <StreakCalendar sessions={sessionSummaries} />
+        </section>
+      </div>
 
-      {/* --- Session --- */}
-      <section>
-        <h2 className="text-muted text-xs mb-3">Session duration</h2>
-        <DurationChart data={durationData} />
-      </section>
-
-      {/* --- Recovery --- */}
-      <section>
-        <h2 className="text-muted text-xs mb-3">Debrief trends</h2>
-        <DebriefChart data={debriefData} />
-      </section>
-
-      <section>
-        <h2 className="text-muted text-xs mb-3">Average RIR</h2>
-        <RirChart data={rirData} />
-      </section>
-
-      {/* --- Activity --- */}
-      <section>
-        <h2 className="text-muted text-xs mb-3">Activity (last 12 weeks)</h2>
-        <StreakCalendar sessions={sessionSummaries} />
-      </section>
+      {/* ── RECOVERY ── */}
+      <div className="border-t border-border pt-6">
+        <SectionLabel>Recovery</SectionLabel>
+        <section>
+          <h2 className="text-muted text-xs mb-3">Debrief trends</h2>
+          <DebriefChart data={debriefData} />
+        </section>
+        <section className="mt-8">
+          <h2 className="text-muted text-xs mb-3">Average RIR</h2>
+          <RirChart data={rirData} />
+        </section>
+      </div>
     </div>
   );
 }

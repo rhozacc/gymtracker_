@@ -101,6 +101,7 @@ export default function ChartsPage() {
   const { planId } = useProgram();
   const { unit } = useUnit();
   const [selectedExercise, setSelectedExercise] = useState("");
+  const [bypassLock, setBypassLock] = useState(false);
 
   const { data: volumeData } = useSWR("/api/volume/weekly", fetcher);
   const { data: chartSessions } = useSWR<ChartSession[]>(
@@ -243,6 +244,39 @@ export default function ChartsPage() {
     return chartSessions.map((s) => ({ date: s.date, dayType: s.dayType }));
   }, [chartSessions]);
 
+  const sessionCount = chartSessions?.length ?? null;
+
+  if (sessionCount !== null && sessionCount < 5 && !bypassLock) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+        <svg
+          width="40"
+          height="40"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="var(--color-muted)"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="mb-4"
+        >
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+        <p className="text-sm font-medium text-text mb-1">Not quite there yet</p>
+        <p className="text-xs text-muted mb-6">
+          Trends unlock after {5 - sessionCount} more session{5 - sessionCount === 1 ? "" : "s"}
+        </p>
+        <button
+          onClick={() => setBypassLock(true)}
+          className="text-xs text-muted hover:text-text transition-colors"
+        >
+          I don&apos;t care, show me
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <h1 className="text-lg font-medium">Trends</h1>
@@ -312,13 +346,13 @@ export default function ChartsPage() {
       </ChartSection>
 
       {/* ── EXPLAINER ── */}
-      <div className="border border-border rounded-lg p-4 text-xs text-muted space-y-2">
-        <p className="font-medium text-text">What is Est. 1RM?</p>
-        <p>
-          Estimated One-Rep Max predicts the maximum weight you could lift for a
-          single rep, calculated from your working sets using the Epley formula:
-          weight &times; (1 + reps &divide; 30). It tracks strength progress
-          without actually maxing out.
+      <div className="border-t border-border pt-6 pb-24">
+        <h2 className="text-sm font-medium mb-2">What is Est. 1RM?</h2>
+        <p className="text-muted text-xs leading-relaxed">
+          <span className="text-accent font-medium">Estimated 1RM (one-rep max)</span> predicts
+          the maximum weight you could lift for a single rep, calculated from your working sets
+          using the Epley formula: weight &times; (1 + reps &divide; 30). It tracks strength
+          progress without actually maxing out.
         </p>
       </div>
     </div>

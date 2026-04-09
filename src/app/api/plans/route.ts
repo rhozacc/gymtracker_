@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { PLANS } from "@/lib/program";
 
-// Sync built-in plans: create if missing, but don't overwrite user edits (e.g. exercise renames)
+// Sync built-in plans: create if missing, update if builtIn (keeps structure current with code)
 async function syncBuiltInPlans() {
   const ops = Object.values(PLANS).map(async (p) => {
     const existing = await prisma.plan.findUnique({ where: { slug: p.id } });
@@ -13,6 +13,15 @@ async function syncBuiltInPlans() {
           name: p.name,
           description: p.description,
           builtIn: true,
+          days: p.days as object,
+        },
+      });
+    } else if (existing.builtIn) {
+      await prisma.plan.update({
+        where: { slug: p.id },
+        data: {
+          name: p.name,
+          description: p.description,
           days: p.days as object,
         },
       });

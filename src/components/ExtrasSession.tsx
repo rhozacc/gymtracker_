@@ -210,13 +210,13 @@ export function ExtrasSession({ extras, onFinish, onSkip }: ExtrasSessionProps) 
         </button>
         <button
           onClick={handleSkipCategory}
-          className="text-xs text-muted hover:text-foreground transition-colors"
+          className="mt-3 px-4 py-1.5 border border-border text-muted text-sm rounded hover:border-accent hover:text-accent transition-colors"
         >
           Skip {catInfo.label.toLowerCase()}
         </button>
         <button
           onClick={onSkip}
-          className="text-xs text-muted hover:text-foreground transition-colors mt-2"
+          className="mt-3 px-4 py-1.5 border border-red-400 text-red-400 text-sm rounded hover:bg-red-400/10 transition-colors"
         >
           End extras
         </button>
@@ -298,7 +298,7 @@ export function ExtrasSession({ extras, onFinish, onSkip }: ExtrasSessionProps) 
         )}
         <button
           onClick={handleSkipCategory}
-          className="text-xs text-muted hover:text-foreground transition-colors"
+          className="mt-3 px-4 py-1.5 border border-border text-muted text-sm rounded hover:border-accent hover:text-accent transition-colors"
         >
           Skip {catInfo.label.toLowerCase()}
         </button>

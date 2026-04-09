@@ -116,7 +116,6 @@ function PlanCard({
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-sm font-medium">{plan.name}</h2>
           <div className="flex items-center gap-2">
-            {plan.goal && <GoalBadge goal={plan.goal} />}
             {!plan.builtIn && (
               <span className="text-[10px] text-muted border border-border rounded-full px-2 py-0.5">
                 Custom
@@ -280,9 +279,9 @@ export default function PlanPage() {
   }
 
   const goalLabels: Record<string, string> = {
-    bulk: "Bulk — Build size & strength",
-    balanced: "Balanced — Well-rounded training",
-    lean: "Lean — Cut & define",
+    bulk: "Build size & strength",
+    balanced: "Well-rounded training",
+    lean: "Cut & define",
     "": "Other",
   };
 
@@ -303,7 +302,7 @@ export default function PlanPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-medium">Plan</h1>
+        <h1 className="text-lg font-medium">Your Current Plan</h1>
         <p className="text-muted text-xs mt-1">
           Your plan data is stored and synced for you. Extras are part of your plan.
         </p>
@@ -318,7 +317,7 @@ export default function PlanPage() {
           <div className="border border-accent rounded-lg">
             <div className="p-4">
               <div className="flex items-center justify-between mb-1">
-                <p className="text-[10px] font-medium uppercase tracking-widest text-muted">Current Plan</p>
+                <p className="text-[10px] font-medium uppercase tracking-widest text-muted">Active</p>
                 {activePlan.goal && <GoalBadge goal={activePlan.goal} />}
               </div>
               <h2 className="text-sm font-medium mt-2">{activePlan.name}</h2>
@@ -390,7 +389,8 @@ export default function PlanPage() {
 
       {/* ── All Plans ── */}
       <div>
-        <p className="text-[10px] font-medium uppercase tracking-widest text-muted mb-3">All Plans</p>
+        <h2 className="text-lg font-medium mb-1">All Plans</h2>
+        <p className="text-xs text-muted mb-3">You can change your plan at any time. Changing a plan will not affect your existing training session history.</p>
 
         {/* Category Tabs */}
         <div className="flex gap-1 border border-border rounded-lg p-1 mb-4">

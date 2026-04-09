@@ -70,10 +70,6 @@ input[type="number"]::-webkit-outer-spin-button {
   filter: drop-shadow(0 0 6px var(--color-accent)) drop-shadow(0 0 12px color-mix(in srgb, var(--color-accent) 40%, transparent));
 }
 
-/* Bar chart glow — dark mode only */
-[data-theme="dark"] .recharts-bar-rectangle path {
-  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-accent) 60%, transparent));
-}
 
 /* Streak calendar active cell glow — dark mode only */
 [data-theme="dark"] .streak-cell-active {

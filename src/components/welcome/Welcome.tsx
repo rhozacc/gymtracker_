@@ -202,18 +202,16 @@ export function Welcome({ onDone }: { onDone: () => void }) {
     return (
       <div className="pb-8 pt-4">
         {/* Step dots */}
-        {step !== "saving" && step !== "ready" && (
-          <div className="flex justify-center gap-2 mb-4">
-            {STEPS.map((s) => (
-              <div
-                key={s}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  s === step ? "bg-accent w-4" : "bg-border w-1.5"
-                }`}
-              />
-            ))}
-          </div>
-        )}
+        <div className="flex justify-center gap-2 mb-4">
+          {STEPS.map((s) => (
+            <div
+              key={s}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                s === step ? "bg-accent w-4" : "bg-border w-1.5"
+              }`}
+            />
+          ))}
+        </div>
 
         {step === "welcome" && (
           <button

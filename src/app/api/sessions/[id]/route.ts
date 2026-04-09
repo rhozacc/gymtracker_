@@ -38,17 +38,66 @@ export async function PATCH(
 
   const session = await prisma.session.findUnique({
     where: { id: params.id },
+    include: { sets: true },
   });
 
   if (!session) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  // Update extras if provided
+  const updateData: Record<string, unknown> = {};
+  if (body.extras !== undefined) {
+    updateData.extras = body.extras;
+  }
+
+  // Update sets if provided
+  if (body.sets && Array.isArray(body.sets)) {
+    updateData.editedAt = new Date();
+    const incomingIds = new Set<string>();
+
+    for (const s of body.sets) {
+      if (s.id) {
+        // Update existing set
+        incomingIds.add(s.id);
+        await prisma.set.update({
+          where: { id: s.id },
+          data: {
+            exerciseId: s.exerciseId,
+            setNumber: s.setNumber,
+            reps: s.reps,
+            weight: s.weight,
+            rir: s.rir ?? null,
+          },
+        });
+      } else {
+        // Create new set
+        const created = await prisma.set.create({
+          data: {
+            sessionId: params.id,
+            exerciseId: s.exerciseId,
+            setNumber: s.setNumber,
+            reps: s.reps,
+            weight: s.weight,
+            rir: s.rir ?? null,
+          },
+        });
+        incomingIds.add(created.id);
+      }
+    }
+
+    // Delete sets that were removed
+    const toDelete = session.sets.filter((s) => !incomingIds.has(s.id));
+    if (toDelete.length > 0) {
+      await prisma.set.deleteMany({
+        where: { id: { in: toDelete.map((s) => s.id) } },
+      });
+    }
+  }
+
   const updated = await prisma.session.update({
     where: { id: params.id },
-    data: {
-      extras: body.extras ?? undefined,
-    },
+    data: updateData,
   });
 
   return NextResponse.json({ id: updated.id });

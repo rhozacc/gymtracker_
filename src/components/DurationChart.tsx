@@ -1,8 +1,8 @@
 "use client";
 
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -26,7 +26,7 @@ export function DurationChartInner({ data }: { data: DataPoint[] }) {
 
   return (
     <ResponsiveContainer width="100%" height={280}>
-      <BarChart data={data}>
+      <LineChart data={data}>
         <XAxis
           dataKey="date"
           stroke="var(--color-chart-axis)"
@@ -55,16 +55,19 @@ export function DurationChartInner({ data }: { data: DataPoint[] }) {
             />
           }
         />
-        <Bar
+        <Line
           dataKey="minutes"
-          fill="var(--color-chart-bar-1)"
-          radius={[4, 4, 0, 0]}
+          stroke="var(--color-accent)"
+          strokeWidth={2}
+          dot={{ fill: "var(--color-accent)", r: 3 }}
+          activeDot={{ fill: "var(--color-accent)", r: 5 }}
+          type="monotone"
           isAnimationActive={true}
           animationDuration={800}
           animationEasing="ease-out"
           name="Duration"
         />
-      </BarChart>
+      </LineChart>
     </ResponsiveContainer>
   );
 }

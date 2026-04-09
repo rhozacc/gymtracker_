@@ -92,7 +92,7 @@ export function RestTimer({ seconds, onDismiss, onTimerEnd, nextExercise }: Rest
   const display = `${mins}:${secs.toString().padStart(2, "0")}`;
 
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-bg/95">
+    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-bg">
       {/* Circular progress */}
       <svg className="w-56 h-56 mb-6" viewBox="0 0 200 200">
         <circle

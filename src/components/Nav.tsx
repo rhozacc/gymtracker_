@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
+import { useNavVisibility } from "@/lib/useNavVisibility";
 
 const tabs = [
   { href: "/", label: "Home" },
@@ -96,6 +97,7 @@ function useSwipeNav() {
 
 export function Nav() {
   const pathname = usePathname();
+  const { navVisible } = useNavVisibility();
   const [tapBeam, setTapBeam] = useState(false);
   const { beam: swipeBeam, clearBeam } = useSwipeNav();
 
@@ -110,6 +112,8 @@ export function Nav() {
 
   const showBeam = tapBeam || swipeBeam;
 
+  if (!navVisible) return null;
+
   return (
     <>
       {showBeam && (
@@ -120,6 +124,14 @@ export function Nav() {
           }}
         />
       )}
+      {/* Glow effect behind navbar */}
+      <div
+        className="fixed bottom-0 left-0 right-0 h-32 pointer-events-none z-40"
+        style={{
+          background: "radial-gradient(ellipse at center bottom, var(--color-accent) 0%, transparent 70%)",
+          opacity: 0.08,
+        }}
+      />
       <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
         <div className="flex items-center bg-surface border border-border rounded-full p-1.5 gap-0.5 shadow-lg shadow-black/10">
           {tabs.map((tab) => {

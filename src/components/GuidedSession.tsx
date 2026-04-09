@@ -24,6 +24,7 @@ interface GuidedSessionProps {
   updateSet: (exIdx: number, setIdx: number, data: SetInput) => void;
   onFinish: () => void;
   onStop: () => void;
+  onListView: () => void;
 }
 
 type Phase = "logging" | "resting";
@@ -61,6 +62,7 @@ export function GuidedSession({
   updateSet,
   onFinish,
   onStop,
+  onListView,
 }: GuidedSessionProps) {
   const [state, dispatch] = useReducer(guidedReducer, {
     phase: "logging",
@@ -214,6 +216,7 @@ export function GuidedSession({
       onDone={handleSetDone}
       onSkip={handleSkipExercise}
       onStop={onStop}
+      onListView={onListView}
       onNameChange={(name) =>
         setExerciseNameOverrides((prev) => ({ ...prev, [currentExercise.id]: name }))
       }

@@ -16,6 +16,7 @@ model Session {
   startedAt DateTime?
   endedAt   DateTime?
   extras    Json?
+  editedAt  DateTime?
   sets      Set[]
   debrief   Debrief?
   createdAt DateTime  @default(now())

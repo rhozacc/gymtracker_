@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-export const RP_NAME = "Gym Tracker";
+export const RP_NAME = "gymtracker_";
 
 export function getRpId(request: Request): string {
   if (process.env.RP_ID) return process.env.RP_ID;

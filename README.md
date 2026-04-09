@@ -1,4 +1,4 @@
-# Gym Tracker
+# gymtracker_
 
 Personal gym tracker with progressive overload detection. Mobile-first, dark or light.
 

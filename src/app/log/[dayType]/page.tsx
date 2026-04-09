@@ -15,10 +15,12 @@ import { Debrief } from "@/components/Debrief";
 import { PostSessionExtras } from "@/components/PostSessionExtras";
 import { PostWorkoutSummary, computeSummary } from "@/components/PostWorkoutSummary";
 import { Toast } from "@/components/Toast";
+import { EndSessionModal } from "@/components/EndSessionModal";
 import { ExerciseRenameModal } from "@/components/ExerciseRenameModal";
 import { useExtras } from "@/lib/useExtras";
 import { useBeep } from "@/lib/useBeep";
 import { useBackgroundNotification } from "@/lib/useBackgroundNotification";
+import { useNavVisibility } from "@/lib/useNavVisibility";
 
 const BACKUP_KEY = "gym-guided-backup";
 
@@ -55,8 +57,11 @@ export default function LogPage() {
 
   // Guided mode state
   const [guidedMode, setGuidedMode] = useState(false);
+  const [wasGuidedMode, setWasGuidedMode] = useState(false);
+  const [showEndModal, setShowEndModal] = useState(false);
   const { initAudio } = useBeep();
   const { requestPermission } = useBackgroundNotification();
+  const { setNavVisible } = useNavVisibility();
 
   // Guided extras state (during workout, before review)
   const { selectedExtras } = useExtras();
@@ -135,6 +140,26 @@ export default function LogPage() {
       // Storage may be full — not critical
     }
   }
+
+  // Hide navbar when in guided mode or reviewing after guided
+  useEffect(() => {
+    if (guidedMode || wasGuidedMode) {
+      setNavVisible(false);
+    } else {
+      setNavVisible(true);
+    }
+    return () => setNavVisible(true);
+  }, [guidedMode, wasGuidedMode, setNavVisible]);
+
+  // Exit confirmation when session is in progress
+  useEffect(() => {
+    if (!guidedMode && !wasGuidedMode) return;
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault();
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [guidedMode, wasGuidedMode]);
 
   useEffect(() => {
     if (!day) return;
@@ -266,12 +291,31 @@ export default function LogPage() {
       return;
     }
     setGuidedMode(false);
+    setWasGuidedMode(true);
     // Backup stays until the user confirms save
   }
 
   function handleExtrasFinish() {
     setGuidedExtrasMode(false);
     setGuidedMode(false);
+    setWasGuidedMode(true);
+  }
+
+  function handleListView() {
+    setGuidedMode(false);
+    setWasGuidedMode(true);
+  }
+
+  function handleEndSessionAbandon() {
+    localStorage.removeItem(BACKUP_KEY);
+    setShowEndModal(false);
+    setWasGuidedMode(false);
+    router.replace("/");
+  }
+
+  async function handleEndSessionRecord() {
+    setShowEndModal(false);
+    await finish();
   }
 
   async function finish() {
@@ -423,12 +467,14 @@ export default function LogPage() {
       )}
 
       <div>
-        <button
-          onClick={() => router.back()}
-          className="text-muted text-sm mb-2 hover:text-accent"
-        >
-          &larr; Back
-        </button>
+        {!wasGuidedMode && (
+          <button
+            onClick={() => router.back()}
+            className="text-muted text-sm mb-2 hover:text-accent"
+          >
+            &larr; Back
+          </button>
+        )}
         <h1 className="text-lg font-medium">{day.label}</h1>
       </div>
 
@@ -441,10 +487,24 @@ export default function LogPage() {
           increments={increments}
           updateSet={updateSet}
           onFinish={handleGuidedFinish}
-          onStop={() => setGuidedMode(false)}
+          onStop={() => setShowEndModal(true)}
+          onListView={handleListView}
         />
       ) : (
         <>
+          {/* Continue Guided Session button (only after switching from guided to list view) */}
+          {wasGuidedMode && (
+            <button
+              onClick={() => {
+                setWasGuidedMode(false);
+                setGuidedMode(true);
+              }}
+              className="w-full h-10 border border-accent text-accent text-sm rounded hover:bg-accent/10 transition-colors"
+            >
+              Continue Guided Session
+            </button>
+          )}
+
           {/* Review / standard edit view */}
           {day.exercises.map((ex, exIdx) => {
             const ol = overloads[ex.id];
@@ -535,13 +595,22 @@ export default function LogPage() {
             />
           </div>
 
-          <button
-            onClick={finish}
-            disabled={saving}
-            className="w-full h-12 bg-accent text-bg font-medium rounded text-sm hover:bg-white disabled:opacity-50 transition-colors"
-          >
-            {saving ? "Saving..." : "Finish Session"}
-          </button>
+          {wasGuidedMode ? (
+            <button
+              onClick={() => setShowEndModal(true)}
+              className="w-full h-12 border border-red-400 text-red-400 font-medium rounded text-sm hover:bg-red-400/10 transition-colors"
+            >
+              End Session
+            </button>
+          ) : (
+            <button
+              onClick={finish}
+              disabled={saving}
+              className="w-full h-12 bg-accent text-bg font-medium rounded text-sm hover:bg-white disabled:opacity-50 transition-colors"
+            >
+              {saving ? "Saving..." : "Finish Session"}
+            </button>
+          )}
         </>
       )}
 
@@ -575,6 +644,16 @@ export default function LogPage() {
             </p>
           </div>
         </div>
+      )}
+
+      {/* End session confirmation modal */}
+      {showEndModal && (
+        <EndSessionModal
+          saving={saving}
+          onAbandon={handleEndSessionAbandon}
+          onRecord={handleEndSessionRecord}
+          onCancel={() => setShowEndModal(false)}
+        />
       )}
 
       {/* Exercise rename modal */}

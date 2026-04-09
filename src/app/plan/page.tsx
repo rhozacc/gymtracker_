@@ -303,113 +303,157 @@ export default function PlanPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-medium">Training Plans</h1>
+        <h1 className="text-lg font-medium">Plan</h1>
         <p className="text-muted text-xs mt-1">
-          Tap a plan to see exercises. History from other plans is always preserved.
+          Your plan data is stored and synced for you. Extras are part of your plan.
         </p>
       </div>
 
-      {/* Main / Extras toggle */}
-      <div className="flex gap-1 border border-border rounded-lg p-1">
-        <div className="flex-1 text-xs py-2 rounded-md text-center bg-surface text-accent font-medium">
-          Main
-        </div>
-        <Link
-          href="/plan/extras"
-          className="flex-1 text-xs py-2 rounded-md text-center text-muted hover:text-foreground transition-colors"
-        >
-          Extras
-        </Link>
-      </div>
-
-      {/* Category Tabs */}
-      <div className="flex gap-1 border border-border rounded-lg p-1">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => { setTab(t.key); setExpandedSlug(null); }}
-            className={`flex-1 text-xs py-2 rounded-md transition-colors ${
-              tab === t.key
-                ? "bg-surface text-accent font-medium"
-                : "text-muted hover:text-foreground"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Loading */}
-      {!dbPlans && (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 bg-surface rounded animate-pulse" />
-          ))}
-        </div>
-      )}
-
-      {/* Plans grouped by goal */}
-      {dbPlans && tab !== "custom" && (
-        <div className="space-y-6">
-          {groupByGoal(currentPlans()).map(({ goal, plans }) => (
-            <div key={goal}>
-              <div className="flex items-center gap-2 mb-3">
-                {goal && <GoalBadge goal={goal} />}
-                <span className="text-xs text-muted">
-                  {goalLabels[goal] || goal}
-                </span>
+      {/* ── Current Plan ── */}
+      {dbPlans && (() => {
+        const activePlan = dbPlans.find((p) => p.slug === planId);
+        if (!activePlan) return null;
+        const days = Object.values(activePlan.days);
+        return (
+          <div className="border border-accent rounded-lg">
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[10px] font-medium uppercase tracking-widest text-muted">Current Plan</p>
+                {activePlan.goal && <GoalBadge goal={activePlan.goal} />}
               </div>
-              <div className="space-y-3">{renderPlans(plans)}</div>
+              <h2 className="text-sm font-medium mt-2">{activePlan.name}</h2>
+              <p className="text-muted text-xs mt-1">{activePlan.description}</p>
+              {activePlan.fit && (
+                <p className="text-xs text-foreground/70 mt-1">{activePlan.fit}</p>
+              )}
             </div>
+
+            {/* Day-by-day exercises */}
+            <div className="px-4 pb-4 space-y-4">
+              {days.map((day) => {
+                const shortLabel = day.label.includes("—")
+                  ? day.label.split("—")[1].trim()
+                  : day.label;
+                return (
+                  <div key={day.label}>
+                    <div className="text-xs font-medium text-muted mb-2">
+                      {shortLabel}
+                    </div>
+                    <div className="space-y-1">
+                      {day.exercises.map((ex) => (
+                        <div
+                          key={ex.id}
+                          className="flex items-center justify-between text-xs py-1"
+                        >
+                          <span className="text-foreground/90">{ex.name}</span>
+                          <span className="text-muted tabular-nums">
+                            {ex.sets} x {ex.repRange[0]}–{ex.repRange[1]}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Extras inline with current plan */}
+              {selectedExtras.length > 0 && (
+                <div className="border-t border-border pt-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium text-muted">Session Extras</span>
+                    <Link href="/plan/extras" className="text-[10px] text-muted hover:text-accent">Edit</Link>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedExtras.map((ext) => (
+                      <span
+                        key={ext.id}
+                        className="text-[10px] text-accent border border-accent/40 bg-accent/10 rounded-full px-2 py-0.5"
+                      >
+                        {ext.name} · {ext.duration}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {selectedExtras.length === 0 && (
+                <Link
+                  href="/plan/extras"
+                  className="block border-t border-border pt-3 text-muted text-xs hover:text-accent transition-colors"
+                >
+                  + Add session extras (abs, cardio, stretch)
+                </Link>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── All Plans ── */}
+      <div>
+        <p className="text-[10px] font-medium uppercase tracking-widest text-muted mb-3">All Plans</p>
+
+        {/* Category Tabs */}
+        <div className="flex gap-1 border border-border rounded-lg p-1 mb-4">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => { setTab(t.key); setExpandedSlug(null); }}
+              className={`flex-1 text-xs py-2 rounded-md transition-colors ${
+                tab === t.key
+                  ? "bg-surface text-accent font-medium"
+                  : "text-muted hover:text-foreground"
+              }`}
+            >
+              {t.label}
+            </button>
           ))}
         </div>
-      )}
 
-      {/* Custom plans */}
-      {dbPlans && tab === "custom" && (
-        <div className="space-y-3">
-          {customPlans.length === 0 && (
-            <p className="text-muted text-xs text-center py-4">
-              No custom plans yet. Create one below!
-            </p>
-          )}
-          {renderPlans(customPlans)}
-        </div>
-      )}
-
-      <Link
-        href="/plan/custom"
-        className="flex items-center justify-center w-full h-10 border border-dashed border-border rounded text-sm text-muted hover:border-muted hover:text-accent transition-colors"
-      >
-        + Create custom plan
-      </Link>
-
-      {/* Extras summary */}
-      <Link
-        href="/plan/extras"
-        className="block border border-border rounded-lg p-4 hover:border-muted transition-colors"
-      >
-        <div className="flex items-center justify-between mb-1">
-          <h2 className="text-sm font-medium">Session Extras</h2>
-          <span className="text-xs text-muted">Edit →</span>
-        </div>
-        {selectedExtras.length > 0 ? (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {selectedExtras.map((ext) => (
-              <span
-                key={ext.id}
-                className="text-[10px] text-accent border border-accent/40 bg-accent/10 rounded-full px-2 py-0.5"
-              >
-                {ext.name} · {ext.duration}
-              </span>
+        {/* Loading */}
+        {!dbPlans && (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-20 bg-surface rounded animate-pulse" />
             ))}
           </div>
-        ) : (
-          <p className="text-muted text-xs">
-            No extras selected. Add abs, cardio, or stretch blocks.
-          </p>
         )}
-      </Link>
+
+        {/* Plans grouped by goal */}
+        {dbPlans && tab !== "custom" && (
+          <div className="space-y-6">
+            {groupByGoal(currentPlans()).map(({ goal, plans }) => (
+              <div key={goal}>
+                <div className="flex items-center gap-2 mb-3">
+                  {goal && <GoalBadge goal={goal} />}
+                  <span className="text-xs text-muted">
+                    {goalLabels[goal] || goal}
+                  </span>
+                </div>
+                <div className="space-y-3">{renderPlans(plans)}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Custom plans */}
+        {dbPlans && tab === "custom" && (
+          <div className="space-y-3">
+            {customPlans.length === 0 && (
+              <p className="text-muted text-xs text-center py-4">
+                No custom plans yet. Create one below!
+              </p>
+            )}
+            {renderPlans(customPlans)}
+          </div>
+        )}
+
+        <Link
+          href="/plan/custom"
+          className="flex items-center justify-center w-full h-10 mt-4 border border-dashed border-border rounded text-sm text-muted hover:border-muted hover:text-accent transition-colors"
+        >
+          + Create custom plan
+        </Link>
+      </div>
 
       <div className="border-t border-border pt-6">
         <h2 className="text-sm font-medium mb-2">What is RIR?</h2>

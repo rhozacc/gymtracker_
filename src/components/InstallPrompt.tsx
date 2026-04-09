@@ -106,7 +106,7 @@ export function InstallPrompt() {
               </svg>
             </span>
             <div>
-              <p className="text-sm font-medium mb-1">Install Gym Tracker</p>
+              <p className="text-sm font-medium mb-1">Install gymtracker_</p>
               <p className="text-muted text-xs leading-relaxed">
                 Tap the <span className="inline-block align-middle mx-0.5">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -146,7 +146,7 @@ export function InstallPrompt() {
             </svg>
           </span>
           <div className="flex-1">
-            <p className="text-sm font-medium">Install Gym Tracker</p>
+            <p className="text-sm font-medium">Install gymtracker_</p>
             <p className="text-muted text-xs">Add to home screen for notifications & offline access</p>
           </div>
           <button

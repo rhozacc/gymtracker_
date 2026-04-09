@@ -12,6 +12,7 @@ import { estimateE1RM } from "@/lib/e1rm";
 import { getMuscleGroup, MUSCLE_GROUPS } from "@/lib/muscleGroups";
 import { StreakCalendar } from "@/components/StreakCalendar";
 import { ExerciseSelect } from "@/components/ExerciseSelect";
+import { KeyTrends } from "@/components/KeyTrends";
 import { useInView } from "@/hooks/useInView";
 
 const chartLoading = (
@@ -246,6 +247,11 @@ export default function ChartsPage() {
     <div className="space-y-4">
       <h1 className="text-lg font-medium">Trends</h1>
 
+      {/* ── KEY TRENDS ── */}
+      <ChartSection label="Key Trends">
+        <KeyTrends sessions={chartSessions || []} unit={unit} />
+      </ChartSection>
+
       {/* ── STRENGTH ── */}
       <ChartSection label="Strength">
         <section>
@@ -304,6 +310,17 @@ export default function ChartsPage() {
           <RirChart data={rirData} />
         </section>
       </ChartSection>
+
+      {/* ── EXPLAINER ── */}
+      <div className="border border-border rounded-lg p-4 text-xs text-muted space-y-2">
+        <p className="font-medium text-text">What is Est. 1RM?</p>
+        <p>
+          Estimated One-Rep Max predicts the maximum weight you could lift for a
+          single rep, calculated from your working sets using the Epley formula:
+          weight &times; (1 + reps &divide; 30). It tracks strength progress
+          without actually maxing out.
+        </p>
+      </div>
     </div>
   );
 }

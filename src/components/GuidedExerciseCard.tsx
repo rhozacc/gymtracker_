@@ -21,6 +21,7 @@ interface GuidedExerciseCardProps {
   onDone: () => void;
   onSkip: () => void;
   onStop: () => void;
+  onListView: () => void;
   onNameChange: (name: string) => void;
   onRestAnimationDone?: () => void;
 }
@@ -39,6 +40,7 @@ export function GuidedExerciseCard({
   onDone,
   onSkip,
   onStop,
+  onListView,
   onNameChange,
   onRestAnimationDone,
 }: GuidedExerciseCardProps) {
@@ -303,20 +305,27 @@ export function GuidedExerciseCard({
       </button>
 
       {/* Secondary actions */}
-      <div className="flex gap-6 mt-4">
+      <div className="flex gap-4 mt-4">
         <button
           onClick={onSkip}
           className="text-muted text-sm hover:text-accent transition-colors"
         >
-          Skip Exercise
+          Skip
         </button>
         <button
-          onClick={onStop}
-          className="text-red-400 text-sm hover:text-red-300 transition-colors"
+          onClick={onListView}
+          className="text-muted text-sm hover:text-accent transition-colors"
         >
-          Stop
+          List View
         </button>
       </div>
+
+      <button
+        onClick={onStop}
+        className="mt-4 px-4 py-1.5 border border-red-400 text-red-400 text-sm rounded hover:bg-red-400/10 transition-colors"
+      >
+        End Session
+      </button>
     </div>
   );
 }

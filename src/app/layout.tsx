@@ -6,15 +6,16 @@ import { SetupGuide } from "@/components/SetupGuide";
 import { Nav } from "@/components/Nav";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { NavVisibilityProvider } from "@/lib/useNavVisibility";
 
 export const metadata: Metadata = {
-  title: "Gym Tracker",
+  title: "gymtracker_",
   description: "Minimal gym tracker with progressive overload",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Gym Tracker",
+    title: "gymtracker_",
   },
 };
 
@@ -44,11 +45,13 @@ export default function RootLayout({
       <body className="min-h-screen bg-bg text-text antialiased">
         <ServiceWorkerRegistrar />
         {hasDb ? (
-          <PinGate>
-            <InstallPrompt />
-            <main className="max-w-lg mx-auto px-4 pt-4 pb-20">{children}</main>
-            <Nav />
-          </PinGate>
+          <NavVisibilityProvider>
+            <PinGate>
+              <InstallPrompt />
+              <main className="max-w-lg mx-auto px-4 pt-4 pb-20">{children}</main>
+              <Nav />
+            </PinGate>
+          </NavVisibilityProvider>
         ) : (
           <SetupGuide />
         )}

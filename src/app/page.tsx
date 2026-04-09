@@ -435,7 +435,7 @@ export default function Dashboard() {
       {/* ── Last Session ── */}
       {lastSession && (
         <div>
-          <SectionLabel>Last Session</SectionLabel>
+          <h2 className="text-lg font-medium mb-3">Last Session</h2>
           <Link
             href={`/history/${lastSession.id}`}
             className="block border border-border rounded p-3 hover:border-muted transition-colors"
@@ -461,7 +461,7 @@ export default function Dashboard() {
 
       {/* ── Start Session ── */}
       <div>
-        <SectionLabel>Start Session</SectionLabel>
+        <h2 className="text-lg font-medium mb-3">Up Next</h2>
         <div className="text-muted text-[10px] mb-2">
           Tap to select &middot; hold &amp; drag to reorder
         </div>
@@ -533,7 +533,7 @@ export default function Dashboard() {
 
       {/* ── Progress ── */}
       <div>
-        <SectionLabel>Progress</SectionLabel>
+        <h2 className="text-lg font-medium mb-3">Progress</h2>
 
         {sessions && sessions.length > 0 && (
           <div className="mb-4">

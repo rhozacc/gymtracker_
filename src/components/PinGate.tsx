@@ -9,7 +9,7 @@ import {
   wasEnrollmentDismissed,
   dismissEnrollment,
 } from "@/lib/webauthn";
-import { Welcome, useOnboarded } from "@/components/Welcome";
+import { Welcome, useOnboarded } from "@/components/welcome/Welcome";
 
 type Phase = "loading" | "biometric-attempt" | "pin" | "enroll-prompt";
 

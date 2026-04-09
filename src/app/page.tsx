@@ -49,22 +49,41 @@ function getNextDayType(
   return dayKeys[(lastIdx + 1) % dayKeys.length];
 }
 
-function getSavedDayOrder(planId: string, defaultKeys: string[]): string[] {
+function validateDayOrder(order: string[], defaultKeys: string[]): string[] | null {
+  if (
+    order.length === defaultKeys.length &&
+    defaultKeys.every((k) => order.includes(k))
+  ) {
+    return order;
+  }
+  return null;
+}
+
+function getSavedDayOrder(
+  planId: string,
+  defaultKeys: string[],
+  dbDayOrder?: Record<string, string[]>
+): string[] {
+  // DB is source of truth
+  if (dbDayOrder && dbDayOrder[planId]) {
+    const valid = validateDayOrder(dbDayOrder[planId], defaultKeys);
+    if (valid) return valid;
+  }
+  // Fallback to localStorage
   if (typeof window === "undefined") return defaultKeys;
   try {
     const saved = localStorage.getItem(DAY_ORDER_KEY(planId));
     if (saved) {
       const parsed = JSON.parse(saved) as string[];
-      // Validate: must have same keys
-      if (
-        parsed.length === defaultKeys.length &&
-        defaultKeys.every((k) => parsed.includes(k))
-      ) {
-        return parsed;
-      }
+      const valid = validateDayOrder(parsed, defaultKeys);
+      if (valid) return valid;
     }
   } catch {}
   return defaultKeys;
+}
+
+interface Preferences {
+  dayOrder?: Record<string, string[]>;
 }
 
 export default function Dashboard() {
@@ -74,16 +93,17 @@ export default function Dashboard() {
   const { data: sessions, error: sessionsError } =
     useSWR<SessionSummary[]>("/api/sessions", fetcher);
   const { data: volumeData } = useSWR("/api/volume/weekly", fetcher);
+  const { data: prefs, mutate: mutatePrefs } = useSWR<Preferences>("/api/preferences", fetcher);
 
   const defaultKeys = Object.keys(plan.days);
   const [dayKeys, setDayKeys] = useState<string[]>(() =>
     getSavedDayOrder(plan.id, defaultKeys)
   );
 
-  // Sync day keys when plan changes
+  // Sync day keys when plan changes or DB preferences load
   useEffect(() => {
-    setDayKeys(getSavedDayOrder(plan.id, Object.keys(plan.days)));
-  }, [plan]);
+    setDayKeys(getSavedDayOrder(plan.id, Object.keys(plan.days), prefs?.dayOrder as Record<string, string[]> | undefined));
+  }, [plan, prefs]);
 
   const streak = sessions ? calculateStreak(sessions) : 0;
   const lastSession = sessions?.[0];
@@ -165,7 +185,16 @@ export default function Dashboard() {
         const newKeys = [...prev];
         const [removed] = newKeys.splice(d, 1);
         newKeys.splice(o, 0, removed);
+        // Save to localStorage (fast cache)
         localStorage.setItem(DAY_ORDER_KEY(plan.id), JSON.stringify(newKeys));
+        // Save to DB (persistent)
+        const updatedDayOrder = { ...(prefs?.dayOrder as Record<string, string[]> || {}), [plan.id]: newKeys };
+        fetch("/api/preferences", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dayOrder: updatedDayOrder }),
+        });
+        mutatePrefs({ ...prefs, dayOrder: updatedDayOrder }, false);
         return newKeys;
       });
     }
@@ -298,10 +327,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {sessions && sessions.length > 0 && (
-        <StreakCalendar sessions={sessions} />
-      )}
-
       {lastSession && (
         <Link
           href={`/history/${lastSession.id}`}
@@ -390,6 +415,10 @@ export default function Dashboard() {
           })}
         </div>
       </div>
+
+      {sessions && sessions.length > 0 && (
+        <StreakCalendar sessions={sessions} />
+      )}
 
       <div>
         <div className="text-muted text-xs mb-3">

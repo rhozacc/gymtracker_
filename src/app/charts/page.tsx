@@ -346,13 +346,13 @@ export default function ChartsPage() {
       </ChartSection>
 
       {/* ── EXPLAINER ── */}
-      <div className="border border-border rounded-lg p-4 text-xs text-muted space-y-2">
-        <p className="font-medium text-text">What is Est. 1RM?</p>
-        <p>
-          Estimated One-Rep Max predicts the maximum weight you could lift for a
-          single rep, calculated from your working sets using the Epley formula:
-          weight &times; (1 + reps &divide; 30). It tracks strength progress
-          without actually maxing out.
+      <div className="border-t border-border pt-6 pb-24">
+        <h2 className="text-sm font-medium mb-2">What is Est. 1RM?</h2>
+        <p className="text-muted text-xs leading-relaxed">
+          <span className="text-accent font-medium">Estimated 1RM (one-rep max)</span> predicts
+          the maximum weight you could lift for a single rep, calculated from your working sets
+          using the Epley formula: weight &times; (1 + reps &divide; 30). It tracks strength
+          progress without actually maxing out.
         </p>
       </div>
     </div>

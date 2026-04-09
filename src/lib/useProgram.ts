@@ -43,7 +43,7 @@ interface Preferences {
 export function useProgram() {
   const [planSlug, setPlanSlugState] = useState<string>(getStoredPlanSlug);
   const { data: dbPlans, mutate } = useSWR<DbPlan[]>("/api/plans", fetcher);
-  const { data: prefs } = useSWR<Preferences>("/api/preferences", fetcher);
+  const { data: prefs, mutate: mutatePrefs } = useSWR<Preferences>("/api/preferences", fetcher);
 
   // Sync from DB preferences on load (DB is source of truth, localStorage is cache)
   const syncedFromDb = useMemo(() => {
@@ -75,13 +75,15 @@ export function useProgram() {
   const setPlan = useCallback((slug: string) => {
     localStorage.setItem(STORAGE_KEY, slug);
     setPlanSlugState(slug);
+    // Optimistically update prefs cache so effectiveSlug reflects the change immediately
+    mutatePrefs((prev) => ({ ...prev, activePlan: slug } as Preferences), false);
     // Persist to DB
     fetch("/api/preferences", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ activePlan: slug }),
     });
-  }, []);
+  }, [mutatePrefs]);
 
   const refreshPlans = useCallback(() => {
     mutate();

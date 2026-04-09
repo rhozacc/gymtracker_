@@ -1,4 +1,4 @@
-// Gym Tracker Service Worker
+// gymtracker_ Service Worker
 // Handles background rest-timer notifications and app shell caching
 
 const APP_VERSION = "1.0.0";

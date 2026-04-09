@@ -31,13 +31,13 @@ export const PLANS: Record<string, PlanDefinition> = {
   upper_lower: {
     id: "upper_lower",
     name: "Upper / Lower",
-    description: "3-day rotation: Upper A (strength), Lower A (strength), Upper B (hypertrophy)",
-    fit: "Good if you dropped from 4+ days to 3. Mixes strength and size work without overloading any single session.",
+    description: "4-day split: Upper Strength, Lower Strength, Upper Hypertrophic, Lower Hypertrophic",
+    fit: "Full upper/lower split with dedicated strength and hypertrophy days for each half. Hits each area twice a week at different intensities.",
     category: "men",
     goal: "bulk",
     days: {
       upper_a: {
-        label: "Day 1 — Upper A (strength)",
+        label: "Day 1 — Upper Strength",
         exercises: [
           { id: "bench_press", name: "Bench press", sets: 4, repRange: [4, 6], increment: 2.5, rest: 120 },
           { id: "seated_db_press", name: "Seated DB press", sets: 3, repRange: [8, 10], increment: 2.5, rest: 75 },
@@ -48,7 +48,7 @@ export const PLANS: Record<string, PlanDefinition> = {
         ],
       },
       lower_a: {
-        label: "Day 2 — Lower A (strength)",
+        label: "Day 2 — Lower Strength",
         exercises: [
           { id: "squat", name: "Low bar squat", sets: 4, repRange: [4, 6], increment: 2.5, rest: 120 },
           { id: "rdl", name: "Romanian deadlift", sets: 3, repRange: [8, 10], increment: 5, rest: 75 },
@@ -59,7 +59,7 @@ export const PLANS: Record<string, PlanDefinition> = {
         ],
       },
       upper_b: {
-        label: "Day 3 — Upper B (hypertrophy)",
+        label: "Day 3 — Upper Hypertrophic",
         exercises: [
           { id: "incline_db_press", name: "Incline DB press", sets: 4, repRange: [8, 10], increment: 2.5, rest: 75 },
           { id: "ohp", name: "Overhead press", sets: 3, repRange: [8, 10], increment: 2.5, rest: 75 },
@@ -68,6 +68,17 @@ export const PLANS: Record<string, PlanDefinition> = {
           { id: "lateral_raise", name: "Lateral raise", sets: 4, repRange: [12, 15], increment: 2.5, rest: 60 },
           { id: "biceps_curl", name: "Biceps curl", sets: 3, repRange: [10, 12], increment: 2.5, rest: 60 },
           { id: "triceps", name: "Triceps pushdown", sets: 3, repRange: [10, 12], increment: 2.5, rest: 60 },
+        ],
+      },
+      lower_b: {
+        label: "Day 4 — Lower Hypertrophic",
+        exercises: [
+          { id: "leg_press", name: "Leg press", sets: 4, repRange: [10, 12], increment: 5, rest: 75 },
+          { id: "rdl", name: "Romanian deadlift", sets: 3, repRange: [10, 12], increment: 5, rest: 75 },
+          { id: "walking_lunge", name: "Walking lunge", sets: 3, repRange: [10, 12], increment: 5, rest: 60 },
+          { id: "lying_curl", name: "Lying leg curl", sets: 4, repRange: [12, 15], increment: 2.5, rest: 60 },
+          { id: "leg_extension", name: "Leg extension", sets: 4, repRange: [12, 15], increment: 5, rest: 60 },
+          { id: "seated_calf_raise", name: "Seated calf raise", sets: 4, repRange: [12, 15], increment: 2.5, rest: 60 },
         ],
       },
     },

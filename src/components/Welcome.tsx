@@ -18,8 +18,8 @@ interface Preferences {
   unit: string;
 }
 
-type Step = "welcome" | "theme" | "unit" | "gender" | "goal" | "plan" | "extras" | "done";
-const STEPS: Step[] = ["welcome", "theme", "unit", "gender", "goal", "plan", "extras", "done"];
+type Step = "welcome" | "theme" | "unit" | "gender" | "goal" | "plan" | "extras" | "nav" | "done";
+const STEPS: Step[] = ["welcome", "theme", "unit", "gender", "goal", "plan", "extras", "nav", "done"];
 type Gender = "men" | "women";
 type Goal = "bulk" | "balanced" | "lean";
 
@@ -166,7 +166,7 @@ export function Welcome({ onDone }: { onDone: () => void }) {
               </svg>
             </div>
             <h1 className="text-2xl font-semibold text-text mb-2" style={{ animation: "welcome-text-in 0.6s ease-out 0.1s both" }}>
-              Gym Tracker
+              gymtracker_
             </h1>
             <p className="text-muted text-sm mb-10" style={{ animation: "welcome-text-in 0.6s ease-out 0.2s both" }}>
               Track sessions. Progressive overload. Stay consistent.
@@ -353,9 +353,38 @@ export function Welcome({ onDone }: { onDone: () => void }) {
               ))}
             </div>
 
-            <button onClick={() => next("done")} className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity">
+            <button onClick={() => next("nav")} className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity">
               {extras.abs || extras.cardio || extras.stretch ? "Continue" : "Skip for now"}
             </button>
+          </div>
+        )}
+
+        {/* Nav guide */}
+        {step === "nav" && (
+          <div>
+            <p className="text-[10px] uppercase tracking-widest text-muted mb-6 text-center">Step 7 of {totalSteps}</p>
+            <h2 className="text-lg font-medium text-text mb-2 text-center">Getting around</h2>
+            <p className="text-muted text-xs mb-6 text-center">Four tabs at the bottom — tap or swipe between them.</p>
+            <div className="space-y-2 mb-6">
+              {[
+                { label: "Home", letter: "H", desc: "Your streak, next workout & quick-start" },
+                { label: "Plan", letter: "P", desc: "Browse and switch training plans" },
+                { label: "Log", letter: "L", desc: "Your full session history" },
+                { label: "Trends", letter: "T", desc: "Charts, volume & progression data" },
+              ].map(({ label, letter, desc }) => (
+                <div key={label} className="flex items-center gap-4 p-3 rounded-lg border border-border text-left">
+                  <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+                    <span className="text-accent text-xs font-bold">{letter}</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{label}</p>
+                    <p className="text-xs text-muted">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted text-center mb-6">Swipe left or right anywhere to jump between tabs</p>
+            <button onClick={() => next("done")} className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity">Continue</button>
           </div>
         )}
 

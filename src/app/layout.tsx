@@ -7,13 +7,13 @@ import { Nav } from "@/components/Nav";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 
 export const metadata: Metadata = {
-  title: "Gym Tracker",
+  title: "gymtracker_",
   description: "Minimal gym tracker with progressive overload",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Gym Tracker",
+    title: "gymtracker_",
   },
 };
 

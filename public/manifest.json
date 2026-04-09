@@ -1,6 +1,6 @@
 {
-  "name": "Gym Tracker",
-  "short_name": "GymTracker",
+  "name": "gymtracker_",
+  "short_name": "gymtracker_",
   "description": "Minimal gym tracker with progressive overload",
   "start_url": "/",
   "display": "standalone",

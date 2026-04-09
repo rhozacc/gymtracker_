@@ -9,11 +9,21 @@ import {
   wasEnrollmentDismissed,
   dismissEnrollment,
 } from "@/lib/webauthn";
+import { Welcome, useOnboarded } from "@/components/Welcome";
 
 type Phase = "loading" | "biometric-attempt" | "pin" | "enroll-prompt";
 
 export function PinGate({ children }: { children: ReactNode }) {
   const [authed, setAuthed] = useState(false);
+  const { onboarded, checked: onboardChecked } = useOnboarded();
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  // Show welcome after auth if not onboarded
+  useEffect(() => {
+    if (authed && onboardChecked && !onboarded) {
+      setShowWelcome(true);
+    }
+  }, [authed, onboardChecked, onboarded]);
   const [phase, setPhase] = useState<Phase>("loading");
   const [pin, setPin] = useState(["", "", "", ""]);
   const [error, setError] = useState(false);
@@ -121,7 +131,12 @@ export function PinGate({ children }: { children: ReactNode }) {
   }
 
   if (authed) {
-    return <>{children}</>;
+    return (
+      <>
+        {showWelcome && <Welcome onDone={() => setShowWelcome(false)} />}
+        {children}
+      </>
+    );
   }
 
   // Loading state
@@ -154,12 +169,8 @@ export function PinGate({ children }: { children: ReactNode }) {
       <div className="min-h-screen bg-bg flex items-center justify-center">
         <div className="text-center max-w-xs px-4">
           <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent mx-auto mb-6">
-            <path d="M12 10V4a2 2 0 0 0-4 0v6" />
-            <path d="M18 8a6 6 0 0 1-12 0" />
-            <path d="M12 14a2 2 0 1 0 0 4" />
-            <path d="M6 12a6 6 0 0 0 12 0" />
-            <path d="M12 2a8 8 0 0 1 8 8" />
-            <path d="M4 10a8 8 0 0 1 2.5-5.5" />
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            <path d="M9 12l2 2 4-4" />
           </svg>
           <h1 className="text-accent text-lg font-medium mb-2">Enable Face ID?</h1>
           <p className="text-muted text-sm mb-8">

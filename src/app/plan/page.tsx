@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useProgram } from "@/lib/useProgram";
 import { useUnit } from "@/lib/useUnit";
+import { useExtras } from "@/lib/useExtras";
 import { PLANS, type Exercise } from "@/lib/program";
 import useSWR from "swr";
 import { fetcher } from "@/lib/swr";
@@ -226,6 +227,7 @@ type CategoryTab = "men" | "women" | "custom";
 export default function PlanPage() {
   const { planId, plan, setPlan, refreshPlans } = useProgram();
   const { unit, setUnit } = useUnit();
+  const { selectedExtras } = useExtras();
   const { data: rawPlans, mutate } = useSWR<DbPlanRaw[]>("/api/plans", fetcher);
   const dbPlans = rawPlans ? enrichPlans(rawPlans) : undefined;
 
@@ -307,6 +309,19 @@ export default function PlanPage() {
         </p>
       </div>
 
+      {/* Main / Extras toggle */}
+      <div className="flex gap-1 border border-border rounded-lg p-1">
+        <div className="flex-1 text-xs py-2 rounded-md text-center bg-surface text-accent font-medium">
+          Main
+        </div>
+        <Link
+          href="/plan/extras"
+          className="flex-1 text-xs py-2 rounded-md text-center text-muted hover:text-foreground transition-colors"
+        >
+          Extras
+        </Link>
+      </div>
+
       {/* Category Tabs */}
       <div className="flex gap-1 border border-border rounded-lg p-1">
         {tabs.map((t) => (
@@ -367,6 +382,33 @@ export default function PlanPage() {
         className="flex items-center justify-center w-full h-10 border border-dashed border-border rounded text-sm text-muted hover:border-muted hover:text-accent transition-colors"
       >
         + Create custom plan
+      </Link>
+
+      {/* Extras summary */}
+      <Link
+        href="/plan/extras"
+        className="block border border-border rounded-lg p-4 hover:border-muted transition-colors"
+      >
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-sm font-medium">Session Extras</h2>
+          <span className="text-xs text-muted">Edit →</span>
+        </div>
+        {selectedExtras.length > 0 ? (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {selectedExtras.map((ext) => (
+              <span
+                key={ext.id}
+                className="text-[10px] text-accent border border-accent/40 bg-accent/10 rounded-full px-2 py-0.5"
+              >
+                {ext.name} · {ext.duration}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted text-xs">
+            No extras selected. Add abs, cardio, or stretch blocks.
+          </p>
+        )}
       </Link>
 
       <div className="border-t border-border pt-6">

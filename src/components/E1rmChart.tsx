@@ -1,14 +1,16 @@
 "use client";
 
 import {
-  LineChart,
+  ComposedChart,
   Line,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
 import { type WeightUnit } from "@/lib/units";
+import { ChartTooltip } from "./ChartTooltip";
 
 interface DataPoint {
   date: string;
@@ -32,11 +34,19 @@ export function E1rmChartInner({
 
   return (
     <ResponsiveContainer width="100%" height={280}>
-      <LineChart data={data}>
+      <ComposedChart data={data}>
+        <defs>
+          <linearGradient id="e1rm-gradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--color-chart-line)" stopOpacity={0.2} />
+            <stop offset="100%" stopColor="var(--color-chart-line)" stopOpacity={0} />
+          </linearGradient>
+        </defs>
         <XAxis
           dataKey="date"
           stroke="var(--color-chart-axis)"
           fontSize={10}
+          axisLine={false}
+          tickLine={false}
           tickFormatter={(d) =>
             new Date(d).toLocaleDateString("en-US", {
               month: "short",
@@ -47,35 +57,39 @@ export function E1rmChartInner({
         <YAxis
           stroke="var(--color-chart-axis)"
           fontSize={10}
+          axisLine={false}
+          tickLine={false}
           unit={` ${unit}`}
         />
         <Tooltip
-          contentStyle={{
-            background: "var(--color-chart-tooltip-bg)",
-            border: "1px solid var(--color-chart-tooltip-border)",
-            borderRadius: "4px",
-            fontSize: "12px",
-          }}
-          labelFormatter={(d) =>
-            new Date(d).toLocaleDateString("en-US", {
-              weekday: "short",
-              month: "short",
-              day: "numeric",
-            })
+          content={
+            <ChartTooltip
+              formatValue={(v) => `${v.toFixed(1)} ${unit}`}
+            />
           }
-          formatter={(value: number) => [
-            `${value.toFixed(1)} ${unit}`,
-            "Est. 1RM",
-          ]}
+        />
+        <Area
+          type="monotone"
+          dataKey="e1rm"
+          fill="url(#e1rm-gradient)"
+          stroke="none"
+          isAnimationActive={true}
+          animationDuration={1200}
+          animationEasing="ease-out"
         />
         <Line
           type="monotone"
           dataKey="e1rm"
           stroke="var(--color-chart-line)"
           strokeWidth={2}
-          dot={{ fill: "var(--color-chart-line)", r: 3 }}
+          dot={false}
+          activeDot={false}
+          isAnimationActive={true}
+          animationDuration={1200}
+          animationEasing="ease-out"
+          name="Est. 1RM"
         />
-      </LineChart>
+      </ComposedChart>
     </ResponsiveContainer>
   );
 }

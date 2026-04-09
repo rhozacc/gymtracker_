@@ -10,6 +10,7 @@ import {
   Legend,
 } from "recharts";
 import { MUSCLE_GROUPS } from "@/lib/muscleGroups";
+import { ChartTooltip } from "./ChartTooltip";
 
 interface WeekData {
   week: string;
@@ -44,27 +45,29 @@ export function MuscleVolumeChartInner({ data }: { data: WeekData[] }) {
           tickFormatter={formatWeek}
           stroke="var(--color-chart-axis)"
           fontSize={10}
+          axisLine={false}
+          tickLine={false}
         />
         <YAxis
           stroke="var(--color-chart-axis)"
           fontSize={10}
+          axisLine={false}
+          tickLine={false}
           allowDecimals={false}
         />
         <Tooltip
           cursor={false}
-          contentStyle={{
-            background: "var(--color-chart-tooltip-bg)",
-            border: "1px solid var(--color-chart-tooltip-border)",
-            borderRadius: "4px",
-            fontSize: "12px",
-          }}
-          labelFormatter={formatWeek}
-          formatter={(value: number, name: string) => [
-            `${value} sets`,
-            name,
-          ]}
+          content={
+            <ChartTooltip
+              formatLabel={formatWeek}
+              formatValue={(v, name) => `${v} sets`}
+            />
+          }
         />
-        <Legend wrapperStyle={{ fontSize: "11px" }} />
+        <Legend
+          wrapperStyle={{ fontSize: "10px", color: "var(--color-muted)", letterSpacing: "0.05em" }}
+          iconType="circle"
+        />
         {MUSCLE_GROUPS.map((mg, i) => (
           <Bar
             key={mg}
@@ -73,8 +76,12 @@ export function MuscleVolumeChartInner({ data }: { data: WeekData[] }) {
             fill={BAR_VARS[i % BAR_VARS.length]}
             name={mg}
             radius={
-              i === MUSCLE_GROUPS.length - 1 ? [2, 2, 0, 0] : [0, 0, 0, 0]
+              i === MUSCLE_GROUPS.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]
             }
+            isAnimationActive={true}
+            animationDuration={800}
+            animationBegin={i * 100}
+            animationEasing="ease-out"
           />
         ))}
       </BarChart>

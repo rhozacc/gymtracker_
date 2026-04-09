@@ -42,6 +42,40 @@ model Debrief {
   createdAt DateTime @default(now())
 }
 
+model ExtrasConfig {
+  id      String  @id @default("default")
+  abs     String?
+  cardio  String?
+  stretch String?
+}
+
+model WebAuthnCredential {
+  id           String   @id @default(cuid())
+  credentialId String   @unique
+  publicKey    Bytes
+  counter      BigInt   @default(0)
+  transports   String[] @default([])
+  createdAt    DateTime @default(now())
+}
+
+model WebAuthnChallenge {
+  id        String   @id @default(cuid())
+  challenge String   @unique
+  type      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model UserPreferences {
+  id         String   @id @default("default")
+  onboarded  Boolean  @default(false)
+  activePlan String   @default("upper_lower")
+  theme      String   @default("dark")
+  unit       String   @default("kg")
+  dayOrder   Json     @default("{}")
+  updatedAt  DateTime @updatedAt
+}
+
 model Plan {
   id          String   @id @default(cuid())
   slug        String   @unique

@@ -8,6 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { ChartTooltip } from "./ChartTooltip";
 
 interface DataPoint {
   date: string;
@@ -30,6 +31,8 @@ export function DurationChartInner({ data }: { data: DataPoint[] }) {
           dataKey="date"
           stroke="var(--color-chart-axis)"
           fontSize={10}
+          axisLine={false}
+          tickLine={false}
           tickFormatter={(d) =>
             new Date(d).toLocaleDateString("en-US", {
               month: "short",
@@ -40,29 +43,26 @@ export function DurationChartInner({ data }: { data: DataPoint[] }) {
         <YAxis
           stroke="var(--color-chart-axis)"
           fontSize={10}
+          axisLine={false}
+          tickLine={false}
           unit=" min"
         />
         <Tooltip
           cursor={false}
-          contentStyle={{
-            background: "var(--color-chart-tooltip-bg)",
-            border: "1px solid var(--color-chart-tooltip-border)",
-            borderRadius: "4px",
-            fontSize: "12px",
-          }}
-          labelFormatter={(d) =>
-            new Date(d).toLocaleDateString("en-US", {
-              weekday: "short",
-              month: "short",
-              day: "numeric",
-            })
+          content={
+            <ChartTooltip
+              formatValue={(v) => `${v} min`}
+            />
           }
-          formatter={(value: number) => [`${value} min`, "Duration"]}
         />
         <Bar
           dataKey="minutes"
           fill="var(--color-chart-bar-1)"
-          radius={[2, 2, 0, 0]}
+          radius={[4, 4, 0, 0]}
+          isAnimationActive={true}
+          animationDuration={800}
+          animationEasing="ease-out"
+          name="Duration"
         />
       </BarChart>
     </ResponsiveContainer>

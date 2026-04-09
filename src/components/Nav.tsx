@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 
 const tabs = [
@@ -31,22 +31,95 @@ function BeamSweep({ onDone }: { onDone: () => void }) {
   );
 }
 
+function useSwipeNav() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const anchorX = useRef(0);
+  const touchStartY = useRef(0);
+  const currentIdx = useRef(0);
+  const swiping = useRef(false);
+  const [beam, setBeam] = useState(false);
+
+  const getCurrentIndex = useCallback(() => {
+    for (let i = 0; i < tabs.length; i++) {
+      const t = tabs[i];
+      if (t.href === "/" ? pathname === "/" : pathname.startsWith(t.href)) return i;
+    }
+    return 0;
+  }, [pathname]);
+
+  useEffect(() => {
+    const THRESHOLD = 50;
+
+    function onTouchStart(e: TouchEvent) {
+      anchorX.current = e.touches[0].clientX;
+      touchStartY.current = e.touches[0].clientY;
+      currentIdx.current = getCurrentIndex();
+      swiping.current = false;
+    }
+
+    function onTouchMove(e: TouchEvent) {
+      const dx = e.touches[0].clientX - anchorX.current;
+      const dy = e.touches[0].clientY - touchStartY.current;
+
+      // Lock to horizontal after initial movement
+      if (!swiping.current) {
+        if (Math.abs(dx) < 15 && Math.abs(dy) < 15) return;
+        swiping.current = Math.abs(dx) > Math.abs(dy);
+        if (!swiping.current) return;
+      }
+
+      // Continuous: each time we cross the threshold, advance one tab
+      if (Math.abs(dx) >= THRESHOLD) {
+        // Swipe right (positive dx) → go to next tab (higher index)
+        const next = dx > 0 ? currentIdx.current + 1 : currentIdx.current - 1;
+        if (next >= 0 && next < tabs.length && next !== currentIdx.current) {
+          currentIdx.current = next;
+          setBeam(true);
+          router.push(tabs[next].href);
+        }
+        // Reset anchor so the next threshold-crossing advances again
+        anchorX.current = e.touches[0].clientX;
+      }
+    }
+
+    document.addEventListener("touchstart", onTouchStart, { passive: true });
+    document.addEventListener("touchmove", onTouchMove, { passive: true });
+    return () => {
+      document.removeEventListener("touchstart", onTouchStart);
+      document.removeEventListener("touchmove", onTouchMove);
+    };
+  }, [getCurrentIndex, router]);
+
+  return { beam, clearBeam: () => setBeam(false) };
+}
+
 export function Nav() {
   const pathname = usePathname();
-  const [beam, setBeam] = useState(false);
+  const [tapBeam, setTapBeam] = useState(false);
+  const { beam: swipeBeam, clearBeam } = useSwipeNav();
 
   const handleTap = useCallback(
     (href: string) => {
       const isActive =
         href === "/" ? pathname === "/" : pathname.startsWith(href);
-      if (!isActive) setBeam(true);
+      if (!isActive) setTapBeam(true);
     },
     [pathname]
   );
 
+  const showBeam = tapBeam || swipeBeam;
+
   return (
     <>
-      {beam && <BeamSweep onDone={() => setBeam(false)} />}
+      {showBeam && (
+        <BeamSweep
+          onDone={() => {
+            setTapBeam(false);
+            clearBeam();
+          }}
+        />
+      )}
       <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
         <div className="flex items-center bg-surface border border-border rounded-full p-1.5 gap-0.5 shadow-lg shadow-black/10">
           {tabs.map((tab) => {

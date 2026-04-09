@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { getDayShortLabel } from "@/lib/program";
 import { type WeightUnit, kgToDisplay } from "@/lib/units";
+import { ChartTooltip } from "./ChartTooltip";
 
 interface WeekData {
   week: string;
@@ -32,7 +33,6 @@ function formatWeek(w: string) {
 }
 
 export function VolumeChartInner({ data, unit = "kg" }: { data: WeekData[]; unit?: WeightUnit }) {
-  // Discover all dayType keys from the data
   const dayTypes = Array.from(
     new Set(
       data.flatMap((d) =>
@@ -49,20 +49,29 @@ export function VolumeChartInner({ data, unit = "kg" }: { data: WeekData[]; unit
           tickFormatter={formatWeek}
           stroke="var(--color-chart-axis)"
           fontSize={10}
+          axisLine={false}
+          tickLine={false}
         />
-        <YAxis stroke="var(--color-chart-axis)" fontSize={10} tickFormatter={(v) => `${Math.round(kgToDisplay(v, unit) / 1000)}k`} />
+        <YAxis
+          stroke="var(--color-chart-axis)"
+          fontSize={10}
+          axisLine={false}
+          tickLine={false}
+          tickFormatter={(v) => `${Math.round(kgToDisplay(v, unit) / 1000)}k`}
+        />
         <Tooltip
           cursor={false}
-          contentStyle={{
-            background: "var(--color-chart-tooltip-bg)",
-            border: "1px solid var(--color-chart-tooltip-border)",
-            borderRadius: "4px",
-            fontSize: "12px",
-          }}
-          labelFormatter={formatWeek}
-          formatter={(value: number) => [`${Math.round(kgToDisplay(value, unit))} ${unit}`]}
+          content={
+            <ChartTooltip
+              formatLabel={formatWeek}
+              formatValue={(v) => `${Math.round(kgToDisplay(v, unit))} ${unit}`}
+            />
+          }
         />
-        <Legend wrapperStyle={{ fontSize: "11px" }} />
+        <Legend
+          wrapperStyle={{ fontSize: "10px", color: "var(--color-muted)", letterSpacing: "0.05em" }}
+          iconType="circle"
+        />
         {dayTypes.map((dt, i) => (
           <Bar
             key={dt}
@@ -70,7 +79,11 @@ export function VolumeChartInner({ data, unit = "kg" }: { data: WeekData[]; unit
             stackId="vol"
             fill={BAR_VARS[i % BAR_VARS.length]}
             name={getDayShortLabel(dt)}
-            radius={i === dayTypes.length - 1 ? [2, 2, 0, 0] : [0, 0, 0, 0]}
+            radius={i === dayTypes.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+            isAnimationActive={true}
+            animationDuration={800}
+            animationBegin={i * 100}
+            animationEasing="ease-out"
           />
         ))}
       </BarChart>

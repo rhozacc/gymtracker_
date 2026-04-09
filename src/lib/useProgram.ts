@@ -36,9 +36,28 @@ function dbPlanToDefinition(p: DbPlan): PlanDefinition {
   };
 }
 
+interface Preferences {
+  activePlan: string;
+}
+
 export function useProgram() {
   const [planSlug, setPlanSlugState] = useState<string>(getStoredPlanSlug);
   const { data: dbPlans, mutate } = useSWR<DbPlan[]>("/api/plans", fetcher);
+  const { data: prefs } = useSWR<Preferences>("/api/preferences", fetcher);
+
+  // Sync from DB preferences on load (DB is source of truth, localStorage is cache)
+  const syncedFromDb = useMemo(() => {
+    if (!prefs?.activePlan) return false;
+    const dbSlug = prefs.activePlan;
+    const localSlug = getStoredPlanSlug();
+    if (dbSlug !== localSlug) {
+      localStorage.setItem(STORAGE_KEY, dbSlug);
+    }
+    return dbSlug;
+  }, [prefs]);
+
+  // Use DB value once available, otherwise localStorage
+  const effectiveSlug = syncedFromDb || planSlug;
 
   // Build plan registry from DB data
   const plans: Record<string, PlanDefinition> = useMemo(() => {
@@ -51,16 +70,22 @@ export function useProgram() {
     return map;
   }, [dbPlans]);
 
-  const plan: PlanDefinition = plans[planSlug] || plans[DEFAULT_PLAN] || PLANS[DEFAULT_PLAN];
+  const plan: PlanDefinition = plans[effectiveSlug] || plans[DEFAULT_PLAN] || PLANS[DEFAULT_PLAN];
 
   const setPlan = useCallback((slug: string) => {
     localStorage.setItem(STORAGE_KEY, slug);
     setPlanSlugState(slug);
+    // Persist to DB
+    fetch("/api/preferences", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ activePlan: slug }),
+    });
   }, []);
 
   const refreshPlans = useCallback(() => {
     mutate();
   }, [mutate]);
 
-  return { planId: planSlug, plan, plans, setPlan, refreshPlans, isLoading: !dbPlans };
+  return { planId: effectiveSlug, plan, plans, setPlan, refreshPlans, isLoading: !dbPlans };
 }

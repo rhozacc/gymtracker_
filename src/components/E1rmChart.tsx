@@ -83,7 +83,7 @@ export function E1rmChartInner({
           stroke="var(--color-chart-line)"
           strokeWidth={2}
           dot={false}
-          activeDot={{ r: 4, fill: "var(--color-chart-line)", stroke: "var(--color-bg)", strokeWidth: 2 }}
+          activeDot={false}
           isAnimationActive={true}
           animationDuration={1200}
           animationEasing="ease-out"

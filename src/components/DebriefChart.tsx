@@ -104,7 +104,7 @@ export function DebriefChartInner({ data }: { data: DataPoint[] }) {
           stroke="var(--color-chart-line)"
           strokeWidth={2}
           dot={false}
-          activeDot={{ r: 4, fill: "var(--color-chart-line)", stroke: "var(--color-bg)", strokeWidth: 2 }}
+          activeDot={false}
           isAnimationActive={true}
           animationDuration={1200}
           animationEasing="ease-out"
@@ -116,7 +116,7 @@ export function DebriefChartInner({ data }: { data: DataPoint[] }) {
           stroke="var(--color-chart-line-2)"
           strokeWidth={2}
           dot={false}
-          activeDot={{ r: 4, fill: "var(--color-chart-line-2)", stroke: "var(--color-bg)", strokeWidth: 2 }}
+          activeDot={false}
           isAnimationActive={true}
           animationDuration={1200}
           animationEasing="ease-out"
@@ -128,7 +128,7 @@ export function DebriefChartInner({ data }: { data: DataPoint[] }) {
           stroke="var(--color-chart-line-3)"
           strokeWidth={2}
           dot={false}
-          activeDot={{ r: 4, fill: "var(--color-chart-line-3)", stroke: "var(--color-bg)", strokeWidth: 2 }}
+          activeDot={false}
           isAnimationActive={true}
           animationDuration={1200}
           animationEasing="ease-out"

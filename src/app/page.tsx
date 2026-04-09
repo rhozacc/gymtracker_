@@ -287,17 +287,10 @@ export default function Dashboard() {
               title={bioEnabled ? "Biometric login enabled" : "Enable biometric login"}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 10V4a2 2 0 0 0-4 0v6" />
-                <path d="M18 8a6 6 0 0 1-12 0" />
-                <path d="M12 14a2 2 0 1 0 0 4" />
-                <path d="M6 12a6 6 0 0 0 12 0" />
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
             </button>
           )}
-          <div>
-            <h1 className="text-xl font-medium">Gym Tracker</h1>
-            <span className="text-muted text-xs">{plan.name}</span>
-          </div>
         </div>
         <div className="text-right">
           <span className="text-3xl font-bold">{streak}</span>

@@ -60,7 +60,7 @@ export function VolumeChartInner({ data, unit = "kg" }: { data: WeekData[]; unit
           tickFormatter={(v) => `${Math.round(kgToDisplay(v, unit) / 1000)}k`}
         />
         <Tooltip
-          cursor={{ fill: "var(--color-accent)", fillOpacity: 0.04 }}
+          cursor={false}
           content={
             <ChartTooltip
               formatLabel={formatWeek}

@@ -66,6 +66,15 @@ model WebAuthnChallenge {
   createdAt DateTime @default(now())
 }
 
+model UserPreferences {
+  id         String   @id @default("default")
+  onboarded  Boolean  @default(false)
+  activePlan String   @default("upper_lower")
+  theme      String   @default("dark")
+  unit       String   @default("kg")
+  updatedAt  DateTime @updatedAt
+}
+
 model Plan {
   id          String   @id @default(cuid())
   slug        String   @unique

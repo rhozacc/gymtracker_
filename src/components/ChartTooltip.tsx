@@ -31,7 +31,7 @@ export function ChartTooltip({
   if (!active || !payload?.length) return null;
 
   return (
-    <div className="rounded-lg border border-border bg-surface/95 chart-tooltip px-3 py-2 shadow-lg">
+    <div className="rounded-lg border border-border bg-surface px-3 py-2 shadow-lg">
       <p className="text-[10px] uppercase tracking-wide text-muted mb-1">
         {formatLabel(label ?? "")}
       </p>

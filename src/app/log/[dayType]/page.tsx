@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { checkOverload, OverloadResult } from "@/lib/overload";
 import { useProgram } from "@/lib/useProgram";
 import { useUnit } from "@/lib/useUnit";
@@ -38,6 +38,7 @@ interface ExerciseState {
 export default function LogPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const { plan, planId, refreshPlans } = useProgram();
   const { unit } = useUnit();
   const dayType = params.dayType as string;
@@ -58,6 +59,7 @@ export default function LogPage() {
   // Guided mode state
   const [guidedMode, setGuidedMode] = useState(false);
   const [wasGuidedMode, setWasGuidedMode] = useState(false);
+  const [guidedCompleted, setGuidedCompleted] = useState(false);
   const [showEndModal, setShowEndModal] = useState(false);
   const { initAudio } = useBeep();
   const { requestPermission } = useBackgroundNotification();
@@ -86,6 +88,14 @@ export default function LogPage() {
 
   const hideToast = useCallback(() => setToast(false), []);
   const increments = getIncrements(unit);
+
+  // Auto-start guided mode if ?guided=true
+  useEffect(() => {
+    if (searchParams.get("guided") === "true") {
+      setGuidedMode(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Check for a backup from a crashed session on mount
   useEffect(() => {
@@ -292,6 +302,7 @@ export default function LogPage() {
     }
     setGuidedMode(false);
     setWasGuidedMode(true);
+    setGuidedCompleted(true);
     // Backup stays until the user confirms save
   }
 
@@ -299,6 +310,7 @@ export default function LogPage() {
     setGuidedExtrasMode(false);
     setGuidedMode(false);
     setWasGuidedMode(true);
+    setGuidedCompleted(true);
   }
 
   function handleListView() {
@@ -467,7 +479,7 @@ export default function LogPage() {
       )}
 
       <div>
-        {!wasGuidedMode && (
+        {!wasGuidedMode && !guidedMode && (
           <button
             onClick={() => router.back()}
             className="text-muted text-sm mb-2 hover:text-accent"
@@ -476,6 +488,14 @@ export default function LogPage() {
           </button>
         )}
         <h1 className="text-lg font-medium">{day.label}</h1>
+        {guidedMode && (
+          <button
+            onClick={handleListView}
+            className="text-muted text-xs mt-1 hover:text-accent transition-colors"
+          >
+            Show List View
+          </button>
+        )}
       </div>
 
       {guidedMode ? (
@@ -488,21 +508,22 @@ export default function LogPage() {
           updateSet={updateSet}
           onFinish={handleGuidedFinish}
           onStop={() => setShowEndModal(true)}
-          onListView={handleListView}
         />
       ) : (
         <>
-          {/* Continue Guided Session button (only after switching from guided to list view) */}
-          {wasGuidedMode && (
-            <button
-              onClick={() => {
-                setWasGuidedMode(false);
-                setGuidedMode(true);
-              }}
-              className="w-full h-10 border border-accent text-accent text-sm rounded hover:bg-accent/10 transition-colors"
-            >
-              Continue Guided Session
-            </button>
+          {/* Continue Guided Session — sticky top, only when not yet completed */}
+          {wasGuidedMode && !guidedCompleted && (
+            <div className="sticky top-0 z-40">
+              <button
+                onClick={() => {
+                  setWasGuidedMode(false);
+                  setGuidedMode(true);
+                }}
+                className="w-full h-14 bg-accent text-bg font-medium rounded-lg text-base hover:opacity-90 transition-opacity"
+              >
+                Continue Guided Session
+              </button>
+            </div>
           )}
 
           {/* Review / standard edit view */}
@@ -595,7 +616,15 @@ export default function LogPage() {
             />
           </div>
 
-          {wasGuidedMode ? (
+          {guidedCompleted ? (
+            <button
+              onClick={finish}
+              disabled={saving}
+              className="w-full h-12 bg-accent text-bg font-medium rounded text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              {saving ? "Saving..." : "Record Session"}
+            </button>
+          ) : wasGuidedMode ? (
             <button
               onClick={() => setShowEndModal(true)}
               className="w-full h-12 border border-red-400 text-red-400 font-medium rounded text-sm hover:bg-red-400/10 transition-colors"
@@ -614,37 +643,6 @@ export default function LogPage() {
         </>
       )}
 
-      {/* Start Guided Session button — only shown when not in guided mode */}
-      {!guidedMode && (
-        <div className="fixed bottom-14 left-0 right-0 z-40 px-4 pb-4 pt-3 bg-surface border-t border-border animate-slide-up">
-          <div className="max-w-lg mx-auto">
-            <button
-              onClick={() => {
-                initAudio();
-                requestPermission();
-                // Write initial backup before guided mode starts
-                const backup: BackupData = {
-                  dayType,
-                  startedAt: startedAtRef.current,
-                  exercises,
-                };
-                try {
-                  localStorage.setItem(BACKUP_KEY, JSON.stringify(backup));
-                } catch {
-                  // ignore
-                }
-                setGuidedMode(true);
-              }}
-              className="w-full h-14 bg-accent text-bg font-medium rounded-lg text-base hover:opacity-90 transition-opacity"
-            >
-              Start Guided Session
-            </button>
-            <p className="text-muted text-xs text-center mt-2">
-              Step-by-step with rest timers
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* End session confirmation modal */}
       {showEndModal && (

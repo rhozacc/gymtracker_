@@ -10,6 +10,8 @@ import { OverloadBanner } from "@/components/OverloadBanner";
 interface GuidedExerciseCardProps {
   exercise: Exercise;
   exerciseName: string; // may be overridden by parent
+  exerciseIndex: number;
+  totalExercises: number;
   setIndex: number;
   totalSets: number;
   setData: SetInput;
@@ -21,7 +23,6 @@ interface GuidedExerciseCardProps {
   onDone: () => void;
   onSkip: () => void;
   onStop: () => void;
-  onListView: () => void;
   onNameChange: (name: string) => void;
   onRestAnimationDone?: () => void;
 }
@@ -29,6 +30,8 @@ interface GuidedExerciseCardProps {
 export function GuidedExerciseCard({
   exercise,
   exerciseName,
+  exerciseIndex,
+  totalExercises,
   setIndex,
   totalSets,
   setData,
@@ -40,7 +43,6 @@ export function GuidedExerciseCard({
   onDone,
   onSkip,
   onStop,
-  onListView,
   onNameChange,
   onRestAnimationDone,
 }: GuidedExerciseCardProps) {
@@ -48,6 +50,7 @@ export function GuidedExerciseCard({
   const [tempWeight, setTempWeight] = useState(setData.weight);
   const [tempName, setTempName] = useState(exerciseName);
   const [greenFlash, setGreenFlash] = useState(false);
+  const [confirmSkip, setConfirmSkip] = useState(false);
 
   // Sync tempName if exerciseName changes externally
   useEffect(() => {
@@ -194,7 +197,7 @@ export function GuidedExerciseCard({
       }`}
     >
       {/* Header */}
-      <p className="text-muted text-xs uppercase tracking-wide">Current Exercise</p>
+      <p className="text-muted text-xs uppercase tracking-wide">Exercise {exerciseIndex + 1}/{totalExercises}</p>
 
       {/* Exercise name with edit icon */}
       <div className="flex items-center gap-2 mt-1">
@@ -215,12 +218,12 @@ export function GuidedExerciseCard({
         </button>
       </div>
 
-      {/* Set info — bigger font */}
+      {/* Set info */}
       <p className="text-muted text-lg font-medium mt-1">
-        Set {setIndex + 1} of {totalSets}
-        <span className="text-sm font-normal ml-2 opacity-70">
-          · {exercise.repRange[0]}–{exercise.repRange[1]} reps
-        </span>
+        Set {setIndex + 1}/{totalSets}
+      </p>
+      <p className="text-muted text-sm opacity-70">
+        {exercise.repRange[0]}–{exercise.repRange[1]} reps
       </p>
 
       {overload && overload.lastWeight > 0 && (
@@ -304,21 +307,30 @@ export function GuidedExerciseCard({
         Done
       </button>
 
-      {/* Secondary actions */}
-      <div className="flex gap-4 mt-4">
+      {/* Skip button */}
+      {confirmSkip ? (
+        <div className="mt-4 flex gap-2">
+          <button
+            onClick={() => { setConfirmSkip(false); onSkip(); }}
+            className="px-4 py-1.5 border border-border text-muted text-sm rounded hover:border-accent hover:text-accent transition-colors"
+          >
+            Confirm skip
+          </button>
+          <button
+            onClick={() => setConfirmSkip(false)}
+            className="px-4 py-1.5 text-muted text-sm hover:text-accent transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      ) : (
         <button
-          onClick={onSkip}
-          className="text-muted text-sm hover:text-accent transition-colors"
+          onClick={() => setConfirmSkip(true)}
+          className="mt-4 px-4 py-1.5 border border-border text-muted text-sm rounded hover:border-accent hover:text-accent transition-colors"
         >
           Skip
         </button>
-        <button
-          onClick={onListView}
-          className="text-muted text-sm hover:text-accent transition-colors"
-        >
-          List View
-        </button>
-      </div>
+      )}
 
       <button
         onClick={onStop}

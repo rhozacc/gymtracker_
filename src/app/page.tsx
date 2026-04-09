@@ -524,7 +524,7 @@ export default function Dashboard() {
           })}
         </div>
         <button
-          onClick={() => router.push(`/log/${effectiveSelected}`)}
+          onClick={() => router.push(`/log/${effectiveSelected}?guided=true`)}
           className="w-full h-12 mt-3 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity"
         >
           Start {getDayLabel(effectiveSelected)} Session

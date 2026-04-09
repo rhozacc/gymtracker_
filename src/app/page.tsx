@@ -506,14 +506,14 @@ export default function Dashboard() {
                     isSelected
                       ? "border-accent bg-accent/5"
                       : "border-border hover:border-muted"
-                  } ${isNext && !isSelected ? "animate-pulse-border" : ""}`}
+                  } ${isSelected ? "animate-pulse-border" : ""}`}
                   draggable={false}
                 >
                   {day.label}
                   <span className="text-muted ml-2 text-xs">
                     {day.exercises.length} exercises
                   </span>
-                  {isNext && (
+                  {isSelected && (
                     <span className="text-accent text-xs ml-2 font-medium">
                       Next up
                     </span>

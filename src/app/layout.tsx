@@ -5,6 +5,7 @@ import { PinGate } from "@/components/PinGate";
 import { SetupGuide } from "@/components/SetupGuide";
 import { Nav } from "@/components/Nav";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 export const metadata: Metadata = {
   title: "Gym Tracker",
@@ -44,6 +45,7 @@ export default function RootLayout({
         <ServiceWorkerRegistrar />
         {hasDb ? (
           <PinGate>
+            <InstallPrompt />
             <main className="max-w-lg mx-auto px-4 pt-4 pb-20">{children}</main>
             <Nav />
           </PinGate>

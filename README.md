@@ -1,6 +1,6 @@
 # Gym Tracker
 
-Personal gym tracker with progressive overload detection. Dark, mobile-first, PIN-protected.
+Personal gym tracker with progressive overload detection. Dark, mobile-first.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/rhozacc/gymtracker_&env=APP_PIN&envDescription=4-digit+PIN+to+protect+your+app&project-name=gymtracker)
 

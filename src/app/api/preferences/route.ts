@@ -28,13 +28,14 @@ export async function GET() {
 export async function PUT(req: Request) {
   try {
     const body = await req.json();
-    const { onboarded, activePlan, theme, unit } = body;
+    const { onboarded, activePlan, theme, unit, dayOrder } = body;
 
     const data: Record<string, unknown> = {};
     if (onboarded !== undefined) data.onboarded = onboarded;
     if (activePlan !== undefined) data.activePlan = activePlan;
     if (theme !== undefined) data.theme = theme;
     if (unit !== undefined) data.unit = unit;
+    if (dayOrder !== undefined) data.dayOrder = dayOrder;
 
     const prefs = await prisma.userPreferences.upsert({
       where: { id: DEFAULT_ID },

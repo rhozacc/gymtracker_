@@ -49,7 +49,7 @@ function useSwipeNav() {
   }, [pathname]);
 
   useEffect(() => {
-    const THRESHOLD = 80;
+    const THRESHOLD = 50;
 
     function onTouchStart(e: TouchEvent) {
       anchorX.current = e.touches[0].clientX;
@@ -71,8 +71,8 @@ function useSwipeNav() {
 
       // Continuous: each time we cross the threshold, advance one tab
       if (Math.abs(dx) >= THRESHOLD) {
-        // Swipe right (positive dx) → go to previous tab (lower index)
-        const next = dx > 0 ? currentIdx.current - 1 : currentIdx.current + 1;
+        // Swipe right (positive dx) → go to next tab (higher index)
+        const next = dx > 0 ? currentIdx.current + 1 : currentIdx.current - 1;
         if (next >= 0 && next < tabs.length && next !== currentIdx.current) {
           currentIdx.current = next;
           setBeam(true);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/swr";
 import { PLANS, type PlanDefinition } from "@/lib/program";
@@ -18,15 +18,22 @@ interface Preferences {
   unit: string;
 }
 
-type Step = "welcome" | "theme" | "unit" | "plan" | "extras" | "done";
-const STEPS: Step[] = ["welcome", "theme", "unit", "plan", "extras", "done"];
+type Step = "welcome" | "theme" | "unit" | "gender" | "goal" | "plan" | "extras" | "done";
+const STEPS: Step[] = ["welcome", "theme", "unit", "gender", "goal", "plan", "extras", "done"];
+type Gender = "men" | "women";
+type Goal = "bulk" | "balanced" | "lean";
+
+const GOAL_INFO: Record<Goal, { label: string; desc: string }> = {
+  bulk: { label: "Bulk", desc: "Build size & strength" },
+  balanced: { label: "Balanced", desc: "Well-rounded training" },
+  lean: { label: "Lean", desc: "Cut & define" },
+};
 
 export function useOnboarded() {
-  const { data, isLoading, mutate } = useSWR<Preferences>("/api/preferences", fetcher);
+  const { data, isLoading } = useSWR<Preferences>("/api/preferences", fetcher);
   return {
-    onboarded: data?.onboarded ?? true, // default true to avoid flash
+    onboarded: data?.onboarded ?? true,
     checked: !isLoading,
-    mutate,
   };
 }
 
@@ -46,24 +53,15 @@ async function saveExtras(selection: ExtrasSelection) {
   });
 }
 
-// Group plans by goal for display
-const plansByGoal = (plans: PlanDefinition[], category: "men" | "women") => {
-  const filtered = plans.filter((p) => p.category === category);
-  const groups: Record<string, PlanDefinition[]> = {};
-  for (const p of filtered) {
-    const g = p.goal || "other";
-    if (!groups[g]) groups[g] = [];
-    groups[g].push(p);
-  }
-  return groups;
-};
+function getRecommended(gender: Gender, goal: Goal): PlanDefinition[] {
+  return Object.values(PLANS).filter(
+    (p) => p.category === gender && p.goal === goal
+  );
+}
 
-const GOAL_LABELS: Record<string, string> = {
-  bulk: "Bulk",
-  balanced: "Balanced",
-  lean: "Lean",
-  other: "Other",
-};
+function getAllForGender(gender: Gender): PlanDefinition[] {
+  return Object.values(PLANS).filter((p) => p.category === gender);
+}
 
 export function Welcome({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState<Step>("welcome");
@@ -72,12 +70,13 @@ export function Welcome({ onDone }: { onDone: () => void }) {
     return (document.documentElement.getAttribute("data-theme") as "dark" | "light") || "dark";
   });
   const [unit, setUnit] = useState<"kg" | "lbs">("kg");
+  const [gender, setGender] = useState<Gender>("men");
+  const [goal, setGoal] = useState<Goal>("balanced");
   const [selectedPlan, setSelectedPlan] = useState("upper_lower");
-  const [planTab, setPlanTab] = useState<"men" | "women">("men");
+  const [showAllPlans, setShowAllPlans] = useState(false);
   const [extras, setExtras] = useState<ExtrasSelection>({ abs: null, cardio: null, stretch: null });
+  const [extraTab, setExtraTab] = useState<ExtraCategory>("abs");
   const [fade, setFade] = useState(false);
-
-  const allPlans = Object.values(PLANS);
 
   function applyTheme(t: "dark" | "light") {
     setTheme(t);
@@ -102,12 +101,12 @@ export function Welcome({ onDone }: { onDone: () => void }) {
     setTimeout(() => {
       setStep(nextStep);
       setFade(false);
+      setShowAllPlans(false);
     }, 300);
   }
 
   async function finish() {
     setFade(true);
-    // Save everything to DB
     await Promise.all([
       savePrefs({ onboarded: true, activePlan: selectedPlan, theme, unit }),
       saveExtras(extras),
@@ -116,17 +115,39 @@ export function Welcome({ onDone }: { onDone: () => void }) {
     setTimeout(() => onDone(), 400);
   }
 
-  const totalSteps = STEPS.length - 2; // exclude welcome and done from count
+  const totalSteps = STEPS.length - 2;
+  const stepNum = STEPS.indexOf(step); // 0=welcome, 7=done
+
+  const recommended = getRecommended(gender, goal);
+  const allPlans = getAllForGender(gender);
+
+  function PlanCard({ p }: { p: PlanDefinition }) {
+    return (
+      <button
+        key={p.id}
+        onClick={() => setSelectedPlan(p.id)}
+        className={`w-full text-left p-3 rounded-lg border-2 mb-2 transition-all duration-200 ${
+          selectedPlan === p.id
+            ? "border-accent bg-accent/5"
+            : "border-border hover:border-muted"
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium">{p.name}</span>
+          <span className="text-[10px] text-muted">
+            {Object.keys(p.days).length} days
+          </span>
+        </div>
+        <p className="text-muted text-xs mt-1">{p.description}</p>
+      </button>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[300] bg-bg flex items-center justify-center overflow-hidden">
-      {/* Animated accent glow */}
       <div
         className="absolute w-64 h-64 rounded-full opacity-10 blur-3xl"
-        style={{
-          background: "var(--color-accent)",
-          animation: "welcome-pulse 4s ease-in-out infinite",
-        }}
+        style={{ background: "var(--color-accent)", animation: "welcome-pulse 4s ease-in-out infinite" }}
       />
 
       <div
@@ -134,291 +155,222 @@ export function Welcome({ onDone }: { onDone: () => void }) {
           fade ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"
         }`}
       >
-        {/* Step: Welcome */}
+        {/* Welcome */}
         {step === "welcome" && (
           <div className="text-center">
             <div className="mb-8" style={{ animation: "welcome-icon-in 0.6s ease-out" }}>
-              <svg
-                width="64"
-                height="64"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="var(--color-accent)"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mx-auto"
-              >
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto">
                 <path d="M6.5 6.5a3.5 3.5 0 1 0 7 0 3.5 3.5 0 0 0-7 0Z" />
                 <path d="M1.5 20.4a6.5 6.5 0 0 1 13 0" />
                 <path d="M16 15l2 2 4-4" />
               </svg>
             </div>
-            <h1
-              className="text-2xl font-semibold text-text mb-2"
-              style={{ animation: "welcome-text-in 0.6s ease-out 0.1s both" }}
-            >
+            <h1 className="text-2xl font-semibold text-text mb-2" style={{ animation: "welcome-text-in 0.6s ease-out 0.1s both" }}>
               Gym Tracker
             </h1>
-            <p
-              className="text-muted text-sm mb-10"
-              style={{ animation: "welcome-text-in 0.6s ease-out 0.2s both" }}
-            >
+            <p className="text-muted text-sm mb-10" style={{ animation: "welcome-text-in 0.6s ease-out 0.2s both" }}>
               Track sessions. Progressive overload. Stay consistent.
             </p>
-            <button
-              onClick={() => next("theme")}
-              className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity"
-              style={{ animation: "welcome-text-in 0.6s ease-out 0.3s both" }}
-            >
+            <button onClick={() => next("theme")} className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity" style={{ animation: "welcome-text-in 0.6s ease-out 0.3s both" }}>
               Get started
             </button>
           </div>
         )}
 
-        {/* Step: Theme */}
+        {/* Theme */}
         {step === "theme" && (
           <div className="text-center">
-            <p className="text-[10px] uppercase tracking-widest text-muted mb-6">
-              Step 1 of {totalSteps}
-            </p>
+            <p className="text-[10px] uppercase tracking-widest text-muted mb-6">Step 1 of {totalSteps}</p>
             <h2 className="text-lg font-medium text-text mb-2">Pick your vibe</h2>
             <p className="text-muted text-xs mb-8">You can change this later</p>
             <div className="flex gap-3 mb-10">
-              <button
-                onClick={() => applyTheme("dark")}
-                className={`flex-1 aspect-[3/4] rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-3 ${
-                  theme === "dark"
-                    ? "border-accent bg-accent/5 scale-[1.02]"
-                    : "border-border hover:border-muted"
-                }`}
-              >
+              <button onClick={() => applyTheme("dark")} className={`flex-1 aspect-[3/4] rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-3 ${theme === "dark" ? "border-accent bg-accent/5 scale-[1.02]" : "border-border hover:border-muted"}`}>
                 <div className="w-10 h-10 rounded-full bg-[#0a0a0a] border border-[#222] flex items-center justify-center">
                   <span className="text-[#39ff14] text-lg">{"\u25CF"}</span>
                 </div>
-                <span className={`text-xs font-medium ${theme === "dark" ? "text-accent" : "text-muted"}`}>
-                  Dark
-                </span>
+                <span className={`text-xs font-medium ${theme === "dark" ? "text-accent" : "text-muted"}`}>Dark</span>
               </button>
-              <button
-                onClick={() => applyTheme("light")}
-                className={`flex-1 aspect-[3/4] rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-3 ${
-                  theme === "light"
-                    ? "border-accent bg-accent/5 scale-[1.02]"
-                    : "border-border hover:border-muted"
-                }`}
-              >
+              <button onClick={() => applyTheme("light")} className={`flex-1 aspect-[3/4] rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-3 ${theme === "light" ? "border-accent bg-accent/5 scale-[1.02]" : "border-border hover:border-muted"}`}>
                 <div className="w-10 h-10 rounded-full bg-[#f5f5f5] border border-[#e0e0e0] flex items-center justify-center">
                   <span className="text-[#d4622b] text-lg">{"\u25CF"}</span>
                 </div>
-                <span className={`text-xs font-medium ${theme === "light" ? "text-accent" : "text-muted"}`}>
-                  Light
-                </span>
+                <span className={`text-xs font-medium ${theme === "light" ? "text-accent" : "text-muted"}`}>Light</span>
               </button>
             </div>
-            <button
-              onClick={() => next("unit")}
-              className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity"
-            >
-              Continue
-            </button>
+            <button onClick={() => next("unit")} className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity">Continue</button>
           </div>
         )}
 
-        {/* Step: Unit */}
+        {/* Unit */}
         {step === "unit" && (
           <div className="text-center">
-            <p className="text-[10px] uppercase tracking-widest text-muted mb-6">
-              Step 2 of {totalSteps}
-            </p>
+            <p className="text-[10px] uppercase tracking-widest text-muted mb-6">Step 2 of {totalSteps}</p>
             <h2 className="text-lg font-medium text-text mb-2">Weight unit</h2>
             <p className="text-muted text-xs mb-8">All data stored in kg, display converts</p>
             <div className="flex gap-3 mb-10">
-              <button
-                onClick={() => applyUnit("kg")}
-                className={`flex-1 h-20 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1 ${
-                  unit === "kg"
-                    ? "border-accent bg-accent/5 scale-[1.02]"
-                    : "border-border hover:border-muted"
-                }`}
-              >
+              <button onClick={() => applyUnit("kg")} className={`flex-1 h-20 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1 ${unit === "kg" ? "border-accent bg-accent/5 scale-[1.02]" : "border-border hover:border-muted"}`}>
                 <span className={`text-2xl font-bold ${unit === "kg" ? "text-accent" : "text-text"}`}>KG</span>
                 <span className="text-[10px] text-muted">Kilograms</span>
               </button>
-              <button
-                onClick={() => applyUnit("lbs")}
-                className={`flex-1 h-20 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1 ${
-                  unit === "lbs"
-                    ? "border-accent bg-accent/5 scale-[1.02]"
-                    : "border-border hover:border-muted"
-                }`}
-              >
+              <button onClick={() => applyUnit("lbs")} className={`flex-1 h-20 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1 ${unit === "lbs" ? "border-accent bg-accent/5 scale-[1.02]" : "border-border hover:border-muted"}`}>
                 <span className={`text-2xl font-bold ${unit === "lbs" ? "text-accent" : "text-text"}`}>LBS</span>
                 <span className="text-[10px] text-muted">Pounds</span>
               </button>
             </div>
-            <button
-              onClick={() => next("plan")}
-              className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity"
-            >
-              Continue
-            </button>
+            <button onClick={() => next("gender")} className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity">Continue</button>
           </div>
         )}
 
-        {/* Step: Plan selection */}
+        {/* Gender */}
+        {step === "gender" && (
+          <div className="text-center">
+            <p className="text-[10px] uppercase tracking-widest text-muted mb-6">Step 3 of {totalSteps}</p>
+            <h2 className="text-lg font-medium text-text mb-2">Training style</h2>
+            <p className="text-muted text-xs mb-8">This determines which plans we recommend</p>
+            <div className="flex gap-3 mb-10">
+              <button onClick={() => setGender("men")} className={`flex-1 h-20 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1 ${gender === "men" ? "border-accent bg-accent/5 scale-[1.02]" : "border-border hover:border-muted"}`}>
+                <span className={`text-2xl ${gender === "men" ? "text-accent" : "text-text"}`}>M</span>
+                <span className="text-[10px] text-muted">Men&apos;s</span>
+              </button>
+              <button onClick={() => setGender("women")} className={`flex-1 h-20 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1 ${gender === "women" ? "border-accent bg-accent/5 scale-[1.02]" : "border-border hover:border-muted"}`}>
+                <span className={`text-2xl ${gender === "women" ? "text-accent" : "text-text"}`}>F</span>
+                <span className="text-[10px] text-muted">Women&apos;s</span>
+              </button>
+            </div>
+            <button onClick={() => next("goal")} className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity">Continue</button>
+          </div>
+        )}
+
+        {/* Goal */}
+        {step === "goal" && (
+          <div className="text-center">
+            <p className="text-[10px] uppercase tracking-widest text-muted mb-6">Step 4 of {totalSteps}</p>
+            <h2 className="text-lg font-medium text-text mb-2">What&apos;s your goal?</h2>
+            <p className="text-muted text-xs mb-6">We&apos;ll recommend plans that match</p>
+            <div className="space-y-3 mb-10">
+              {(["bulk", "balanced", "lean"] as Goal[]).map((g) => (
+                <button
+                  key={g}
+                  onClick={() => setGoal(g)}
+                  className={`w-full h-16 rounded-xl border-2 transition-all duration-200 flex items-center px-5 gap-4 ${
+                    goal === g ? "border-accent bg-accent/5" : "border-border hover:border-muted"
+                  }`}
+                >
+                  <span className={`text-lg font-bold ${goal === g ? "text-accent" : "text-text"}`}>
+                    {GOAL_INFO[g].label}
+                  </span>
+                  <span className="text-xs text-muted">{GOAL_INFO[g].desc}</span>
+                </button>
+              ))}
+            </div>
+            <button onClick={() => next("plan")} className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity">Continue</button>
+          </div>
+        )}
+
+        {/* Plan — recommended first, then "see all" */}
         {step === "plan" && (
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-muted mb-6 text-center">
-              Step 3 of {totalSteps}
+            <p className="text-[10px] uppercase tracking-widest text-muted mb-6 text-center">Step 5 of {totalSteps}</p>
+            <h2 className="text-lg font-medium text-text mb-2 text-center">Pick a plan</h2>
+            <p className="text-muted text-xs mb-4 text-center">
+              Recommended for {GOAL_INFO[goal].label.toLowerCase()}
             </p>
-            <h2 className="text-lg font-medium text-text mb-2 text-center">Choose a plan</h2>
-            <p className="text-muted text-xs mb-4 text-center">You can change or create custom plans later</p>
+
+            <div className="max-h-[45vh] overflow-y-auto space-y-1 mb-4 -mx-1 px-1">
+              {recommended.map((p) => (
+                <PlanCard key={p.id} p={p} />
+              ))}
+
+              {!showAllPlans && allPlans.length > recommended.length && (
+                <button
+                  onClick={() => setShowAllPlans(true)}
+                  className="w-full text-center py-3 text-xs text-muted hover:text-accent transition-colors"
+                >
+                  See all {gender === "men" ? "men's" : "women's"} plans ({allPlans.length})
+                </button>
+              )}
+
+              {showAllPlans && (
+                <>
+                  <div className="text-[10px] uppercase tracking-wide text-muted mt-4 mb-2">All plans</div>
+                  {allPlans
+                    .filter((p) => !recommended.some((r) => r.id === p.id))
+                    .map((p) => (
+                      <PlanCard key={p.id} p={p} />
+                    ))}
+                </>
+              )}
+            </div>
+
+            <button onClick={() => next("extras")} className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity">Continue</button>
+          </div>
+        )}
+
+        {/* Extras — tabbed by category */}
+        {step === "extras" && (
+          <div>
+            <p className="text-[10px] uppercase tracking-widest text-muted mb-6 text-center">Step 6 of {totalSteps}</p>
+            <h2 className="text-lg font-medium text-text mb-2 text-center">Session extras</h2>
+            <p className="text-muted text-xs mb-4 text-center">Optional add-ons after each workout</p>
 
             {/* Category tabs */}
             <div className="flex gap-1 border border-border rounded-lg p-1 mb-4">
-              {(["men", "women"] as const).map((cat) => (
+              {(["abs", "cardio", "stretch"] as ExtraCategory[]).map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => setPlanTab(cat)}
+                  onClick={() => setExtraTab(cat)}
                   className={`flex-1 text-xs py-2 rounded-md transition-colors ${
-                    planTab === cat
+                    extraTab === cat
                       ? "bg-surface text-accent font-medium"
                       : "text-muted hover:text-text"
                   }`}
                 >
-                  {cat === "men" ? "Men's" : "Women's"}
+                  {CATEGORY_INFO[cat].label}
+                  {extras[cat] && <span className="ml-1 text-accent">*</span>}
                 </button>
               ))}
             </div>
 
-            {/* Plan list */}
-            <div className="max-h-[40vh] overflow-y-auto space-y-3 mb-6 -mx-1 px-1">
-              {Object.entries(plansByGoal(allPlans, planTab)).map(([goal, plans]) => (
-                <div key={goal}>
-                  <div className="text-[10px] uppercase tracking-wide text-muted mb-2">
-                    {GOAL_LABELS[goal] || goal}
+            <p className="text-[10px] text-muted mb-3">{CATEGORY_INFO[extraTab].description}</p>
+
+            <div className="space-y-2 mb-6">
+              {EXTRAS_BY_CATEGORY[extraTab].map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() => toggleExtra(extraTab, opt.id)}
+                  className={`w-full text-left p-3 rounded-lg border-2 transition-all duration-200 ${
+                    extras[extraTab] === opt.id
+                      ? "border-accent bg-accent/5"
+                      : "border-border hover:border-muted"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{opt.name}</span>
+                    <span className="text-[10px] text-muted">{opt.duration}</span>
                   </div>
-                  {plans.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => setSelectedPlan(p.id)}
-                      className={`w-full text-left p-3 rounded-lg border-2 mb-2 transition-all duration-200 ${
-                        selectedPlan === p.id
-                          ? "border-accent bg-accent/5"
-                          : "border-border hover:border-muted"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">{p.name}</span>
-                        <span className="text-[10px] text-muted">
-                          {Object.keys(p.days).length} days
-                        </span>
-                      </div>
-                      <p className="text-muted text-xs mt-1">{p.description}</p>
-                    </button>
-                  ))}
-                </div>
+                  <p className="text-muted text-xs mt-1">{opt.description}</p>
+                </button>
               ))}
             </div>
 
-            <button
-              onClick={() => next("extras")}
-              className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity"
-            >
-              Continue
-            </button>
-          </div>
-        )}
-
-        {/* Step: Extras selection */}
-        {step === "extras" && (
-          <div>
-            <p className="text-[10px] uppercase tracking-widest text-muted mb-6 text-center">
-              Step 4 of {totalSteps}
-            </p>
-            <h2 className="text-lg font-medium text-text mb-2 text-center">Session extras</h2>
-            <p className="text-muted text-xs mb-4 text-center">
-              Optional add-ons after each workout. Tap to select.
-            </p>
-
-            <div className="max-h-[45vh] overflow-y-auto space-y-4 mb-6 -mx-1 px-1">
-              {(["abs", "cardio", "stretch"] as ExtraCategory[]).map((cat) => (
-                <div key={cat}>
-                  <div className="text-[10px] uppercase tracking-wide text-muted mb-2">
-                    {CATEGORY_INFO[cat].label}
-                  </div>
-                  <div className="space-y-2">
-                    {EXTRAS_BY_CATEGORY[cat].map((opt) => (
-                      <button
-                        key={opt.id}
-                        onClick={() => toggleExtra(cat, opt.id)}
-                        className={`w-full text-left p-3 rounded-lg border-2 transition-all duration-200 ${
-                          extras[cat] === opt.id
-                            ? "border-accent bg-accent/5"
-                            : "border-border hover:border-muted"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">{opt.name}</span>
-                          <span className="text-[10px] text-muted">{opt.duration}</span>
-                        </div>
-                        <p className="text-muted text-xs mt-1">{opt.description}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <button
-              onClick={() => next("done")}
-              className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity"
-            >
+            <button onClick={() => next("done")} className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity">
               {extras.abs || extras.cardio || extras.stretch ? "Continue" : "Skip for now"}
             </button>
           </div>
         )}
 
-        {/* Step: Done */}
+        {/* Done */}
         {step === "done" && (
           <div className="text-center">
-            <div
-              className="mb-6 text-accent"
-              style={{ animation: "welcome-icon-in 0.5s ease-out" }}
-            >
-              <svg
-                width="56"
-                height="56"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mx-auto"
-              >
+            <div className="mb-6 text-accent" style={{ animation: "welcome-icon-in 0.5s ease-out" }}>
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                 <path d="M22 4L12 14.01l-3-3" />
               </svg>
             </div>
-            <h2
-              className="text-lg font-medium text-text mb-2"
-              style={{ animation: "welcome-text-in 0.5s ease-out 0.1s both" }}
-            >
-              You&apos;re all set
-            </h2>
-            <p
-              className="text-muted text-xs mb-8"
-              style={{ animation: "welcome-text-in 0.5s ease-out 0.15s both" }}
-            >
-              Start your first session from the home screen.
-            </p>
-            <button
-              onClick={finish}
-              className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity"
-              style={{ animation: "welcome-text-in 0.5s ease-out 0.2s both" }}
-            >
+            <h2 className="text-lg font-medium text-text mb-2" style={{ animation: "welcome-text-in 0.5s ease-out 0.1s both" }}>You&apos;re all set</h2>
+            <p className="text-muted text-xs mb-8" style={{ animation: "welcome-text-in 0.5s ease-out 0.15s both" }}>Start your first session from the home screen.</p>
+            <button onClick={finish} className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity" style={{ animation: "welcome-text-in 0.5s ease-out 0.2s both" }}>
               Let&apos;s go
             </button>
           </div>
@@ -427,7 +379,7 @@ export function Welcome({ onDone }: { onDone: () => void }) {
 
       {/* Step dots */}
       <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex gap-2">
-        {STEPS.map((s) => (
+        {STEPS.map((s, i) => (
           <div
             key={s}
             className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${

@@ -243,6 +243,33 @@ export default function ChartsPage() {
     return chartSessions.map((s) => ({ date: s.date, dayType: s.dayType }));
   }, [chartSessions]);
 
+  const sessionCount = chartSessions?.length ?? null;
+
+  if (sessionCount !== null && sessionCount < 5) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+        <svg
+          width="40"
+          height="40"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="var(--color-muted)"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="mb-4"
+        >
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+        <p className="text-sm font-medium text-text mb-1">Not quite there yet</p>
+        <p className="text-xs text-muted">
+          Trends unlock after {5 - sessionCount} more session{5 - sessionCount === 1 ? "" : "s"}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <h1 className="text-lg font-medium">Trends</h1>

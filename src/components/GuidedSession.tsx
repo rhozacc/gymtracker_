@@ -185,8 +185,10 @@ export function GuidedSession({
 
     // Advance to next set immediately
     dispatch({ type: "NEXT_SET", nextExIdx: next.exerciseIndex, nextSetIdx: next.setIndex });
+    if (next.exerciseIndex !== state.exerciseIndex) {
+      triggerExerciseFlash();
+    }
     triggerSetFlash();
-    if (next.exerciseIndex !== state.exerciseIndex) triggerExerciseFlash();
 
     // Start inline rest timer
     const restSecs = currentExercise.rest;

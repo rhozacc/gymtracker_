@@ -76,7 +76,7 @@ export default function LogPage() {
 
   guidedModeRef.current = guidedMode;
 
-  const { backupFound, writeBackup, restoreBackup, discardBackup, clearBackup } =
+  const { backupFound, backupStartedAt, writeBackup, restoreBackup, discardBackup, clearBackup } =
     useSessionBackup(dayType, startedAtRef, guidedModeRef);
 
   // Auto-start guided mode if ?guided=true
@@ -115,12 +115,15 @@ export default function LogPage() {
     setExercises(
       day.exercises.map((ex) => ({
         exerciseId: ex.id,
-        sets: Array.from({ length: ex.sets }, () => ({
-          reps: ex.repRange[0].toString(),
-          weight: "",
-          rir: "",
-          done: false,
-        })),
+        sets: [
+          { reps: ex.repRange[0].toString(), weight: "", rir: "", done: false, isWarmup: true },
+          ...Array.from({ length: ex.sets }, () => ({
+            reps: ex.repRange[0].toString(),
+            weight: "",
+            rir: "",
+            done: false,
+          })),
+        ],
       }))
     );
 
@@ -148,20 +151,30 @@ export default function LogPage() {
           return {
             ...exState,
             sets: exState.sets.map((s, i) => {
-              let prefillKg: number;
+              // i=0 is warmup; working sets start at i=1, mapped to raw[i-1]
+              const rawIdx = Math.min(i - 1, raw.length - 1);
+              const rawSet = rawIdx >= 0 ? raw[rawIdx] : null;
+
+              let baseKg: number;
               if (ol.status === "go_up" || ol.status === "almost_ready") {
                 // Use suggestedWeight so the prefilled value always matches the banner
-                prefillKg = ol.suggestedWeight;
+                baseKg = ol.suggestedWeight;
               } else {
-                const lastSetWeight = raw[Math.min(i, raw.length - 1)]?.weight;
-                prefillKg = lastSetWeight ?? ol.lastWeight;
+                baseKg = rawSet?.weight ?? ol.lastWeight;
               }
-              const prefillWeight = kgToDisplay(prefillKg, unit).toString();
+
+              if (s.isWarmup) {
+                return {
+                  ...s,
+                  weight: s.weight || kgToDisplay(baseKg * 0.5, unit).toString(),
+                };
+              }
+
               return {
                 ...s,
-                weight: s.weight || prefillWeight,
-                reps: s.reps || (raw[i]?.reps?.toString() ?? ""),
-                rir: s.rir || (raw[i]?.rir?.toString() ?? ""),
+                weight: s.weight || kgToDisplay(baseKg, unit).toString(),
+                reps: s.reps || (rawSet?.reps?.toString() ?? ""),
+                rir: s.rir || (rawSet?.rir?.toString() ?? ""),
               };
             }),
           };
@@ -269,6 +282,7 @@ export default function LogPage() {
     for (const ex of exercises) {
       let setNum = 1;
       for (const s of ex.sets) {
+        if (s.isWarmup) continue;
         const reps = parseInt(s.reps);
         const displayWeight = parseFloat(s.weight);
         if (isNaN(reps) || isNaN(displayWeight) || reps <= 0 || displayWeight <= 0) continue;
@@ -330,6 +344,45 @@ export default function LogPage() {
 
   return (
     <div className={`space-y-6 ${!guidedMode ? "pb-32" : ""}`}>
+      {backupFound && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/80 backdrop-blur-sm p-4">
+          <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-sm space-y-4">
+            <div>
+              <p className="text-base font-semibold">Oops, but no sweat!</p>
+              {backupStartedAt && (
+                <p className="text-muted text-xs mt-1">
+                  Session from{" "}
+                  {new Date(backupStartedAt).toLocaleString(undefined, {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                </p>
+              )}
+              <p className="text-muted text-sm mt-2">
+                Your last session didn&apos;t finish. Pick up where you left off?
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => restoreBackup(setExercises)}
+                className="flex-1 h-11 bg-accent text-bg font-medium rounded text-sm hover:opacity-90 transition-opacity"
+              >
+                Continue on
+              </button>
+              <button
+                onClick={discardBackup}
+                className="flex-1 h-11 border border-border text-muted rounded text-sm hover:border-accent hover:text-accent transition-colors"
+              >
+                Abort
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Toast message="Session saved!" visible={toast} onDone={hideToast} />
 
       {showTimer && timerSeconds > 0 && (
@@ -404,7 +457,6 @@ export default function LogPage() {
           guidedCompleted={guidedCompleted}
           saving={saving}
           notes={notes}
-          backupFound={backupFound}
           onNotesChange={setNotes}
           onContinueGuided={() => {
             setWasGuidedMode(false);
@@ -412,8 +464,6 @@ export default function LogPage() {
           }}
           onFinish={finish}
           onEndSession={() => setShowEndModal(true)}
-          onRestoreBackup={() => restoreBackup(setExercises)}
-          onDiscardBackup={discardBackup}
           onUpdateSet={updateSet}
           onAddSet={addSet}
           onRemoveSet={removeSet}

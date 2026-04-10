@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode, type CSSProperties } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
@@ -14,7 +14,6 @@ import { kgToDisplay } from "@/lib/units";
 import { calculateStreak, formatDate } from "@/lib/utils";
 import { StreakCalendar } from "@/components/StreakCalendar";
 import { getMuscleGroup, MUSCLE_GROUPS } from "@/lib/muscleGroups";
-import { useDragReorderDays } from "@/hooks/useDragReorderDays";
 
 const MuscleRadar = dynamic(
   () => import("@/components/MuscleRadar").then((m) => m.MuscleRadarInner),
@@ -39,10 +38,6 @@ interface ChartSession {
   date: string;
   dayType: string;
   sets: { exerciseId: string; reps: number; weight: number }[];
-}
-
-interface Preferences {
-  dayOrder?: Record<string, string[]>;
 }
 
 function getNextDayType(
@@ -74,33 +69,11 @@ export default function Dashboard() {
     "/api/charts/data",
     fetcher
   );
-  const { data: prefs, mutate: mutatePrefs } = useSWR<Preferences>(
-    "/api/preferences",
-    fetcher
-  );
-
   const defaultKeys = Object.keys(plan.days);
-
-  const {
-    dayKeys,
-    dragIdx,
-    overIdx,
-    displayKeys,
-    gridRef,
-    cardRefs,
-    handleTouchStart,
-    handleMouseDown,
-    finishDrag,
-  } = useDragReorderDays({
-    planId: plan.id,
-    defaultKeys,
-    prefs,
-    mutatePrefs,
-  });
 
   const streak = sessions ? calculateStreak(sessions) : 0;
   const lastSession = sessions?.[0];
-  const nextDayType = getNextDayType(lastSession?.dayType, dayKeys);
+  const nextDayType = getNextDayType(lastSession?.dayType, defaultKeys);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const effectiveSelected = selectedDay || nextDayType;
 
@@ -223,64 +196,32 @@ export default function Dashboard() {
       {/* ── Start Session ── */}
       <div>
         <h2 className="text-lg font-medium mb-3">Up Next</h2>
-        <div className="text-muted text-[10px] mb-2">
-          Tap to select &middot; hold &amp; drag to reorder
-        </div>
-        <div
-          ref={gridRef}
-          className="grid grid-cols-1 gap-2"
-          onTouchEnd={finishDrag}
-          onTouchCancel={finishDrag}
-          onMouseUp={finishDrag}
-        >
-          {displayKeys.map((key, i) => {
+        <div className="grid grid-cols-1 gap-2">
+          {defaultKeys.map((key) => {
             const day = plan.days[key];
             if (!day) return null;
             const isSelected = key === effectiveSelected;
-            const isNext = key === nextDayType;
-            const isDragging = dragIdx !== null;
-            const isBeingDragged = isDragging && dayKeys[dragIdx] === key;
-            const realIdx = dayKeys.indexOf(key);
 
             return (
-              <div
+              <button
                 key={key}
-                ref={(el) => {
-                  cardRefs.current[i] = el;
-                }}
-                onTouchStart={(e) => handleTouchStart(realIdx, e)}
-                onMouseDown={(e) => handleMouseDown(realIdx, e)}
-                onContextMenu={(e) => e.preventDefault()}
-                className={`select-none transition-all duration-150 ${
-                  isBeingDragged ? "opacity-60 scale-[0.97]" : ""
+                onClick={() => setSelectedDay(key)}
+                className={`w-full text-left block border rounded p-3 transition-colors text-sm ${
+                  isSelected
+                    ? "border-accent bg-accent/5 animate-pulse-border"
+                    : "border-border hover:border-muted"
                 }`}
-                style={
-                  { WebkitTouchCallout: "none" } as CSSProperties
-                }
               >
-                <button
-                  onClick={() => {
-                    if (isDragging) return;
-                    setSelectedDay(key);
-                  }}
-                  className={`w-full text-left block border rounded p-3 transition-colors text-sm ${
-                    isSelected
-                      ? "border-accent bg-accent/5"
-                      : "border-border hover:border-muted"
-                  } ${isSelected ? "animate-pulse-border" : ""}`}
-                  draggable={false}
-                >
-                  {day.label}
-                  <span className="text-muted ml-2 text-xs">
-                    {day.exercises.length} exercises
+                {day.label}
+                <span className="text-muted ml-2 text-xs">
+                  {day.exercises.length} exercises
+                </span>
+                {isSelected && (
+                  <span className="text-accent text-xs ml-2 font-medium">
+                    Next up
                   </span>
-                  {isSelected && (
-                    <span className="text-accent text-xs ml-2 font-medium">
-                      Next up
-                    </span>
-                  )}
-                </button>
-              </div>
+                )}
+              </button>
             );
           })}
         </div>

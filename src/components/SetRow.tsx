@@ -5,6 +5,7 @@ export interface SetInput {
   weight: string;
   rir: string;
   done: boolean;
+  isWarmup?: boolean;
 }
 
 interface SetRowProps {
@@ -37,13 +38,14 @@ export function SetRow({
 
   function handleCheckDone() {
     if (!data.weight && !data.reps) return;
+    navigator.vibrate?.(100);
     onChange({ ...data, done: true });
     onDone();
   }
 
   return (
     <div
-      className={`rounded transition-colors ${
+      className={`rounded transition-colors ${data.isWarmup ? "opacity-60" : ""} ${
         data.done ? "border-l-2 border-green-500 bg-green-950/10 pl-1" : ""
       }`}
     >
@@ -58,7 +60,7 @@ export function SetRow({
               : "border-border text-muted hover:border-accent hover:text-accent"
           }`}
         >
-          {data.done ? "✓" : index + 1}
+          {data.done ? "✓" : data.isWarmup ? "W" : index}
         </button>
         <input
           type="text"
@@ -76,19 +78,23 @@ export function SetRow({
           onChange={(e) => onChange({ ...data, reps: e.target.value })}
           className="w-full h-10 bg-surface border border-border text-text text-center text-sm rounded px-1 focus:border-accent focus:outline-none"
         />
-        <select
-          value={data.rir}
-          onChange={(e) => onChange({ ...data, rir: e.target.value })}
-          className="w-full h-10 bg-surface border border-border text-text text-center text-sm rounded px-0.5 focus:border-accent focus:outline-none appearance-none"
-        >
-          <option value="">RIR</option>
-          <option value="0">0</option>
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-          <option value="5">5</option>
-        </select>
+        {data.isWarmup ? (
+          <span className="w-full h-10 shrink-0" />
+        ) : (
+          <select
+            value={data.rir}
+            onChange={(e) => onChange({ ...data, rir: e.target.value })}
+            className="w-full h-10 bg-surface border border-border text-text text-center text-sm rounded px-0.5 focus:border-accent focus:outline-none appearance-none"
+          >
+            <option value="">RIR</option>
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        )}
         {onRemove ? (
           <button
             type="button"

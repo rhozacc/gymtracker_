@@ -244,7 +244,7 @@ export function MainView({
       </div>
 
       <p className={`text-lg font-medium mt-1 transition-colors duration-500 ${setFlash ? "text-accent" : "text-muted"}`}>
-        Set {setIndex + 1}/{totalSets}
+        {setData.isWarmup ? "Warmup" : `Set ${setIndex}/${totalSets - 1}`}
       </p>
       <p className="text-muted text-sm opacity-70">
         {exercise.repRange[0]}–{exercise.repRange[1]} reps
@@ -298,24 +298,26 @@ export function MainView({
         </div>
       </div>
 
-      <div className="mt-4 w-full max-w-xs">
-        <p className="text-muted text-[10px] uppercase tracking-wide text-center mb-2">RIR</p>
-        <div className="grid grid-cols-6 gap-1.5">
-          {[0, 1, 2, 3, 4, 5].map((n) => (
-            <button
-              key={n}
-              onClick={() => onChange({ ...setData, rir: n.toString() })}
-              className={`h-11 rounded text-sm transition-colors ${
-                selectedRir === n
-                  ? "bg-accent text-bg ring-2 ring-accent/50"
-                  : "bg-surface border border-border text-muted"
-              }`}
-            >
-              {n}
-            </button>
-          ))}
+      {!setData.isWarmup && (
+        <div className="mt-4 w-full max-w-xs">
+          <p className="text-muted text-[10px] uppercase tracking-wide text-center mb-2">RIR</p>
+          <div className="grid grid-cols-6 gap-1.5">
+            {[0, 1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                onClick={() => onChange({ ...setData, rir: n.toString() })}
+                className={`h-11 rounded text-sm transition-colors ${
+                  selectedRir === n
+                    ? "bg-accent text-bg ring-2 ring-accent/50"
+                    : "bg-surface border border-border text-muted"
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Done button / rest countdown */}
       {isResting ? (
@@ -338,6 +340,7 @@ export function MainView({
         <button
           onClick={() => {
             if (!setData.weight || !setData.reps) return;
+            navigator.vibrate?.(100);
             onDone();
           }}
           disabled={!setData.weight || !setData.reps}

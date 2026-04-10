@@ -3,8 +3,9 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const weeks = 16;
+export async function GET(request: Request) {
+  const weeksParam = new URL(request.url).searchParams.get("weeks");
+  const weeks = weeksParam ? Math.min(Math.max(parseInt(weeksParam, 10) || 16, 1), 52) : 16;
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - weeks * 7);
 

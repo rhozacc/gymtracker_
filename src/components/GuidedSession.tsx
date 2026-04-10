@@ -190,11 +190,13 @@ export function GuidedSession({
     }
     triggerSetFlash();
 
-    // Start inline rest timer
-    const restSecs = currentExercise.rest;
-    restDurationRef.current = restSecs;
-    setRestEndsAt(Date.now() + restSecs * 1000);
-    startRestTimer(restSecs, next.info);
+    // Start inline rest timer (skip after warmup set)
+    const restSecs = currentSetData.isWarmup ? 0 : currentExercise.rest;
+    if (restSecs > 0) {
+      restDurationRef.current = restSecs;
+      setRestEndsAt(Date.now() + restSecs * 1000);
+      startRestTimer(restSecs, next.info);
+    }
   }, [currentSetData, state.exerciseIndex, state.setIndex, updateSet, day.exercises.length, currentExState, onFinish, currentExercise, getNextInfo, exercises, startRestTimer]);
 
   const handleSkipRest = useCallback(() => {

@@ -9,6 +9,7 @@ export function useSessionBackup(
   guidedModeRef: MutableRefObject<boolean>
 ) {
   const [backupFound, setBackupFound] = useState(false);
+  const [backupStartedAt, setBackupStartedAt] = useState<string | null>(null);
 
   // Check for a backup from a crashed session on mount
   useEffect(() => {
@@ -18,6 +19,7 @@ export function useSessionBackup(
       const backup: BackupData = JSON.parse(raw);
       if (backup.dayType === dayType) {
         setBackupFound(true);
+        setBackupStartedAt(backup.startedAt);
       }
     } catch {
       // Ignore corrupt backup
@@ -63,5 +65,5 @@ export function useSessionBackup(
     localStorage.removeItem(BACKUP_KEY);
   }
 
-  return { backupFound, writeBackup, restoreBackup, discardBackup, clearBackup };
+  return { backupFound, backupStartedAt, writeBackup, restoreBackup, discardBackup, clearBackup };
 }

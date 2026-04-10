@@ -148,7 +148,7 @@ export function PinGate({ children }: { children: ReactNode }) {
     );
   }
 
-  // Biometric attempt — show spinner while Face ID / Touch ID prompt is active
+  // Biometric attempt — show spinner while biometric prompt is active
   if (phase === "biometric-attempt") {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center">
@@ -172,7 +172,7 @@ export function PinGate({ children }: { children: ReactNode }) {
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             <path d="M9 12l2 2 4-4" />
           </svg>
-          <h1 className="text-accent text-lg font-medium mb-2">Enable Face ID?</h1>
+          <h1 className="text-accent text-lg font-medium mb-2">Enable biometric login?</h1>
           <p className="text-muted text-sm mb-8">
             Use biometric login for faster access next time
           </p>

@@ -7,6 +7,7 @@ import { Nav } from "@/components/Nav";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { NavVisibilityProvider } from "@/lib/useNavVisibility";
+import { OrientationLockInit } from "@/components/OrientationLockInit";
 
 export const metadata: Metadata = {
   title: "gymtracker_",
@@ -44,6 +45,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-bg text-text antialiased">
         <ServiceWorkerRegistrar />
+        <OrientationLockInit />
         {hasDb ? (
           <NavVisibilityProvider>
             <PinGate>

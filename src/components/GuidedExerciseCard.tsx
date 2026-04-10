@@ -18,13 +18,16 @@ interface GuidedExerciseCardProps {
   overload?: OverloadResult;
   unit: WeightUnit;
   increments: number[];
-  fromRest?: boolean;
+  restRemaining: number;
+  restDuration: number;
+  setFlash: boolean;
+  exerciseFlash: boolean;
   onChange: (data: SetInput) => void;
   onDone: () => void;
+  onSkipRest: () => void;
   onSkip: () => void;
   onStop: () => void;
   onNameChange: (name: string) => void;
-  onRestAnimationDone?: () => void;
 }
 
 export function GuidedExerciseCard({
@@ -38,18 +41,21 @@ export function GuidedExerciseCard({
   overload,
   unit,
   increments,
-  fromRest,
+  restRemaining,
+  restDuration,
+  setFlash,
+  exerciseFlash,
   onChange,
   onDone,
+  onSkipRest,
   onSkip,
   onStop,
   onNameChange,
-  onRestAnimationDone,
 }: GuidedExerciseCardProps) {
   const [view, setView] = useState<"main" | "weight" | "editName">("main");
   const [tempWeight, setTempWeight] = useState(setData.weight);
   const [tempName, setTempName] = useState(exerciseName);
-  const [greenFlash, setGreenFlash] = useState(false);
+  const [leftHanded, setLeftHanded] = useState(false);
   const [confirmSkip, setConfirmSkip] = useState(false);
 
   useEffect(() => {
@@ -57,16 +63,13 @@ export function GuidedExerciseCard({
   }, [exerciseName]);
 
   useEffect(() => {
-    if (fromRest) {
-      setGreenFlash(true);
-      const t = setTimeout(() => {
-        setGreenFlash(false);
-        onRestAnimationDone?.();
-      }, 900);
-      return () => clearTimeout(t);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromRest]);
+    setLeftHanded(localStorage.getItem("gym-left-handed") === "1");
+  }, []);
+
+  // Reset confirmSkip when exercise changes
+  useEffect(() => {
+    setConfirmSkip(false);
+  }, [exerciseIndex]);
 
   function adjustWeight(delta: number) {
     const current = parseFloat(tempWeight) || 0;
@@ -129,7 +132,11 @@ export function GuidedExerciseCard({
       setData={setData}
       overload={overload}
       unit={unit}
-      greenFlash={greenFlash}
+      restRemaining={restRemaining}
+      restDuration={restDuration}
+      leftHanded={leftHanded}
+      setFlash={setFlash}
+      exerciseFlash={exerciseFlash}
       confirmSkip={confirmSkip}
       onWeightTap={() => {
         setTempWeight(setData.weight);
@@ -141,6 +148,7 @@ export function GuidedExerciseCard({
       }}
       onChange={onChange}
       onDone={onDone}
+      onSkipRest={onSkipRest}
       onSkipConfirm={() => { setConfirmSkip(false); onSkip(); }}
       onSkipCancel={() => setConfirmSkip(false)}
       onSkipRequest={() => setConfirmSkip(true)}

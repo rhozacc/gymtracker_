@@ -7,6 +7,7 @@ import useSWR from "swr";
 import dynamic from "next/dynamic";
 import { fetcher } from "@/lib/swr";
 import { getDayLabel } from "@/lib/program";
+import { checkOverload } from "@/lib/overload";
 import { useProgram } from "@/lib/useProgram";
 import { useUnit } from "@/lib/useUnit";
 import { useTheme } from "@/lib/useTheme";
@@ -37,7 +38,7 @@ interface ChartSession {
   id: string;
   date: string;
   dayType: string;
-  sets: { exerciseId: string; reps: number; weight: number }[];
+  sets: { exerciseId: string; reps: number; weight: number; rir: number | null }[];
 }
 
 function getNextDayType(
@@ -109,6 +110,55 @@ export default function Dashboard() {
       totalVolume: s.totalVolume,
     }));
   }, [sessions]);
+
+  const overloadHighlights = useMemo(() => {
+    if (!chartData || !plan) return [];
+
+    // Build map: exerciseId → sets from its most recent session
+    const lastSetsByExercise: Record<string, { reps: number; weight: number; rir: number | null }[]> = {};
+    for (const session of [...chartData].reverse()) {
+      const grouped: Record<string, typeof session.sets> = {};
+      for (const s of session.sets) {
+        if (!grouped[s.exerciseId]) grouped[s.exerciseId] = [];
+        grouped[s.exerciseId].push(s);
+      }
+      for (const [exId, sets] of Object.entries(grouped)) {
+        if (!lastSetsByExercise[exId]) lastSetsByExercise[exId] = sets;
+      }
+    }
+
+    const results: {
+      name: string;
+      dayLabel: string;
+      status: "go_up" | "almost_ready";
+      suggestedWeight: number;
+      lastWeight: number;
+    }[] = [];
+    const seen = new Set<string>();
+
+    for (const day of Object.values(plan.days)) {
+      for (const ex of day.exercises) {
+        if (seen.has(ex.id)) continue;
+        seen.add(ex.id);
+        const lastSets = lastSetsByExercise[ex.id] ?? [];
+        if (lastSets.length === 0) continue;
+        const result = checkOverload(ex, lastSets);
+        if (result.status === "go_up" || result.status === "almost_ready") {
+          results.push({
+            name: ex.name,
+            dayLabel: day.label,
+            status: result.status,
+            suggestedWeight: result.suggestedWeight,
+            lastWeight: result.lastWeight,
+          });
+        }
+      }
+    }
+
+    return results.sort((a, b) =>
+      (a.status === "go_up" ? -1 : 1) - (b.status === "go_up" ? -1 : 1)
+    );
+  }, [chartData, plan]);
 
   return (
     <div className="space-y-14">
@@ -244,6 +294,39 @@ export default function Dashboard() {
           Start {getDayLabel(effectiveSelected)} Session
         </button>
       </div>
+
+      {/* ── Load Up ── */}
+      {overloadHighlights.length > 0 && (
+        <div>
+          <p className="text-[10px] font-medium uppercase tracking-widest text-muted mb-3">Load up</p>
+          <div>
+            {overloadHighlights.map(({ name, dayLabel, status, suggestedWeight, lastWeight }) => (
+              <div key={name} className="flex items-center justify-between py-2.5 border-b border-border last:border-0">
+                <div>
+                  <p className="text-sm font-medium">{name}</p>
+                  <p className="text-[11px] text-muted">{dayLabel}</p>
+                </div>
+                <div className="text-right">
+                  {status === "go_up" ? (
+                    <p className="text-sm font-medium">
+                      <span className="text-muted">{kgToDisplay(lastWeight, unit)}</span>
+                      <span className="text-muted mx-1">→</span>
+                      <span className="text-accent">{kgToDisplay(suggestedWeight, unit)} {unit}</span>
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted font-medium">
+                      {kgToDisplay(lastWeight, unit)} {unit}
+                    </p>
+                  )}
+                  <p className={`text-[11px] ${status === "go_up" ? "text-accent" : "text-muted"}`}>
+                    {status === "go_up" ? "ready to go up" : "almost there"}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Progress ── */}
       <div>

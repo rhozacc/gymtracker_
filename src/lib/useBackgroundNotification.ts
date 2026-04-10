@@ -2,6 +2,14 @@
 
 import { useCallback } from "react";
 
+const NOTIF_OPTED_OUT = "gym-notifications-off";
+
+function notificationsEnabled(): boolean {
+  if (typeof window === "undefined" || !("Notification" in window)) return false;
+  if (Notification.permission !== "granted") return false;
+  return localStorage.getItem(NOTIF_OPTED_OUT) !== "1";
+}
+
 interface NextExerciseInfo {
   name: string;
   weight: string;
@@ -29,8 +37,7 @@ export function useBackgroundNotification() {
 
   /** Show a one-shot notification (used when rest ends while app is backgrounded) */
   const notifyIfBackgrounded = useCallback(async (title: string, body: string) => {
-    if (typeof window === "undefined" || !("Notification" in window)) return;
-    if (Notification.permission !== "granted") return;
+    if (!notificationsEnabled()) return;
     if (document.visibilityState !== "hidden") return;
 
     // Prefer SW-based notification (works on iOS PWA lock screen)
@@ -49,8 +56,7 @@ export function useBackgroundNotification() {
    * This works even when the app/tab is backgrounded on iOS.
    */
   const startRestTimer = useCallback(async (seconds: number, nextExercise?: NextExerciseInfo) => {
-    if (typeof window === "undefined") return;
-    if (Notification.permission !== "granted") return;
+    if (!notificationsEnabled()) return;
 
     const reg = await getSWRegistration();
     if (reg?.active) {

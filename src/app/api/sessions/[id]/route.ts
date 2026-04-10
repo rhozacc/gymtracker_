@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireSession } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -7,8 +8,11 @@ export async function GET(
   _request: Request,
   { params }: { params: { id: string } }
 ) {
+  const { userId, res } = await requireSession();
+  if (res) return res;
+
   const session = await prisma.session.findUnique({
-    where: { id: params.id },
+    where: { id: params.id, userId },
     include: {
       sets: {
         orderBy: [{ exerciseId: "asc" }, { setNumber: "asc" }],
@@ -34,10 +38,13 @@ export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
+  const { userId, res } = await requireSession();
+  if (res) return res;
+
   const body = await request.json();
 
   const session = await prisma.session.findUnique({
-    where: { id: params.id },
+    where: { id: params.id, userId },
     include: { sets: true },
   });
 
@@ -45,20 +52,17 @@ export async function PATCH(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // Update extras if provided
   const updateData: Record<string, unknown> = {};
   if (body.extras !== undefined) {
     updateData.extras = body.extras;
   }
 
-  // Update sets if provided
   if (body.sets && Array.isArray(body.sets)) {
     updateData.editedAt = new Date();
     const incomingIds = new Set<string>();
 
     for (const s of body.sets) {
       if (s.id) {
-        // Update existing set
         incomingIds.add(s.id);
         await prisma.set.update({
           where: { id: s.id },
@@ -71,7 +75,6 @@ export async function PATCH(
           },
         });
       } else {
-        // Create new set
         const created = await prisma.set.create({
           data: {
             sessionId: params.id,
@@ -86,7 +89,6 @@ export async function PATCH(
       }
     }
 
-    // Delete sets that were removed
     const toDelete = session.sets.filter((s) => !incomingIds.has(s.id));
     if (toDelete.length > 0) {
       await prisma.set.deleteMany({
@@ -107,8 +109,11 @@ export async function DELETE(
   _request: Request,
   { params }: { params: { id: string } }
 ) {
+  const { userId, res } = await requireSession();
+  if (res) return res;
+
   const session = await prisma.session.findUnique({
-    where: { id: params.id },
+    where: { id: params.id, userId },
   });
 
   if (!session) {
@@ -116,6 +121,5 @@ export async function DELETE(
   }
 
   await prisma.session.delete({ where: { id: params.id } });
-
   return NextResponse.json({ deleted: true });
 }

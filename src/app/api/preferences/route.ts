@@ -1,22 +1,23 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-const DEFAULT_ID = "default";
+import { requireSession } from "@/lib/api-auth";
 
 export async function GET() {
+  const { userId, res } = await requireSession();
+  if (res) return res;
+
   try {
-    let prefs = await prisma.userPreferences.findUnique({
-      where: { id: DEFAULT_ID },
+    let prefs = await prisma.userPreferences.findFirst({
+      where: { userId },
     });
     if (!prefs) {
       prefs = await prisma.userPreferences.create({
-        data: { id: DEFAULT_ID },
+        data: { userId },
       });
     }
     return NextResponse.json(prefs);
   } catch {
     return NextResponse.json({
-      id: DEFAULT_ID,
       onboarded: false,
       activePlan: "upper_lower",
       theme: "dark",
@@ -26,6 +27,9 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
+  const { userId, res } = await requireSession();
+  if (res) return res;
+
   try {
     const body = await req.json();
     const { onboarded, activePlan, theme, unit, dayOrder } = body;
@@ -37,11 +41,10 @@ export async function PUT(req: Request) {
     if (unit !== undefined) data.unit = unit;
     if (dayOrder !== undefined) data.dayOrder = dayOrder;
 
-    const prefs = await prisma.userPreferences.upsert({
-      where: { id: DEFAULT_ID },
-      update: data,
-      create: { id: DEFAULT_ID, ...data },
-    });
+    const existing = await prisma.userPreferences.findFirst({ where: { userId } });
+    const prefs = existing
+      ? await prisma.userPreferences.update({ where: { id: existing.id }, data })
+      : await prisma.userPreferences.create({ data: { userId, ...data } });
 
     return NextResponse.json(prefs);
   } catch {

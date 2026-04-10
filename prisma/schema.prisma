@@ -10,6 +10,7 @@ datasource db {
 
 model Session {
   id        String    @id @default(cuid())
+  userId    String?
   date      DateTime  @default(now())
   dayType   String
   notes     String?
@@ -45,6 +46,7 @@ model Debrief {
 
 model ExtrasConfig {
   id      String  @id @default("default")
+  userId  String?
   abs     String?
   cardio  String?
   stretch String?
@@ -69,6 +71,7 @@ model WebAuthnChallenge {
 
 model UserPreferences {
   id         String   @id @default("default")
+  userId     String?
   onboarded  Boolean  @default(false)
   activePlan String   @default("upper_lower")
   theme      String   @default("dark")
@@ -79,6 +82,7 @@ model UserPreferences {
 
 model Plan {
   id          String   @id @default(cuid())
+  userId      String?
   slug        String   @unique
   name        String
   description String   @default("")
@@ -86,4 +90,72 @@ model Plan {
   days        Json
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model AllowedEmail {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+// Better Auth tables
+model User {
+  id            String      @id
+  name          String
+  email         String      @unique
+  emailVerified Boolean     @default(false)
+  image         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  authSessions  AuthSession[]
+  accounts      Account[]
+
+  @@map("user")
+}
+
+model AuthSession {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("auth_session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }

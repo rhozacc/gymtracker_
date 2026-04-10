@@ -1,30 +1,36 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-const DEFAULT_ID = "default";
+import { requireSession } from "@/lib/api-auth";
 
 export async function GET() {
+  const { userId, res } = await requireSession();
+  if (res) return res;
+
   try {
-    const config = await prisma.extrasConfig.findUnique({
-      where: { id: DEFAULT_ID },
-    });
+    const config = await prisma.extrasConfig.findFirst({ where: { userId } });
     return NextResponse.json(config ?? { abs: null, cardio: null, stretch: null });
   } catch {
-    // Table may not exist yet — return defaults
     return NextResponse.json({ abs: null, cardio: null, stretch: null });
   }
 }
 
 export async function PUT(req: Request) {
+  const { userId, res } = await requireSession();
+  if (res) return res;
+
   try {
     const body = await req.json();
     const { abs, cardio, stretch } = body;
 
-    const config = await prisma.extrasConfig.upsert({
-      where: { id: DEFAULT_ID },
-      update: { abs: abs ?? null, cardio: cardio ?? null, stretch: stretch ?? null },
-      create: { id: DEFAULT_ID, abs: abs ?? null, cardio: cardio ?? null, stretch: stretch ?? null },
-    });
+    const existing = await prisma.extrasConfig.findFirst({ where: { userId } });
+    const config = existing
+      ? await prisma.extrasConfig.update({
+          where: { id: existing.id },
+          data: { abs: abs ?? null, cardio: cardio ?? null, stretch: stretch ?? null },
+        })
+      : await prisma.extrasConfig.create({
+          data: { userId, abs: abs ?? null, cardio: cardio ?? null, stretch: stretch ?? null },
+        });
 
     return NextResponse.json(config);
   } catch {

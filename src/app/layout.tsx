@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import "./globals.css";
-import { PinGate } from "@/components/PinGate";
+import { AuthGuard } from "@/components/AuthGuard";
 import { SetupGuide } from "@/components/SetupGuide";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { InstallPrompt } from "@/components/InstallPrompt";
@@ -45,10 +45,10 @@ export default function RootLayout({
         <ServiceWorkerRegistrar />
         <OrientationLockInit />
         {hasDb ? (
-          <PinGate>
+          <AuthGuard>
             <InstallPrompt />
             <main className="max-w-lg mx-auto px-4 pt-4 pb-8">{children}</main>
-          </PinGate>
+          </AuthGuard>
         ) : (
           <SetupGuide />
         )}

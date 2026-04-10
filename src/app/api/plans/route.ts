@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { PLANS } from "@/lib/program";
+import { requireSession } from "@/lib/api-auth";
 
-// Sync built-in plans: create if missing, update if builtIn (keeps structure current with code)
 async function syncBuiltInPlans() {
   const ops = Object.values(PLANS).map(async (p) => {
     const existing = await prisma.plan.findUnique({ where: { slug: p.id } });
@@ -19,11 +19,7 @@ async function syncBuiltInPlans() {
     } else if (existing.builtIn) {
       await prisma.plan.update({
         where: { slug: p.id },
-        data: {
-          name: p.name,
-          description: p.description,
-          days: p.days as object,
-        },
+        data: { name: p.name, description: p.description, days: p.days as object },
       });
     }
   });
@@ -31,12 +27,21 @@ async function syncBuiltInPlans() {
 }
 
 export async function GET() {
+  const { userId, res } = await requireSession();
+  if (res) return res;
+
   await syncBuiltInPlans();
-  const plans = await prisma.plan.findMany({ orderBy: { createdAt: "asc" } });
+  const plans = await prisma.plan.findMany({
+    where: { OR: [{ builtIn: true }, { userId }] },
+    orderBy: { createdAt: "asc" },
+  });
   return NextResponse.json(plans);
 }
 
 export async function POST(req: Request) {
+  const { userId, res } = await requireSession();
+  if (res) return res;
+
   const body = await req.json();
   const { slug, name, description, days } = body;
 
@@ -46,6 +51,7 @@ export async function POST(req: Request) {
 
   const plan = await prisma.plan.create({
     data: {
+      userId,
       slug,
       name,
       description: description || "Custom plan",

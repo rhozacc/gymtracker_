@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useMemo, useState, type ReactNode, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
@@ -13,13 +13,10 @@ import { useTheme } from "@/lib/useTheme";
 import { kgToDisplay } from "@/lib/units";
 import { calculateStreak, formatDate } from "@/lib/utils";
 import { StreakCalendar } from "@/components/StreakCalendar";
+import { BiometricConfirmModal } from "@/components/BiometricConfirmModal";
 import { getMuscleGroup, MUSCLE_GROUPS } from "@/lib/muscleGroups";
-import {
-  isBiometricSupported,
-  isBiometricEnrolled,
-  registerBiometric,
-  disableBiometric,
-} from "@/lib/webauthn";
+import { useBiometricAuth } from "@/hooks/useBiometricAuth";
+import { useDragReorderDays } from "@/hooks/useDragReorderDays";
 
 const MuscleRadar = dynamic(
   () => import("@/components/MuscleRadar").then((m) => m.MuscleRadarInner),
@@ -46,7 +43,9 @@ interface ChartSession {
   sets: { exerciseId: string; reps: number; weight: number }[];
 }
 
-const DAY_ORDER_KEY = (planId: string) => `gym-day-order-${planId}`;
+interface Preferences {
+  dayOrder?: Record<string, string[]>;
+}
 
 function getNextDayType(
   lastDayType: string | undefined,
@@ -58,45 +57,7 @@ function getNextDayType(
   return dayKeys[(lastIdx + 1) % dayKeys.length];
 }
 
-function validateDayOrder(
-  order: string[],
-  defaultKeys: string[]
-): string[] | null {
-  if (
-    order.length === defaultKeys.length &&
-    defaultKeys.every((k) => order.includes(k))
-  ) {
-    return order;
-  }
-  return null;
-}
-
-function getSavedDayOrder(
-  planId: string,
-  defaultKeys: string[],
-  dbDayOrder?: Record<string, string[]>
-): string[] {
-  if (dbDayOrder && dbDayOrder[planId]) {
-    const valid = validateDayOrder(dbDayOrder[planId], defaultKeys);
-    if (valid) return valid;
-  }
-  if (typeof window === "undefined") return defaultKeys;
-  try {
-    const saved = localStorage.getItem(DAY_ORDER_KEY(planId));
-    if (saved) {
-      const parsed = JSON.parse(saved) as string[];
-      const valid = validateDayOrder(parsed, defaultKeys);
-      if (valid) return valid;
-    }
-  } catch {}
-  return defaultKeys;
-}
-
-interface Preferences {
-  dayOrder?: Record<string, string[]>;
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function SectionLabel({ children }: { children: ReactNode }) {
   return (
     <p className="text-[10px] font-medium uppercase tracking-widest text-muted mb-3">
       {children}
@@ -121,19 +82,37 @@ export default function Dashboard() {
   );
 
   const defaultKeys = Object.keys(plan.days);
-  const [dayKeys, setDayKeys] = useState<string[]>(() =>
-    getSavedDayOrder(plan.id, defaultKeys)
-  );
 
-  useEffect(() => {
-    setDayKeys(
-      getSavedDayOrder(
-        plan.id,
-        Object.keys(plan.days),
-        prefs?.dayOrder as Record<string, string[]> | undefined
-      )
-    );
-  }, [plan, prefs]);
+  const {
+    dayKeys,
+    dragIdx,
+    overIdx,
+    displayKeys,
+    gridRef,
+    cardRefs,
+    handleTouchStart,
+    handleMouseDown,
+    finishDrag,
+  } = useDragReorderDays({
+    planId: plan.id,
+    defaultKeys,
+    prefs,
+    mutatePrefs,
+  });
+
+  const {
+    bioEnabled,
+    bioSupported,
+    bioConfirm,
+    bioPin,
+    bioBusy,
+    bioError,
+    setBioPin,
+    setBioError,
+    handleBioToggle,
+    confirmDisableBio,
+    cancelDisableBio,
+  } = useBiometricAuth();
 
   const streak = sessions ? calculateStreak(sessions) : 0;
   const lastSession = sessions?.[0];
@@ -141,7 +120,6 @@ export default function Dashboard() {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const effectiveSelected = selectedDay || nextDayType;
 
-  // Muscle group radar data (current week)
   const muscleRadarData = useMemo(() => {
     if (!chartData) return [];
     const now = new Date();
@@ -170,7 +148,6 @@ export default function Dashboard() {
     return MUSCLE_GROUPS.map((mg) => ({ muscle: mg, sets: counts[mg] }));
   }, [chartData]);
 
-  // Sessions with volume for StreakCalendar
   const sessionsWithVolume = useMemo(() => {
     if (!sessions) return [];
     return sessions.map((s) => ({
@@ -179,155 +156,6 @@ export default function Dashboard() {
       totalVolume: s.totalVolume,
     }));
   }, [sessions]);
-
-  // ── Drag-to-reorder state ──────────────────────────────────────────────
-  const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [overIdx, setOverIdx] = useState<number | null>(null);
-  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const touchStartY = useRef<number>(0);
-  const isDraggingRef = useRef(false);
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const gridRef = useRef<HTMLDivElement>(null);
-  const dragIdxRef = useRef<number | null>(null);
-  const overIdxRef = useRef<number | null>(null);
-
-  // ── Biometric state ────────────────────────────────────────────────────
-  const [bioEnabled, setBioEnabled] = useState<boolean | null>(null);
-  const [bioSupported, setBioSupported] = useState(false);
-  const [bioConfirm, setBioConfirm] = useState(false);
-  const [bioPin, setBioPin] = useState("");
-  const [bioBusy, setBioBusy] = useState(false);
-  const [bioError, setBioError] = useState("");
-
-  useEffect(() => {
-    isBiometricSupported().then(setBioSupported);
-    isBiometricEnrolled().then(setBioEnabled);
-  }, []);
-
-  async function handleBioToggle() {
-    if (bioEnabled) {
-      setBioConfirm(true);
-      setBioError("");
-    } else {
-      setBioBusy(true);
-      const ok = await registerBiometric();
-      setBioBusy(false);
-      if (ok) setBioEnabled(true);
-    }
-  }
-
-  async function confirmDisableBio() {
-    setBioBusy(true);
-    setBioError("");
-    const ok = await disableBiometric(bioPin);
-    setBioBusy(false);
-    if (ok) {
-      setBioEnabled(false);
-      setBioConfirm(false);
-      setBioPin("");
-    } else {
-      setBioError("Wrong PIN");
-    }
-  }
-
-  const clearHold = useCallback(() => {
-    if (holdTimerRef.current) {
-      clearTimeout(holdTimerRef.current);
-      holdTimerRef.current = null;
-    }
-  }, []);
-
-  function startDrag(idx: number) {
-    isDraggingRef.current = true;
-    dragIdxRef.current = idx;
-    overIdxRef.current = idx;
-    setDragIdx(idx);
-    setOverIdx(idx);
-    if (navigator.vibrate) navigator.vibrate(30);
-  }
-
-  function finishDrag() {
-    clearHold();
-    const d = dragIdxRef.current;
-    const o = overIdxRef.current;
-    if (d !== null && o !== null && d !== o) {
-      setDayKeys((prev) => {
-        const newKeys = [...prev];
-        const [removed] = newKeys.splice(d, 1);
-        newKeys.splice(o, 0, removed);
-        localStorage.setItem(DAY_ORDER_KEY(plan.id), JSON.stringify(newKeys));
-        const updatedDayOrder = {
-          ...((prefs?.dayOrder as Record<string, string[]>) || {}),
-          [plan.id]: newKeys,
-        };
-        fetch("/api/preferences", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ dayOrder: updatedDayOrder }),
-        });
-        mutatePrefs({ ...prefs, dayOrder: updatedDayOrder }, false);
-        return newKeys;
-      });
-    }
-    isDraggingRef.current = false;
-    dragIdxRef.current = null;
-    overIdxRef.current = null;
-    setDragIdx(null);
-    setOverIdx(null);
-  }
-
-  function handleTouchStart(idx: number, e: React.TouchEvent) {
-    const touch = e.touches[0];
-    touchStartY.current = touch.clientY;
-    clearHold();
-    holdTimerRef.current = setTimeout(() => startDrag(idx), 400);
-  }
-
-  useEffect(() => {
-    const grid = gridRef.current;
-    if (!grid) return;
-
-    function onTouchMove(e: TouchEvent) {
-      const touch = e.touches[0];
-      if (!isDraggingRef.current) {
-        if (Math.abs(touch.clientY - touchStartY.current) > 10) {
-          clearHold();
-        }
-        return;
-      }
-      e.preventDefault();
-      const y = touch.clientY;
-      for (let i = 0; i < cardRefs.current.length; i++) {
-        const el = cardRefs.current[i];
-        if (!el) continue;
-        const rect = el.getBoundingClientRect();
-        if (y >= rect.top && y <= rect.bottom) {
-          overIdxRef.current = i;
-          setOverIdx(i);
-          break;
-        }
-      }
-    }
-
-    grid.addEventListener("touchmove", onTouchMove, { passive: false });
-    return () => grid.removeEventListener("touchmove", onTouchMove);
-  }, [clearHold]);
-
-  function handleMouseDown(idx: number, e: React.MouseEvent) {
-    if (e.button !== 0) return;
-    touchStartY.current = e.clientY;
-    clearHold();
-    holdTimerRef.current = setTimeout(() => startDrag(idx), 400);
-  }
-
-  const displayKeys = (() => {
-    if (dragIdx === null || overIdx === null || dragIdx === overIdx)
-      return dayKeys;
-    const preview = [...dayKeys];
-    const [removed] = preview.splice(dragIdx, 1);
-    preview.splice(overIdx, 0, removed);
-    return preview;
-  })();
 
   return (
     <div className="space-y-6">
@@ -494,11 +322,11 @@ export default function Dashboard() {
                   isBeingDragged ? "opacity-60 scale-[0.97]" : ""
                 }`}
                 style={
-                  { WebkitTouchCallout: "none" } as React.CSSProperties
+                  { WebkitTouchCallout: "none" } as CSSProperties
                 }
               >
                 <button
-                  onClick={(e) => {
+                  onClick={() => {
                     if (isDragging) return;
                     setSelectedDay(key);
                   }}
@@ -552,53 +380,18 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Biometric disable confirmation */}
       {bioConfirm && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-bg/90">
-          <div className="bg-surface border border-border rounded-lg p-6 max-w-xs w-full mx-4 text-center">
-            <h2 className="text-sm font-medium mb-2">
-              Disable biometric login?
-            </h2>
-            <p className="text-muted text-xs mb-4">
-              Enter your PIN to confirm
-            </p>
-            <input
-              type="password"
-              inputMode="numeric"
-              maxLength={4}
-              value={bioPin}
-              onChange={(e) => {
-                setBioPin(e.target.value.replace(/\D/g, "").slice(0, 4));
-                setBioError("");
-              }}
-              placeholder="PIN"
-              className="w-full h-10 bg-bg border border-border text-text text-center text-lg rounded mb-2 focus:border-accent focus:outline-none"
-              autoFocus
-            />
-            {bioError && (
-              <p className="text-red-500 text-xs mb-2">{bioError}</p>
-            )}
-            <div className="flex gap-3 mt-3">
-              <button
-                onClick={() => {
-                  setBioConfirm(false);
-                  setBioPin("");
-                  setBioError("");
-                }}
-                className="flex-1 h-10 border border-border text-muted rounded text-sm hover:text-accent transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDisableBio}
-                disabled={bioPin.length < 4 || bioBusy}
-                className="flex-1 h-10 bg-red-500 text-white font-medium rounded text-sm hover:bg-red-400 disabled:opacity-50 transition-colors"
-              >
-                {bioBusy ? "..." : "Disable"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <BiometricConfirmModal
+          pin={bioPin}
+          busy={bioBusy}
+          error={bioError}
+          onPinChange={(p) => {
+            setBioPin(p);
+            setBioError("");
+          }}
+          onConfirm={confirmDisableBio}
+          onCancel={cancelDisableBio}
+        />
       )}
     </div>
   );

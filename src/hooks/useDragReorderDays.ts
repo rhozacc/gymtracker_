@@ -54,7 +54,7 @@ interface UseDragReorderDaysReturn {
   displayKeys: string[];
   gridRef: RefObject<HTMLDivElement>;
   cardRefs: MutableRefObject<(HTMLDivElement | null)[]>;
-  handleTouchStart: (idx: number, e: { touches: { clientY: number }[] }) => void;
+  handleTouchStart: (idx: number, e: { touches: ArrayLike<{ clientY: number }> }) => void;
   handleMouseDown: (idx: number, e: { button: number; clientY: number }) => void;
   finishDrag: () => void;
 }
@@ -138,7 +138,7 @@ export function useDragReorderDays({
     setOverIdx(null);
   }
 
-  function handleTouchStart(idx: number, e: { touches: { clientY: number }[] }) {
+  function handleTouchStart(idx: number, e: { touches: ArrayLike<{ clientY: number }> }) {
     const touch = e.touches[0];
     touchStartY.current = touch.clientY;
     clearHold();

@@ -247,7 +247,7 @@ export default function Settings() {
         <div>
           <SectionLabel>Security</SectionLabel>
           <div className="border border-border rounded p-3">
-            <Row label="Biometric login" description="Face ID or fingerprint to unlock">
+            <Row label="Biometric login" description="Use biometric to unlock">
               <Toggle
                 enabled={!!bioEnabled}
                 onToggle={handleBioToggle}

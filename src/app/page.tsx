@@ -9,6 +9,7 @@ import { fetcher } from "@/lib/swr";
 import { getDayLabel } from "@/lib/program";
 import { useProgram } from "@/lib/useProgram";
 import { useUnit } from "@/lib/useUnit";
+import { useTheme } from "@/lib/useTheme";
 import { kgToDisplay } from "@/lib/units";
 import { calculateStreak, formatDate } from "@/lib/utils";
 import { StreakCalendar } from "@/components/StreakCalendar";
@@ -66,6 +67,7 @@ export default function Dashboard() {
   const router = useRouter();
   const { plan } = useProgram();
   const { unit } = useUnit();
+  const { theme, toggleTheme } = useTheme();
   const { data: sessions, error: sessionsError } =
     useSWR<SessionSummary[]>("/api/sessions", fetcher);
   const { data: chartData } = useSWR<ChartSession[]>(
@@ -154,16 +156,37 @@ export default function Dashboard() {
       )}
 
       <div className="flex items-center justify-between">
-        <Link
-          href="/settings"
-          className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-muted hover:border-accent hover:text-accent transition-colors"
-          aria-label="Settings"
-        >
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-muted hover:border-accent hover:text-accent transition-colors"
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5" />
+                <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            )}
+          </button>
+          <Link
+            href="/settings"
+            className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-muted hover:border-accent hover:text-accent transition-colors"
+            aria-label="Settings"
+          >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="3" />
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
-        </Link>
+          </Link>
+        </div>
         <div className="text-right">
           <span className="text-3xl font-bold">{streak}</span>
           <span className="text-muted text-sm ml-1">week streak</span>

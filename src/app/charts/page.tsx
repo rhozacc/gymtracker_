@@ -103,8 +103,9 @@ export default function ChartsPage() {
   const { unit } = useUnit();
   const [selectedExercise, setSelectedExercise] = useState("");
   const [bypassLock, setBypassLock] = useState(false);
+  const [volumeWeeks, setVolumeWeeks] = useState<2 | 4>(4);
 
-  const { data: volumeData } = useSWR("/api/volume/weekly", fetcher);
+  const { data: volumeData } = useSWR(`/api/volume/weekly?weeks=${volumeWeeks}`, fetcher);
   const { data: chartSessions } = useSWR<ChartSession[]>(
     "/api/charts/data",
     fetcher
@@ -317,7 +318,20 @@ export default function ChartsPage() {
       {/* ── VOLUME ── */}
       <ChartSection label="Volume">
         <section>
-          <h2 className="text-muted text-xs mb-3">Weekly volume</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-muted text-xs">Weekly volume</h2>
+            <div className="flex rounded overflow-hidden border border-border text-xs">
+              {([2, 4] as const).map((w) => (
+                <button
+                  key={w}
+                  onClick={() => setVolumeWeeks(w)}
+                  className={`px-2.5 py-1 transition-colors ${volumeWeeks === w ? "bg-accent text-bg" : "text-muted"}`}
+                >
+                  {w}W
+                </button>
+              ))}
+            </div>
+          </div>
           {volumeData && volumeData.length > 0 ? (
             <VolumeChart data={volumeData} unit={unit} />
           ) : (

@@ -1,15 +1,20 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireSession } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const weeks = 16;
+export async function GET(request: Request) {
+  const { userId, res } = await requireSession();
+  if (res) return res;
+
+  const weeksParam = new URL(request.url).searchParams.get("weeks");
+  const weeks = weeksParam ? Math.min(Math.max(parseInt(weeksParam, 10) || 16, 1), 52) : 16;
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - weeks * 7);
 
   const sessions = await prisma.session.findMany({
-    where: { date: { gte: cutoff } },
+    where: { userId, date: { gte: cutoff } },
     include: { sets: true },
     orderBy: { date: "asc" },
   });
@@ -25,14 +30,9 @@ export async function GET() {
     weekStart.setUTCHours(0, 0, 0, 0);
     const key = weekStart.toISOString().split("T")[0];
 
-    if (!weeklyData.has(key)) {
-      weeklyData.set(key, {});
-    }
+    if (!weeklyData.has(key)) weeklyData.set(key, {});
 
-    const vol = session.sets.reduce(
-      (sum, s) => sum + s.reps * s.weight,
-      0
-    );
+    const vol = session.sets.reduce((sum, s) => sum + s.reps * s.weight, 0);
     const entry = weeklyData.get(key)!;
     entry[session.dayType] = (entry[session.dayType] || 0) + vol;
   }

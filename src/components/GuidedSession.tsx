@@ -1,11 +1,10 @@
 "use client";
 
-import { useReducer, useCallback, useState } from "react";
+import { useReducer, useCallback, useState, useEffect, useRef } from "react";
 import { DayDefinition } from "@/lib/program";
 import { OverloadResult } from "@/lib/overload";
 import { type WeightUnit } from "@/lib/units";
 import { SetInput } from "@/components/SetRow";
-import { RestTimer } from "@/components/RestTimer";
 import { GuidedExerciseCard } from "@/components/GuidedExerciseCard";
 import { useBeep } from "@/lib/useBeep";
 import { useBackgroundNotification } from "@/lib/useBackgroundNotification";
@@ -26,27 +25,21 @@ interface GuidedSessionProps {
   onStop: () => void;
 }
 
-type Phase = "logging" | "resting";
-
 interface GuidedState {
-  phase: Phase;
   exerciseIndex: number;
   setIndex: number;
 }
 
 type GuidedAction =
-  | { type: "COMPLETE_SET" }
   | { type: "NEXT_SET"; nextExIdx: number; nextSetIdx: number }
   | { type: "SKIP_EXERCISE"; nextExIdx: number };
 
 function guidedReducer(state: GuidedState, action: GuidedAction): GuidedState {
   switch (action.type) {
-    case "COMPLETE_SET":
-      return { ...state, phase: "resting" };
     case "NEXT_SET":
-      return { phase: "logging", exerciseIndex: action.nextExIdx, setIndex: action.nextSetIdx };
+      return { exerciseIndex: action.nextExIdx, setIndex: action.nextSetIdx };
     case "SKIP_EXERCISE":
-      return { phase: "logging", exerciseIndex: action.nextExIdx, setIndex: 0 };
+      return { exerciseIndex: action.nextExIdx, setIndex: 0 };
     default:
       return state;
   }
@@ -63,13 +56,33 @@ export function GuidedSession({
   onStop,
 }: GuidedSessionProps) {
   const [state, dispatch] = useReducer(guidedReducer, {
-    phase: "logging",
     exerciseIndex: 0,
     setIndex: 0,
   });
 
-  // Green flash when arriving from rest timer
-  const [fromRest, setFromRest] = useState(false);
+  // Inline rest timer: absolute end timestamp (null = not resting)
+  const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
+  const [restRemaining, setRestRemaining] = useState(0);
+  // Track the duration of the current rest period for the progress fill
+  const restDurationRef = useRef(0);
+
+  // Flash states — triggered explicitly from handlers
+  const [setFlash, setSetFlash] = useState(false);
+  const [exerciseFlash, setExerciseFlash] = useState(false);
+  const setFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const exerciseFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function triggerSetFlash() {
+    if (setFlashTimer.current) clearTimeout(setFlashTimer.current);
+    setSetFlash(true);
+    setFlashTimer.current = setTimeout(() => setSetFlash(false), 600);
+  }
+
+  function triggerExerciseFlash() {
+    if (exerciseFlashTimer.current) clearTimeout(exerciseFlashTimer.current);
+    setExerciseFlash(true);
+    exerciseFlashTimer.current = setTimeout(() => setExerciseFlash(false), 600);
+  }
 
   // Per-exercise name overrides (only for this session)
   const [exerciseNameOverrides, setExerciseNameOverrides] = useState<Record<string, string>>({});
@@ -81,11 +94,9 @@ export function GuidedSession({
   const currentExState = exercises[state.exerciseIndex];
   const currentSetData = currentExState?.sets[state.setIndex];
 
-  // Resolve the display name (override takes precedence)
   const currentDisplayName =
     exerciseNameOverrides[currentExercise?.id ?? ""] ?? currentExercise?.name ?? "";
 
-  // Compute the next exercise/set after the current one
   const getNextInfo = useCallback(() => {
     let nextExIdx = state.exerciseIndex;
     let nextSetIdx = state.setIndex + 1;
@@ -115,28 +126,54 @@ export function GuidedSession({
     };
   }, [state.exerciseIndex, state.setIndex, day.exercises, exercises, exerciseNameOverrides]);
 
-  const next = getNextInfo();
+  // Poll rest timer every 250ms
+  useEffect(() => {
+    if (restEndsAt === null) {
+      setRestRemaining(0);
+      return;
+    }
 
-  const handleTimerEnd = useCallback(() => {
-    playBeep();
-    const nextName = next
-      ? (exerciseNameOverrides[next.exercise.id] ?? next.exercise.name)
-      : "Next set";
-    notifyIfBackgrounded("Rest Complete", `Time to lift! ${nextName}`);
-  }, [playBeep, notifyIfBackgrounded, next, exerciseNameOverrides]);
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((restEndsAt - Date.now()) / 1000));
+      setRestRemaining(remaining);
 
-  const handleDismissTimer = useCallback(() => {
-    // Cancel the SW lock-screen notification since we're returning to the app
-    cancelRestTimer();
+      if (remaining === 0) {
+        playBeep();
+        const next = getNextInfo();
+        const nextName = next
+          ? (exerciseNameOverrides[next.exercise.id] ?? next.exercise.name)
+          : "Next set";
+        notifyIfBackgrounded("Rest Complete", `Time to lift! ${nextName}`);
+        cancelRestTimer();
+        setRestEndsAt(null);
+      }
+    };
 
+    tick(); // immediate first tick
+    const id = setInterval(tick, 250);
+    return () => clearInterval(id);
+  }, [restEndsAt, playBeep, notifyIfBackgrounded, cancelRestTimer, getNextInfo, exerciseNameOverrides]);
+
+  const handleSetDone = useCallback(() => {
+    if (!currentSetData || !currentSetData.weight || !currentSetData.reps) return;
+    updateSet(state.exerciseIndex, state.setIndex, { ...currentSetData, done: true });
+
+    const isLastExercise = state.exerciseIndex >= day.exercises.length - 1;
+    const isLastSet = state.setIndex >= (currentExState?.sets.length ?? 1) - 1;
+
+    if (isLastExercise && isLastSet) {
+      onFinish();
+      return;
+    }
+
+    const next = getNextInfo();
     if (!next) {
       onFinish();
       return;
     }
 
-    // If moving to the next set of the SAME exercise, copy the current set's weight
-    // so the user doesn't have to re-enter it
-    if (next.exerciseIndex === state.exerciseIndex && currentSetData?.weight) {
+    // Copy weight forward immediately (same exercise → same weight)
+    if (next.exerciseIndex === state.exerciseIndex && currentSetData.weight) {
       const nextSetData = exercises[next.exerciseIndex]?.sets[next.setIndex];
       if (nextSetData) {
         updateSet(next.exerciseIndex, next.setIndex, {
@@ -146,39 +183,41 @@ export function GuidedSession({
       }
     }
 
-    setFromRest(true);
+    // Advance to next set immediately
     dispatch({ type: "NEXT_SET", nextExIdx: next.exerciseIndex, nextSetIdx: next.setIndex });
-  }, [next, onFinish, state.exerciseIndex, currentSetData, exercises, updateSet, cancelRestTimer]);
-
-  const handleSetDone = useCallback(() => {
-    if (!currentSetData || !currentSetData.weight || !currentSetData.reps) return;
-    updateSet(state.exerciseIndex, state.setIndex, { ...currentSetData, done: true });
-
-    // Skip rest timer for the very last set of the very last exercise
-    const isLastExercise = state.exerciseIndex >= day.exercises.length - 1;
-    const isLastSet = state.setIndex >= (currentExState?.sets.length ?? 1) - 1;
-
-    if (isLastExercise && isLastSet) {
-      onFinish();
-      return;
+    if (next.exerciseIndex !== state.exerciseIndex) {
+      triggerExerciseFlash();
     }
+    triggerSetFlash();
 
-    dispatch({ type: "COMPLETE_SET" });
+    // Start inline rest timer (skip after warmup set)
+    const restSecs = currentSetData.isWarmup ? 0 : currentExercise.rest;
+    if (restSecs > 0) {
+      restDurationRef.current = restSecs;
+      setRestEndsAt(Date.now() + restSecs * 1000);
+      startRestTimer(restSecs, next.info);
+    }
+  }, [currentSetData, state.exerciseIndex, state.setIndex, updateSet, day.exercises.length, currentExState, onFinish, currentExercise, getNextInfo, exercises, startRestTimer]);
 
-    // Start the SW rest timer so a notification shows on the lock screen
-    const restSecs = currentExercise.rest;
-    const nextInfo = getNextInfo();
-    startRestTimer(restSecs, nextInfo?.info);
-  }, [currentSetData, state.exerciseIndex, state.setIndex, updateSet, day.exercises.length, currentExState, onFinish, currentExercise, getNextInfo, startRestTimer]);
+  const handleSkipRest = useCallback(() => {
+    cancelRestTimer();
+    setRestEndsAt(null);
+  }, [cancelRestTimer]);
 
   const handleSkipExercise = useCallback(() => {
+    // Cancel any running rest when skipping an exercise
+    cancelRestTimer();
+    setRestEndsAt(null);
+
     const skipToExIdx = state.exerciseIndex + 1;
     if (skipToExIdx >= day.exercises.length) {
       onFinish();
       return;
     }
     dispatch({ type: "SKIP_EXERCISE", nextExIdx: skipToExIdx });
-  }, [state.exerciseIndex, day.exercises.length, onFinish]);
+    triggerSetFlash();
+    triggerExerciseFlash();
+  }, [state.exerciseIndex, day.exercises.length, onFinish, cancelRestTimer]);
 
   // Safety: if state is inconsistent, finish the session
   if (!currentExercise || !currentExState || !currentSetData) {
@@ -186,19 +225,6 @@ export function GuidedSession({
     return null;
   }
 
-  // RESTING phase
-  if (state.phase === "resting") {
-    return (
-      <RestTimer
-        seconds={currentExercise.rest}
-        onDismiss={handleDismissTimer}
-        onTimerEnd={handleTimerEnd}
-        nextExercise={next?.info}
-      />
-    );
-  }
-
-  // LOGGING phase
   return (
     <GuidedExerciseCard
       exercise={currentExercise}
@@ -211,15 +237,18 @@ export function GuidedSession({
       overload={overloads[currentExercise.id]}
       unit={unit}
       increments={increments}
-      fromRest={fromRest}
+      restRemaining={restRemaining}
+      restDuration={restDurationRef.current}
+      setFlash={setFlash}
+      exerciseFlash={exerciseFlash}
       onChange={(data) => updateSet(state.exerciseIndex, state.setIndex, data)}
       onDone={handleSetDone}
+      onSkipRest={handleSkipRest}
       onSkip={handleSkipExercise}
       onStop={onStop}
       onNameChange={(name) =>
         setExerciseNameOverrides((prev) => ({ ...prev, [currentExercise.id]: name }))
       }
-      onRestAnimationDone={() => setFromRest(false)}
     />
   );
 }

@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireSession } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const { userId, res } = await requireSession();
+  if (res) return res;
+
   const sessions = await prisma.session.findMany({
+    where: { userId },
     include: {
       sets: { orderBy: [{ exerciseId: "asc" }, { setNumber: "asc" }] },
       debrief: true,

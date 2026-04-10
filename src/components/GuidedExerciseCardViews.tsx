@@ -146,16 +146,27 @@ interface MainViewProps {
   setData: SetInput;
   overload?: OverloadResult;
   unit: WeightUnit;
-  greenFlash: boolean;
+  restRemaining: number;
+  restDuration: number;
+  leftHanded: boolean;
+  setFlash: boolean;
+  exerciseFlash: boolean;
   confirmSkip: boolean;
   onWeightTap: () => void;
   onEditName: () => void;
   onChange: (data: SetInput) => void;
   onDone: () => void;
+  onSkipRest: () => void;
   onSkipConfirm: () => void;
   onSkipCancel: () => void;
   onSkipRequest: () => void;
   onStop: () => void;
+}
+
+function formatRestTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 export function MainView({
@@ -168,12 +179,17 @@ export function MainView({
   setData,
   overload,
   unit,
-  greenFlash,
+  restRemaining,
+  restDuration,
+  leftHanded,
+  setFlash,
+  exerciseFlash,
   confirmSkip,
   onWeightTap,
   onEditName,
   onChange,
   onDone,
+  onSkipRest,
   onSkipConfirm,
   onSkipCancel,
   onSkipRequest,
@@ -186,18 +202,35 @@ export function MainView({
   const repEnd = exercise.repRange[1];
   const repButtons = Array.from({ length: repEnd - repStart + 1 }, (_, i) => repStart + i);
 
-  return (
-    <div
-      className={`flex flex-col items-center py-6 px-4 transition-colors duration-700 ${
-        greenFlash ? "bg-green-500/10" : ""
-      }`}
+  const isResting = restRemaining > 0;
+  const restFillPct = restDuration > 0 ? (restRemaining / restDuration) * 100 : 0;
+
+  const endSessionBtn = (
+    <button
+      onClick={onStop}
+      className="flex-1 px-3 py-2.5 border border-red-400 text-red-400 text-sm rounded hover:bg-red-400/10 transition-colors"
     >
+      End Session
+    </button>
+  );
+
+  const skipBtn = confirmSkip ? null : (
+    <button
+      onClick={onSkipRequest}
+      className="flex-1 px-3 py-2.5 border border-border text-muted text-sm rounded hover:border-accent hover:text-accent transition-colors"
+    >
+      Skip
+    </button>
+  );
+
+  return (
+    <div className="flex flex-col items-center py-6 px-4">
       <p className="text-muted text-xs uppercase tracking-wide">
         Exercise {exerciseIndex + 1}/{totalExercises}
       </p>
 
       <div className="flex items-center gap-2 mt-1">
-        <h2 className="text-2xl font-medium">{exerciseName}</h2>
+        <h2 className={`text-2xl font-medium transition-colors duration-500 ${exerciseFlash ? "text-accent" : ""}`}>{exerciseName}</h2>
         <button
           onClick={onEditName}
           className="text-muted hover:text-accent transition-colors p-1"
@@ -210,8 +243,8 @@ export function MainView({
         </button>
       </div>
 
-      <p className="text-muted text-lg font-medium mt-1">
-        Set {setIndex + 1}/{totalSets}
+      <p className={`text-lg font-medium mt-1 transition-colors duration-500 ${setFlash ? "text-accent" : "text-muted"}`}>
+        {setData.isWarmup ? "Warmup" : `Set ${setIndex}/${totalSets - 1}`}
       </p>
       <p className="text-muted text-sm opacity-70">
         {exercise.repRange[0]}–{exercise.repRange[1]} reps
@@ -265,66 +298,89 @@ export function MainView({
         </div>
       </div>
 
-      <div className="mt-4 w-full max-w-xs">
-        <p className="text-muted text-[10px] uppercase tracking-wide text-center mb-2">RIR</p>
-        <div className="grid grid-cols-6 gap-1.5">
-          {[0, 1, 2, 3, 4, 5].map((n) => (
-            <button
-              key={n}
-              onClick={() => onChange({ ...setData, rir: n.toString() })}
-              className={`h-11 rounded text-sm transition-colors ${
-                selectedRir === n
-                  ? "bg-accent text-bg ring-2 ring-accent/50"
-                  : "bg-surface border border-border text-muted"
-              }`}
-            >
-              {n}
-            </button>
-          ))}
+      {!setData.isWarmup && (
+        <div className="mt-4 w-full max-w-xs">
+          <p className="text-muted text-[10px] uppercase tracking-wide text-center mb-2">RIR</p>
+          <div className="grid grid-cols-6 gap-1.5">
+            {[0, 1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                onClick={() => onChange({ ...setData, rir: n.toString() })}
+                className={`h-11 rounded text-sm transition-colors ${
+                  selectedRir === n
+                    ? "bg-accent text-bg ring-2 ring-accent/50"
+                    : "bg-surface border border-border text-muted"
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      <button
-        onClick={() => {
-          if (!setData.weight || !setData.reps) return;
-          onDone();
-        }}
-        disabled={!setData.weight || !setData.reps}
-        className="mt-6 w-full max-w-xs h-14 bg-accent text-bg font-medium rounded text-sm hover:opacity-90 transition-opacity disabled:opacity-30"
-      >
-        Done
-      </button>
+      {/* Done button / rest countdown */}
+      {isResting ? (
+        <button
+          onClick={onSkipRest}
+          className="relative mt-6 w-full max-w-xs h-14 overflow-hidden border border-accent rounded text-sm"
+        >
+          <div
+            className="absolute inset-y-0 left-0 transition-[width] duration-[250ms] ease-linear"
+            style={{
+              width: `${restFillPct}%`,
+              backgroundColor: "var(--color-accent)",
+            }}
+          />
+          <span className="relative z-10 text-bg text-sm tabular-nums font-medium">
+            {formatRestTime(restRemaining)} — tap to skip
+          </span>
+        </button>
+      ) : (
+        <button
+          onClick={() => {
+            if (!setData.weight || !setData.reps) return;
+            navigator.vibrate?.(100);
+            onDone();
+          }}
+          disabled={!setData.weight || !setData.reps}
+          className="mt-6 w-full max-w-xs h-14 bg-accent text-bg font-medium rounded text-sm hover:opacity-90 transition-opacity disabled:opacity-30"
+        >
+          Done
+        </button>
+      )}
 
+      {/* Skip / End Session row */}
       {confirmSkip ? (
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex gap-2 w-full max-w-xs">
           <button
             onClick={onSkipConfirm}
-            className="px-4 py-1.5 border border-border text-muted text-sm rounded hover:border-accent hover:text-accent transition-colors"
+            className="flex-1 px-3 py-2.5 border border-border text-muted text-sm rounded hover:border-accent hover:text-accent transition-colors"
           >
             Confirm skip
           </button>
           <button
             onClick={onSkipCancel}
-            className="px-4 py-1.5 text-muted text-sm hover:text-accent transition-colors"
+            className="flex-1 px-3 py-2.5 text-muted text-sm hover:text-accent transition-colors"
           >
             Cancel
           </button>
         </div>
       ) : (
-        <button
-          onClick={onSkipRequest}
-          className="mt-4 px-4 py-1.5 border border-border text-muted text-sm rounded hover:border-accent hover:text-accent transition-colors"
-        >
-          Skip
-        </button>
+        <div className="mt-4 flex gap-2 w-full max-w-xs">
+          {leftHanded ? (
+            <>
+              {!isResting && skipBtn}
+              {endSessionBtn}
+            </>
+          ) : (
+            <>
+              {endSessionBtn}
+              {!isResting && skipBtn}
+            </>
+          )}
+        </div>
       )}
-
-      <button
-        onClick={onStop}
-        className="mt-4 px-4 py-1.5 border border-red-400 text-red-400 text-sm rounded hover:bg-red-400/10 transition-colors"
-      >
-        End Session
-      </button>
     </div>
   );
 }

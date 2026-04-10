@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useTheme } from "@/lib/useTheme";
 import { useUnit } from "@/lib/useUnit";
-import { useBiometricAuth } from "@/hooks/useBiometricAuth";
-import { BiometricConfirmModal } from "@/components/BiometricConfirmModal";
+import { authClient } from "@/lib/auth-client";
 
 const NOTIF_OPTED_OUT = "gym-notifications-off";
 const ORIENT_LOCK_KEY = "gym-orientation-lock";
+const LEFT_HANDED_KEY = "gym-left-handed";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -68,23 +68,211 @@ function Toggle({
   );
 }
 
+type AccessPhase = "locked" | "entering-pin" | "unlocked";
+
+interface AllowedEmail {
+  id: string;
+  email: string;
+  createdAt: string;
+}
+
+function AccessSection() {
+  const { data: session } = authClient.useSession();
+  const isOwner = session?.user?.email === process.env.NEXT_PUBLIC_OWNER_EMAIL;
+
+  const [phase, setPhase] = useState<AccessPhase>("locked");
+  const [pin, setPin] = useState(["", "", "", ""]);
+  const [pinError, setPinError] = useState(false);
+  const [pinLoading, setPinLoading] = useState(false);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const [emails, setEmails] = useState<AllowedEmail[]>([]);
+  const [newEmail, setNewEmail] = useState("");
+  const [addError, setAddError] = useState("");
+  const [addLoading, setAddLoading] = useState(false);
+
+  if (!isOwner) return null;
+
+  async function verifyPin(fullPin: string) {
+    setPinLoading(true);
+    setPinError(false);
+    const res = await fetch("/api/auth/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pin: fullPin }),
+    });
+    const data = await res.json();
+    if (data.valid) {
+      await loadEmails();
+      setPhase("unlocked");
+    } else {
+      setPinError(true);
+      setPin(["", "", "", ""]);
+      inputRefs.current[0]?.focus();
+    }
+    setPinLoading(false);
+  }
+
+  function handleDigit(index: number, value: string) {
+    if (!/^\d*$/.test(value)) return;
+    const digit = value.slice(-1);
+    const next = [...pin];
+    next[index] = digit;
+    setPin(next);
+    setPinError(false);
+    if (digit && index < 3) inputRefs.current[index + 1]?.focus();
+    if (digit && index === 3) {
+      const fullPin = next.join("");
+      if (fullPin.length === 4) verifyPin(fullPin);
+    }
+  }
+
+  function handleKeyDown(index: number, e: React.KeyboardEvent) {
+    if (e.key === "Backspace" && !pin[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  }
+
+  async function loadEmails() {
+    const res = await fetch("/api/admin/allowed-emails");
+    const data = await res.json();
+    setEmails(data);
+  }
+
+  async function handleAdd() {
+    const trimmed = newEmail.trim().toLowerCase();
+    if (!trimmed) return;
+    setAddLoading(true);
+    setAddError("");
+    const res = await fetch("/api/admin/allowed-emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: trimmed }),
+    });
+    if (res.ok) {
+      setNewEmail("");
+      await loadEmails();
+    } else {
+      const data = await res.json();
+      setAddError(data.error || "Failed to add");
+    }
+    setAddLoading(false);
+  }
+
+  async function handleDelete(id: string) {
+    await fetch("/api/admin/allowed-emails", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    setEmails((prev) => prev.filter((e) => e.id !== id));
+  }
+
+  return (
+    <div>
+      <SectionLabel>Access</SectionLabel>
+      <div className="border border-border rounded p-3">
+        {phase === "locked" && (
+          <button
+            onClick={() => setPhase("entering-pin")}
+            className="w-full text-left text-sm text-muted hover:text-text transition-colors"
+          >
+            Manage access list
+            <span className="text-[11px] text-muted block mt-0.5">Enter PIN to view and edit</span>
+          </button>
+        )}
+
+        {phase === "entering-pin" && (
+          <div className="flex flex-col items-center gap-4 py-2">
+            <p className="text-sm text-muted">Enter PIN to unlock</p>
+            <div className="flex gap-3">
+              {pin.map((digit, i) => (
+                <input
+                  key={i}
+                  ref={(el) => { inputRefs.current[i] = el; }}
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleDigit(i, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(i, e)}
+                  disabled={pinLoading}
+                  className="w-12 h-12 bg-surface border border-border text-text text-center text-xl font-bold rounded focus:border-accent focus:outline-none disabled:opacity-50"
+                  autoFocus={i === 0}
+                />
+              ))}
+            </div>
+            {pinError && <p className="text-red-400 text-xs">Wrong PIN</p>}
+            {pinLoading && (
+              <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+            )}
+            <button
+              onClick={() => { setPhase("locked"); setPin(["", "", "", ""]); setPinError(false); }}
+              className="text-xs text-muted"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
+        {phase === "unlocked" && (
+          <div className="space-y-3">
+            <p className="text-xs text-muted">Friends who can sign in with their Google account</p>
+
+            {emails.length === 0 ? (
+              <p className="text-xs text-muted italic">No emails added yet</p>
+            ) : (
+              <ul className="space-y-2">
+                {emails.map((e) => (
+                  <li key={e.id} className="flex items-center justify-between gap-2">
+                    <span className="text-sm truncate">{e.email}</span>
+                    <button
+                      onClick={() => handleDelete(e.id)}
+                      className="text-muted hover:text-red-400 transition-colors flex-shrink-0 text-lg leading-none"
+                      aria-label={`Remove ${e.email}`}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="flex gap-2 pt-1">
+              <input
+                type="email"
+                value={newEmail}
+                onChange={(e) => { setNewEmail(e.target.value); setAddError(""); }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
+                placeholder="friend@gmail.com"
+                className="flex-1 h-9 bg-bg border border-border text-text text-sm rounded px-3 focus:border-accent focus:outline-none"
+              />
+              <button
+                onClick={handleAdd}
+                disabled={addLoading || !newEmail.trim()}
+                className="h-9 px-4 bg-accent text-bg text-sm font-medium rounded disabled:opacity-50"
+              >
+                Add
+              </button>
+            </div>
+            {addError && <p className="text-red-400 text-xs">{addError}</p>}
+
+            <button
+              onClick={() => { setPhase("locked"); setPin(["", "", "", ""]); }}
+              className="text-xs text-muted pt-1"
+            >
+              Lock
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Settings() {
   const { theme, toggleTheme } = useTheme();
   const { unit, setUnit } = useUnit();
-
-  const {
-    bioEnabled,
-    bioSupported,
-    bioConfirm,
-    bioPin,
-    bioBusy,
-    bioError,
-    setBioPin,
-    setBioError,
-    handleBioToggle,
-    confirmDisableBio,
-    cancelDisableBio,
-  } = useBiometricAuth();
 
   // ── Notifications ──────────────────────────────────────────────────────────
   const [notifSupported, setNotifSupported] = useState<boolean | null>(null);
@@ -122,6 +310,23 @@ export default function Settings() {
     }
   }
 
+  // ── Left-handed mode ───────────────────────────────────────────────────────
+  const [leftHanded, setLeftHanded] = useState(false);
+
+  useEffect(() => {
+    setLeftHanded(localStorage.getItem(LEFT_HANDED_KEY) === "1");
+  }, []);
+
+  function handleLeftHandedToggle() {
+    const next = !leftHanded;
+    setLeftHanded(next);
+    if (next) {
+      localStorage.setItem(LEFT_HANDED_KEY, "1");
+    } else {
+      localStorage.removeItem(LEFT_HANDED_KEY);
+    }
+  }
+
   // ── Orientation lock ───────────────────────────────────────────────────────
   const [orientSupported, setOrientSupported] = useState(false);
   const [orientLocked, setOrientLocked] = useState(false);
@@ -148,7 +353,7 @@ export default function Settings() {
           }
         ).lock("portrait");
       } catch {
-        // Only works in standalone PWA mode — silently ignore otherwise
+        // Only works in standalone PWA mode
       }
     } else {
       localStorage.removeItem(ORIENT_LOCK_KEY);
@@ -210,6 +415,9 @@ export default function Settings() {
           <Row label="Theme" description={theme === "dark" ? "Dark" : "Light"}>
             <Toggle enabled={theme === "dark"} onToggle={toggleTheme} />
           </Row>
+          <Row label="Left-handed mode" description="End Session on the right during workouts">
+            <Toggle enabled={leftHanded} onToggle={handleLeftHandedToggle} />
+          </Row>
           {orientSupported && (
             <Row label="Lock orientation" description="Stay in portrait mode">
               <Toggle enabled={orientLocked} onToggle={handleOrientToggle} />
@@ -242,35 +450,27 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Security */}
-      {bioSupported && bioEnabled !== null && (
-        <div>
-          <SectionLabel>Security</SectionLabel>
-          <div className="border border-border rounded p-3">
-            <Row label="Biometric login" description="Use biometric to unlock">
-              <Toggle
-                enabled={!!bioEnabled}
-                onToggle={handleBioToggle}
-                disabled={bioBusy}
-              />
-            </Row>
-          </div>
-        </div>
-      )}
+      {/* Access — only visible to owner */}
+      <AccessSection />
 
-      {bioConfirm && (
-        <BiometricConfirmModal
-          pin={bioPin}
-          busy={bioBusy}
-          error={bioError}
-          onPinChange={(p) => {
-            setBioPin(p);
-            setBioError("");
-          }}
-          onConfirm={confirmDisableBio}
-          onCancel={cancelDisableBio}
-        />
-      )}
+      {/* Account */}
+      <div>
+        <SectionLabel>Account</SectionLabel>
+        <div className="border border-border rounded p-3">
+          <button
+            onClick={() =>
+              authClient.signOut({
+                fetchOptions: {
+                  onSuccess: () => { window.location.href = "/auth/sign-in"; },
+                },
+              })
+            }
+            className="w-full text-left text-sm text-muted hover:text-red-400 transition-colors"
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

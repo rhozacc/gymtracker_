@@ -17,13 +17,10 @@ interface StandardModeViewProps {
   guidedCompleted: boolean;
   saving: boolean;
   notes: string;
-  backupFound: boolean;
   onNotesChange: (v: string) => void;
   onContinueGuided: () => void;
   onFinish: () => void;
   onEndSession: () => void;
-  onRestoreBackup: () => void;
-  onDiscardBackup: () => void;
   onUpdateSet: (exIdx: number, setIdx: number, data: SetInput) => void;
   onAddSet: (exIdx: number) => void;
   onRemoveSet: (exIdx: number, setIdx: number) => void;
@@ -41,13 +38,10 @@ export function StandardModeView({
   guidedCompleted,
   saving,
   notes,
-  backupFound,
   onNotesChange,
   onContinueGuided,
   onFinish,
   onEndSession,
-  onRestoreBackup,
-  onDiscardBackup,
   onUpdateSet,
   onAddSet,
   onRemoveSet,
@@ -57,32 +51,6 @@ export function StandardModeView({
 
   return (
     <>
-      {/* Crash-recovery banner */}
-      {backupFound && (
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded p-3 flex items-start gap-3">
-          <div className="flex-1">
-            <p className="text-sm font-medium text-yellow-400">Previous session recovered</p>
-            <p className="text-xs text-muted mt-0.5">
-              Looks like a session didn&apos;t finish saving. Restore your data?
-            </p>
-          </div>
-          <div className="flex gap-2 shrink-0 mt-0.5">
-            <button
-              onClick={onRestoreBackup}
-              className="text-xs px-3 py-1.5 bg-yellow-500/20 text-yellow-400 rounded hover:bg-yellow-500/30 transition-colors"
-            >
-              Restore
-            </button>
-            <button
-              onClick={onDiscardBackup}
-              className="text-xs px-3 py-1.5 border border-border text-muted rounded hover:text-accent transition-colors"
-            >
-              Discard
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Continue Guided Session — sticky top, only when not yet completed */}
       {wasGuidedMode && !guidedCompleted && (
         <div className="sticky top-0 z-40">

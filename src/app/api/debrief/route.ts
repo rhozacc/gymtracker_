@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireSession } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const { userId, res } = await requireSession();
+  if (res) return res;
+
   const debriefs = await prisma.debrief.findMany({
+    where: { session: { userId } },
     orderBy: { createdAt: "desc" },
     include: {
       session: {
@@ -33,7 +38,18 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const { userId, res } = await requireSession();
+  if (res) return res;
+
   const body = await request.json();
+
+  // Verify the session belongs to this user
+  const session = await prisma.session.findUnique({
+    where: { id: body.sessionId, userId },
+  });
+  if (!session) {
+    return NextResponse.json({ error: "Session not found" }, { status: 404 });
+  }
 
   const debrief = await prisma.debrief.create({
     data: {

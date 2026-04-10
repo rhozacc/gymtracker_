@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
@@ -50,14 +50,6 @@ function getNextDayType(
   return dayKeys[(lastIdx + 1) % dayKeys.length];
 }
 
-function SectionLabel({ children }: { children: ReactNode }) {
-  return (
-    <p className="text-[10px] font-medium uppercase tracking-widest text-muted mb-3">
-      {children}
-    </p>
-  );
-}
-
 export default function Dashboard() {
   const router = useRouter();
   const { plan } = useProgram();
@@ -69,11 +61,15 @@ export default function Dashboard() {
     "/api/charts/data",
     fetcher
   );
-  const defaultKeys = Object.keys(plan.days);
+  const dayKeys = Object.keys(plan.days).sort((a, b) => {
+    const numA = parseInt(plan.days[a].label.match(/Day (\d+)/)?.[1] ?? "0");
+    const numB = parseInt(plan.days[b].label.match(/Day (\d+)/)?.[1] ?? "0");
+    return numA - numB;
+  });
 
   const streak = sessions ? calculateStreak(sessions) : 0;
   const lastSession = sessions?.[0];
-  const nextDayType = getNextDayType(lastSession?.dayType, defaultKeys);
+  const nextDayType = getNextDayType(lastSession?.dayType, dayKeys);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const effectiveSelected = selectedDay || nextDayType;
 
@@ -213,7 +209,7 @@ export default function Dashboard() {
           </span>
         </Link>
         <div className="grid grid-cols-1 gap-2">
-          {defaultKeys.map((key) => {
+          {dayKeys.map((key) => {
             const day = plan.days[key];
             if (!day) return null;
             const isSelected = key === effectiveSelected;

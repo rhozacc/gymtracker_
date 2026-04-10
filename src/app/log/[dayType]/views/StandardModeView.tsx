@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import type { OverloadResult } from "@/lib/overload";
 import { kgToDisplay, type WeightUnit } from "@/lib/units";
 import { SetRow, type SetInput } from "@/components/SetRow";
@@ -55,7 +54,6 @@ export function StandardModeView({
   onMarkDone,
   onRenameExercise,
 }: StandardModeViewProps) {
-  const router = useRouter();
 
   return (
     <>
@@ -84,18 +82,6 @@ export function StandardModeView({
           </div>
         </div>
       )}
-
-      <div>
-        {!wasGuidedMode && (
-          <button
-            onClick={() => router.back()}
-            className="text-muted text-sm mb-2 hover:text-accent"
-          >
-            &larr; Back
-          </button>
-        )}
-        <h1 className="text-lg font-medium">{day.label}</h1>
-      </div>
 
       {/* Continue Guided Session — sticky top, only when not yet completed */}
       {wasGuidedMode && !guidedCompleted && (

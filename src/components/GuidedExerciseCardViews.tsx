@@ -5,7 +5,6 @@ import type { Exercise } from "@/lib/program";
 import type { OverloadResult } from "@/lib/overload";
 import type { SetInput } from "@/components/SetRow";
 import { OverloadBanner } from "@/components/OverloadBanner";
-import { useTheme } from "@/lib/useTheme";
 
 // ── Shared types ─────────────────────────────────────────────────────────────
 
@@ -180,7 +179,6 @@ export function MainView({
   onSkipRequest,
   onStop,
 }: MainViewProps) {
-  const { theme, toggleTheme } = useTheme();
   const selectedReps = parseInt(setData.reps) || null;
   const selectedRir = setData.rir !== "" ? parseInt(setData.rir) : null;
 
@@ -190,29 +188,10 @@ export function MainView({
 
   return (
     <div
-      className={`relative flex flex-col items-center py-6 px-4 transition-colors duration-700 ${
+      className={`flex flex-col items-center py-6 px-4 transition-colors duration-700 ${
         greenFlash ? "bg-green-500/10" : ""
       }`}
     >
-      <button
-        onClick={toggleTheme}
-        className="absolute top-4 right-4 w-8 h-8 rounded-full border border-border flex items-center justify-center text-muted hover:border-accent hover:text-accent transition-colors"
-        aria-label="Toggle theme"
-      >
-        {theme === "dark" ? (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="5" />
-            <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-            <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-          </svg>
-        ) : (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-          </svg>
-        )}
-      </button>
       <p className="text-muted text-xs uppercase tracking-wide">
         Exercise {exerciseIndex + 1}/{totalExercises}
       </p>

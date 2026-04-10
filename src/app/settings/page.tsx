@@ -9,6 +9,7 @@ import { BiometricConfirmModal } from "@/components/BiometricConfirmModal";
 
 const NOTIF_OPTED_OUT = "gym-notifications-off";
 const ORIENT_LOCK_KEY = "gym-orientation-lock";
+const LEFT_HANDED_KEY = "gym-left-handed";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -122,6 +123,23 @@ export default function Settings() {
     }
   }
 
+  // ── Left-handed mode ───────────────────────────────────────────────────────
+  const [leftHanded, setLeftHanded] = useState(false);
+
+  useEffect(() => {
+    setLeftHanded(localStorage.getItem(LEFT_HANDED_KEY) === "1");
+  }, []);
+
+  function handleLeftHandedToggle() {
+    const next = !leftHanded;
+    setLeftHanded(next);
+    if (next) {
+      localStorage.setItem(LEFT_HANDED_KEY, "1");
+    } else {
+      localStorage.removeItem(LEFT_HANDED_KEY);
+    }
+  }
+
   // ── Orientation lock ───────────────────────────────────────────────────────
   const [orientSupported, setOrientSupported] = useState(false);
   const [orientLocked, setOrientLocked] = useState(false);
@@ -209,6 +227,9 @@ export default function Settings() {
         <div className="border border-border rounded p-3 space-y-3">
           <Row label="Theme" description={theme === "dark" ? "Dark" : "Light"}>
             <Toggle enabled={theme === "dark"} onToggle={toggleTheme} />
+          </Row>
+          <Row label="Left-handed mode" description="End Session on the right during workouts">
+            <Toggle enabled={leftHanded} onToggle={handleLeftHandedToggle} />
           </Row>
           {orientSupported && (
             <Row label="Lock orientation" description="Stay in portrait mode">

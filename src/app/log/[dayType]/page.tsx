@@ -149,7 +149,8 @@ export default function LogPage() {
             ...exState,
             sets: exState.sets.map((s, i) => {
               let prefillKg: number;
-              if (ol.status === "go_up") {
+              if (ol.status === "go_up" || ol.status === "almost_ready") {
+                // Use suggestedWeight so the prefilled value always matches the banner
                 prefillKg = ol.suggestedWeight;
               } else {
                 const lastSetWeight = raw[Math.min(i, raw.length - 1)]?.weight;

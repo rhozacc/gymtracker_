@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import useSWR from "swr";
 import dynamic from "next/dynamic";
 import { fetcher } from "@/lib/swr";
@@ -248,7 +249,12 @@ export default function ChartsPage() {
 
   if (sessionCount !== null && sessionCount < 5 && !bypassLock) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 relative">
+        <Link href="/" className="absolute top-0 left-0 text-muted hover:text-text transition-colors" aria-label="Back to home">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M11 4L6 9l5 5"/>
+          </svg>
+        </Link>
         <svg
           width="40"
           height="40"
@@ -279,7 +285,14 @@ export default function ChartsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-medium">Trends</h1>
+      <div className="flex items-center gap-3">
+        <Link href="/" className="text-muted hover:text-text transition-colors" aria-label="Back to home">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M11 4L6 9l5 5"/>
+          </svg>
+        </Link>
+        <h1 className="text-lg font-medium">Trends</h1>
+      </div>
 
       {/* ── KEY TRENDS ── */}
       <ChartSection label="Key Trends">
@@ -346,7 +359,7 @@ export default function ChartsPage() {
       </ChartSection>
 
       {/* ── EXPLAINER ── */}
-      <div className="border-t border-border pt-6 pb-24">
+      <div className="border-t border-border pt-6">
         <h2 className="text-sm font-medium mb-2">What is Est. 1RM?</h2>
         <p className="text-muted text-xs leading-relaxed">
           <span className="text-accent font-medium">Estimated 1RM (one-rep max)</span> predicts

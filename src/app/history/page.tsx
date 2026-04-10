@@ -40,7 +40,14 @@ export default function HistoryPage() {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-lg font-medium">History</h1>
+        <div className="flex items-center gap-3">
+          <Link href="/" className="text-muted hover:text-text transition-colors" aria-label="Back to home">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 4L6 9l5 5"/>
+            </svg>
+          </Link>
+          <h1 className="text-lg font-medium">History</h1>
+        </div>
         {sessions && sessions.length > 0 && !confirmNuke && (
           <button
             onClick={() => setConfirmNuke(true)}

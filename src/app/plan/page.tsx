@@ -302,7 +302,14 @@ export default function PlanPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-medium">Your Current Plan</h1>
+        <div className="flex items-center gap-3 mb-1">
+          <Link href="/" className="text-muted hover:text-text transition-colors" aria-label="Back to home">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 4L6 9l5 5"/>
+            </svg>
+          </Link>
+          <h1 className="text-lg font-medium">Your Current Plan</h1>
+        </div>
         <p className="text-muted text-xs mt-1">
           Your plan data is stored and synced for you. Extras are part of your plan.
         </p>

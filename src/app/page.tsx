@@ -115,7 +115,7 @@ export default function Dashboard() {
   }, [sessions]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-14">
       {sessionsError && (
         <div className="border border-red-500/30 bg-red-950/20 rounded p-3 text-sm">
           <span className="text-red-400 font-medium">
@@ -169,7 +169,15 @@ export default function Dashboard() {
       {/* ── Last Session ── */}
       {lastSession && (
         <div>
-          <h2 className="text-lg font-medium mb-3">Last Session</h2>
+          <Link href="/history" className="flex items-center justify-between mb-3 group">
+            <h2 className="text-lg font-medium">Last Session</h2>
+            <span className="flex items-center gap-1.5 text-muted group-hover:text-text transition-colors">
+              <span className="text-xs">Log</span>
+              <svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 10L10 2M10 2H4.5M10 2V7.5"/>
+              </svg>
+            </span>
+          </Link>
           <Link
             href={`/history/${lastSession.id}`}
             className="block border border-border rounded p-3 hover:border-muted transition-colors"
@@ -195,7 +203,15 @@ export default function Dashboard() {
 
       {/* ── Start Session ── */}
       <div>
-        <h2 className="text-lg font-medium mb-3">Up Next</h2>
+        <Link href="/plan" className="flex items-center justify-between mb-3 group">
+          <h2 className="text-lg font-medium">Up Next</h2>
+          <span className="flex items-center gap-1.5 text-muted group-hover:text-text transition-colors">
+            <span className="text-xs">Plans</span>
+            <svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 10L10 2M10 2H4.5M10 2V7.5"/>
+            </svg>
+          </span>
+        </Link>
         <div className="grid grid-cols-1 gap-2">
           {defaultKeys.map((key) => {
             const day = plan.days[key];
@@ -235,7 +251,15 @@ export default function Dashboard() {
 
       {/* ── Progress ── */}
       <div>
-        <h2 className="text-lg font-medium mb-3">Progress</h2>
+        <Link href="/charts" className="flex items-center justify-between mb-3 group">
+          <h2 className="text-lg font-medium">Progress</h2>
+          <span className="flex items-center gap-1.5 text-muted group-hover:text-text transition-colors">
+            <span className="text-xs">Trends</span>
+            <svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 10L10 2M10 2H4.5M10 2V7.5"/>
+            </svg>
+          </span>
+        </Link>
 
         {sessions && sessions.length > 0 && (
           <div className="mb-4">

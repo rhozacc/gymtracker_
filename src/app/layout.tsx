@@ -3,10 +3,8 @@ import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import { PinGate } from "@/components/PinGate";
 import { SetupGuide } from "@/components/SetupGuide";
-import { Nav } from "@/components/Nav";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { InstallPrompt } from "@/components/InstallPrompt";
-import { NavVisibilityProvider } from "@/lib/useNavVisibility";
 import { OrientationLockInit } from "@/components/OrientationLockInit";
 
 export const metadata: Metadata = {
@@ -47,13 +45,10 @@ export default function RootLayout({
         <ServiceWorkerRegistrar />
         <OrientationLockInit />
         {hasDb ? (
-          <NavVisibilityProvider>
-            <PinGate>
-              <InstallPrompt />
-              <main className="max-w-lg mx-auto px-4 pt-4 pb-20">{children}</main>
-              <Nav />
-            </PinGate>
-          </NavVisibilityProvider>
+          <PinGate>
+            <InstallPrompt />
+            <main className="max-w-lg mx-auto px-4 pt-4 pb-8">{children}</main>
+          </PinGate>
         ) : (
           <SetupGuide />
         )}

@@ -220,6 +220,40 @@ function AccessSection() {
           <div className="space-y-3">
             <p className="text-xs text-muted">Friends who can sign in with their Google account</p>
 
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={newEmail}
+                onChange={(e) => { setNewEmail(e.target.value); setAddError(""); }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
+                placeholder="friend@gmail.com"
+                className="flex-1 h-9 bg-bg border border-border text-text text-sm rounded px-3 focus:border-accent focus:outline-none"
+              />
+              {newEmail.trim() ? (
+                <button
+                  onClick={handleAdd}
+                  disabled={addLoading}
+                  className="h-9 px-4 bg-accent text-bg text-sm font-medium rounded disabled:opacity-50"
+                >
+                  {addLoading ? "..." : "Add"}
+                </button>
+              ) : (
+                <button
+                  onClick={async () => {
+                    try {
+                      const text = await navigator.clipboard.readText();
+                      const trimmed = text.trim();
+                      if (trimmed) { setNewEmail(trimmed); setAddError(""); }
+                    } catch { /* clipboard denied */ }
+                  }}
+                  className="h-9 px-4 border border-border text-muted text-sm rounded hover:border-accent hover:text-accent transition-colors"
+                >
+                  Paste
+                </button>
+              )}
+            </div>
+            {addError && <p className="text-red-400 text-xs">{addError}</p>}
+
             {emails.length === 0 ? (
               <p className="text-xs text-muted italic">No emails added yet</p>
             ) : (
@@ -238,25 +272,6 @@ function AccessSection() {
                 ))}
               </ul>
             )}
-
-            <div className="flex gap-2 pt-1">
-              <input
-                type="email"
-                value={newEmail}
-                onChange={(e) => { setNewEmail(e.target.value); setAddError(""); }}
-                onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
-                placeholder="friend@gmail.com"
-                className="flex-1 h-9 bg-bg border border-border text-text text-sm rounded px-3 focus:border-accent focus:outline-none"
-              />
-              <button
-                onClick={handleAdd}
-                disabled={addLoading || !newEmail.trim()}
-                className="h-9 px-4 bg-accent text-bg text-sm font-medium rounded disabled:opacity-50"
-              >
-                Add
-              </button>
-            </div>
-            {addError && <p className="text-red-400 text-xs">{addError}</p>}
 
             <button
               onClick={() => { setPhase("locked"); setPin(["", "", "", ""]); }}

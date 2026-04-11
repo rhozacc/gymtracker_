@@ -25,7 +25,8 @@ export const viewport: Viewport = {
 };
 
 // Inline script to set theme before first paint (prevents flash)
-const themeScript = `(function(){var t=localStorage.getItem('gym-theme');if(!t){t=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'}document.documentElement.setAttribute('data-theme',t)})()`;
+// Defaults to dark when nothing stored. Handles "system" by reading OS preference.
+const themeScript = `(function(){var p=localStorage.getItem('gym-theme');var t;if(p==='dark'||p==='light'){t=p}else if(p==='system'){t=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'}else{t='dark'}document.documentElement.setAttribute('data-theme',t)})()`;
 
 export default function RootLayout({
   children,

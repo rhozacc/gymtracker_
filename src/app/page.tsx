@@ -55,7 +55,7 @@ export default function Dashboard() {
   const router = useRouter();
   const { plan } = useProgram();
   const { unit } = useUnit();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, preference: themePref, toggleTheme } = useTheme();
   const { data: sessions, error: sessionsError } =
     useSWR<SessionSummary[]>("/api/sessions", fetcher);
   const { data: chartData } = useSWR<ChartSession[]>(
@@ -191,7 +191,17 @@ export default function Dashboard() {
             className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-muted hover:border-accent hover:text-accent transition-colors"
             aria-label="Toggle theme"
           >
-            {theme === "dark" ? (
+            {themePref === "system" ? (
+              /* Auto icon — half sun / half moon */
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5" />
+                <line x1="12" y1="1" x2="12" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="23" />
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                <line x1="1" y1="12" x2="3" y2="12" />
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+              </svg>
+            ) : theme === "dark" ? (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="5" />
                 <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />

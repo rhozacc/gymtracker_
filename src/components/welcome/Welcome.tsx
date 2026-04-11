@@ -80,9 +80,11 @@ function BackButton({ step, onBack }: { step: Step; onBack: () => void }) {
 
 export function Welcome({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState<Step>("welcome");
-  const [theme, setTheme] = useState<"dark" | "light">(() => {
+  const [theme, setTheme] = useState<"dark" | "light" | "system">(() => {
     if (typeof window === "undefined") return "dark";
-    return (document.documentElement.getAttribute("data-theme") as "dark" | "light") || "dark";
+    const stored = localStorage.getItem("gym-theme");
+    if (stored === "dark" || stored === "light" || stored === "system") return stored;
+    return "dark";
   });
   const [unit, setUnit] = useState<"kg" | "lbs">("kg");
   const [gender, setGender] = useState<Gender>("men");
@@ -108,10 +110,13 @@ export function Welcome({ onDone }: { onDone: () => void }) {
   const stepNum = NUMBERED_STEPS.indexOf(step) + 1;
   const totalSteps = NUMBERED_STEPS.length;
 
-  function applyTheme(t: "dark" | "light") {
+  function applyTheme(t: "dark" | "light" | "system") {
     setTheme(t);
-    document.documentElement.setAttribute("data-theme", t);
     localStorage.setItem("gym-theme", t);
+    const resolved = t === "system"
+      ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+      : t;
+    document.documentElement.setAttribute("data-theme", resolved);
   }
 
   function applyUnit(u: "kg" | "lbs") {

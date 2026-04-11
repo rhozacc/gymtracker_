@@ -271,7 +271,7 @@ function AccessSection() {
 }
 
 export default function Settings() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, preference: themePref, setTheme } = useTheme();
   const { unit, setUnit } = useUnit();
 
   // ── Notifications ──────────────────────────────────────────────────────────
@@ -412,8 +412,22 @@ export default function Settings() {
       <div>
         <SectionLabel>Appearance</SectionLabel>
         <div className="border border-border rounded p-3 space-y-3">
-          <Row label="Theme" description={theme === "dark" ? "Dark" : "Light"}>
-            <Toggle enabled={theme === "dark"} onToggle={toggleTheme} />
+          <Row label="Theme" description={themePref === "system" ? "Auto" : themePref === "dark" ? "Dark" : "Light"}>
+            <div className="flex gap-1">
+              {(["dark", "system", "light"] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setTheme(p)}
+                  className={`px-2.5 h-7 text-xs rounded transition-colors ${
+                    themePref === p
+                      ? "bg-accent text-bg font-medium"
+                      : "text-muted border border-border"
+                  }`}
+                >
+                  {p === "system" ? "Auto" : p === "dark" ? "Dark" : "Light"}
+                </button>
+              ))}
+            </div>
           </Row>
           <Row label="Left-handed mode" description="End Session on the right during workouts">
             <Toggle enabled={leftHanded} onToggle={handleLeftHandedToggle} />

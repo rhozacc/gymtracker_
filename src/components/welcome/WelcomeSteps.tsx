@@ -113,8 +113,8 @@ export function ThemeStep({
 }: {
   stepNum: number;
   totalSteps: number;
-  theme: "dark" | "light";
-  onApply: (t: "dark" | "light") => void;
+  theme: "dark" | "light" | "system";
+  onApply: (t: "dark" | "light" | "system") => void;
 }) {
   return (
     <div className="text-center pt-8">
@@ -129,10 +129,24 @@ export function ThemeStep({
           }`}
         >
           <div className="w-10 h-10 rounded-full bg-[#0a0a0a] border border-[#222] flex items-center justify-center">
-            <span className="text-[#39ff14] text-lg">{"\u25CF"}</span>
+            <span className="text-[#39ff14] text-lg">&#9679;</span>
           </div>
           <span className={`text-xs font-medium ${theme === "dark" ? "text-accent" : "text-muted"}`}>
             Dark
+          </span>
+        </button>
+        <button
+          onClick={() => onApply("system")}
+          className={`flex-1 aspect-[3/4] rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-3 ${
+            theme === "system" ? "border-accent bg-accent/5 scale-[1.02]" : "border-border hover:border-muted"
+          }`}
+        >
+          <div className="w-10 h-10 rounded-full overflow-hidden border border-border flex">
+            <div className="w-1/2 h-full bg-[#0a0a0a]" />
+            <div className="w-1/2 h-full bg-[#f5f5f5]" />
+          </div>
+          <span className={`text-xs font-medium ${theme === "system" ? "text-accent" : "text-muted"}`}>
+            Auto
           </span>
         </button>
         <button
@@ -142,7 +156,7 @@ export function ThemeStep({
           }`}
         >
           <div className="w-10 h-10 rounded-full bg-[#f5f5f5] border border-[#e0e0e0] flex items-center justify-center">
-            <span className="text-[#d4622b] text-lg">{"\u25CF"}</span>
+            <span className="text-[#d4622b] text-lg">&#9679;</span>
           </div>
           <span className={`text-xs font-medium ${theme === "light" ? "text-accent" : "text-muted"}`}>
             Light

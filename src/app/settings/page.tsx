@@ -92,6 +92,7 @@ function AccessSection() {
   const [newEmail, setNewEmail] = useState("");
   const [addError, setAddError] = useState("");
   const [addLoading, setAddLoading] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   if (!isOwner) return null;
 
@@ -168,6 +169,7 @@ function AccessSection() {
       body: JSON.stringify({ id }),
     });
     setEmails((prev) => prev.filter((e) => e.id !== id));
+    setConfirmDeleteId(null);
   }
 
   return (
@@ -262,13 +264,30 @@ function AccessSection() {
                 {emails.map((e) => (
                   <li key={e.id} className="flex items-center justify-between gap-2">
                     <span className="text-sm truncate">{e.email}</span>
-                    <button
-                      onClick={() => handleDelete(e.id)}
-                      className="text-muted hover:text-red-400 transition-colors flex-shrink-0 text-lg leading-none"
-                      aria-label={`Remove ${e.email}`}
-                    >
-                      ×
-                    </button>
+                    {confirmDeleteId === e.id ? (
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => handleDelete(e.id)}
+                          className="text-xs text-red-400 font-medium hover:text-red-300 transition-colors"
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="text-xs text-muted hover:text-text transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteId(e.id)}
+                        className="text-muted hover:text-red-400 transition-colors flex-shrink-0 text-lg leading-none"
+                        aria-label={`Remove ${e.email}`}
+                      >
+                        ×
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>

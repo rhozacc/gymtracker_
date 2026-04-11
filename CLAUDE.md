@@ -87,3 +87,16 @@ public/          — Static assets, manifest, service worker
 - E1RM: Epley formula `weight * (1 + reps / 30)` in `lib/e1rm.ts`
 - Plans stored in DB (`Plan` model), enriched with static metadata from `lib/program.ts`
 - Guided session backup: `localStorage BACKUP_KEY` for crash recovery
+
+## What's New (`src/lib/whats-new.ts`)
+
+**Always update before deploying.** Format: `{ area: string, text: string }[]`
+
+- `area` — short name rendered as an accent-colored H2 (e.g. `"Rest timer"`)
+- `text` — 1–2 sentences describing the change for the user
+
+```ts
+{ area: "Rest timer", text: "Wake lock now prevents screen sleep during rest." }
+```
+
+`UpdateSplash` renders each entry as an accent H2 + body paragraph. Do not use the old `string[]` format.

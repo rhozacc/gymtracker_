@@ -9,7 +9,6 @@ import { kgToDisplay, displayToKg, getIncrements } from "@/lib/units";
 import type { SetInput } from "@/components/SetRow";
 import { GuidedSession } from "@/components/GuidedSession";
 import { ExtrasSession } from "@/components/ExtrasSession";
-import { ExtrasSuggestion } from "@/components/ExtrasSuggestion";
 import { computeSummary } from "@/components/PostWorkoutSummary";
 import { Toast } from "@/components/Toast";
 import { EndSessionModal } from "@/components/EndSessionModal";
@@ -62,7 +61,6 @@ export default function LogPage() {
   // Guided extras state (during workout, before review)
   const [guidedExtrasMode, setGuidedExtrasMode] = useState(false);
   const [extrasSuggestion, setExtrasSuggestion] = useState<ExtraOption | null>(null);
-  const [showExtrasSuggestion, setShowExtrasSuggestion] = useState(false);
 
   // Post-session flow state
   const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
@@ -250,8 +248,9 @@ export default function LogPage() {
       const sessionMins =
         (Date.now() - new Date(startedAtRef.current).getTime()) / 60000;
       const suggestion = suggestExtra(dayType, sessionMins);
+      recordExtrasHistory(suggestion.id, suggestion.category, dayType);
       setExtrasSuggestion(suggestion);
-      setShowExtrasSuggestion(true);
+      setGuidedExtrasMode(true);
       return;
     }
     setGuidedMode(false);
@@ -259,22 +258,19 @@ export default function LogPage() {
     setGuidedCompleted(true);
   }
 
-  function handleExtrasAccept() {
-    if (extrasSuggestion) {
-      recordExtrasHistory(extrasSuggestion.id, extrasSuggestion.category, dayType);
-    }
-    setShowExtrasSuggestion(false);
-    setGuidedExtrasMode(true);
-  }
-
-  function handleExtrasSuggestionSkip() {
-    setShowExtrasSuggestion(false);
-    setGuidedMode(false);
-    setWasGuidedMode(true);
-    setGuidedCompleted(true);
-  }
-
   function handleExtrasFinish() {
+    // Log completed extras to DB (fire-and-forget)
+    if (extrasSuggestion) {
+      fetch("/api/extras/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          routineId: extrasSuggestion.id,
+          category: extrasSuggestion.category,
+          dayType,
+        }),
+      }).catch(() => {/* non-critical */});
+    }
     setGuidedExtrasMode(false);
     setGuidedMode(false);
     setWasGuidedMode(true);
@@ -358,17 +354,6 @@ export default function LogPage() {
       );
     }
     setSaving(false);
-  }
-
-  // Smart extras suggestion card
-  if (showExtrasSuggestion && extrasSuggestion) {
-    return (
-      <ExtrasSuggestion
-        suggestion={extrasSuggestion}
-        onAccept={handleExtrasAccept}
-        onSkip={handleExtrasSuggestionSkip}
-      />
-    );
   }
 
   // Guided extras screen (after guided session, before review)

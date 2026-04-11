@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { WHATS_NEW } from "@/lib/whats-new";
+import type { WhatsNewEntry } from "@/lib/whats-new";
 
 const VERSION_KEY = "gym-version";
 const CURRENT_VERSION =
@@ -112,14 +113,14 @@ export function UpdateSplash() {
               </h2>
             </div>
 
-            <ul className="space-y-4">
-              {WHATS_NEW.map((item, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <span className="text-accent font-bold text-sm mt-0.5 shrink-0">—</span>
-                  <span className="text-text text-sm leading-relaxed">{item}</span>
-                </li>
+            <div className="space-y-5">
+              {WHATS_NEW.map((item: WhatsNewEntry, i: number) => (
+                <div key={i}>
+                  <h2 className="text-accent font-bold text-base leading-snug">{item.area}</h2>
+                  <p className="text-text text-sm leading-relaxed mt-1">{item.text}</p>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
 
           <div className="max-w-sm mx-auto w-full">

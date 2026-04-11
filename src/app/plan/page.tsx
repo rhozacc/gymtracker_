@@ -395,7 +395,7 @@ export default function PlanPage() {
       })()}
 
       {/* ── All Plans ── */}
-      <div>
+      <div className="mt-8">
         <h2 className="text-lg font-medium mb-1">All Plans</h2>
         <p className="text-xs text-muted mb-3">You can change your plan at any time. Changing a plan will not affect your existing training session history.</p>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
@@ -73,7 +73,23 @@ export default function Dashboard() {
   const lastSession = sessions?.[0];
   const nextDayType = getNextDayType(lastSession?.dayType, dayKeys);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [recoveredBackup, setRecoveredBackup] = useState<{ dayType: string; startedAt: string } | null>(null);
+  const [showAbortConfirm, setShowAbortConfirm] = useState(false);
   const effectiveSelected = selectedDay || nextDayType;
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("gym-guided-backup");
+      if (!raw) return;
+      const backup = JSON.parse(raw);
+      if (backup.dayType && backup.startedAt) {
+        setRecoveredBackup({ dayType: backup.dayType, startedAt: backup.startedAt });
+        setSelectedDay(backup.dayType);
+      }
+    } catch {
+      // ignore corrupt backup
+    }
+  }, []);
 
   const muscleRadarData = useMemo(() => {
     if (!chartData) return [];
@@ -302,10 +318,55 @@ export default function Dashboard() {
         </div>
         <button
           onClick={() => router.push(`/log/${effectiveSelected}?guided=true`)}
-          className="w-full h-12 mt-3 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity"
+          className={`w-full h-12 mt-3 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-all ${
+            recoveredBackup ? "shadow-[0_0_24px_rgba(57,255,20,0.35)]" : ""
+          }`}
         >
-          Start {getDayLabel(effectiveSelected)} Session
+          {recoveredBackup ? (
+            <span className="flex items-center justify-center gap-2">
+              <span>Continue unfinished session</span>
+              <span className="text-[10px] font-medium uppercase tracking-wider bg-bg/20 rounded-full px-2 py-0.5 leading-none">
+                In Progress
+              </span>
+            </span>
+          ) : (
+            `Start ${getDayLabel(effectiveSelected)} Session`
+          )}
         </button>
+
+        {recoveredBackup && !showAbortConfirm && (
+          <button
+            onClick={() => setShowAbortConfirm(true)}
+            className="w-full text-center text-xs text-red-400 hover:text-red-300 transition-colors mt-2 py-1"
+          >
+            Abort session
+          </button>
+        )}
+
+        {recoveredBackup && showAbortConfirm && (
+          <div className="mt-2 border border-red-400/30 rounded-lg p-3 space-y-2">
+            <p className="text-xs text-muted text-center">Discard the unfinished session?</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  localStorage.removeItem("gym-guided-backup");
+                  setRecoveredBackup(null);
+                  setShowAbortConfirm(false);
+                  setSelectedDay(null);
+                }}
+                className="flex-1 h-9 border border-red-400/50 text-red-400 text-xs rounded hover:border-red-400 transition-colors"
+              >
+                Yes, discard
+              </button>
+              <button
+                onClick={() => setShowAbortConfirm(false)}
+                className="flex-1 h-9 border border-border text-muted text-xs rounded hover:border-accent hover:text-accent transition-colors"
+              >
+                Keep it
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Load Up ── */}

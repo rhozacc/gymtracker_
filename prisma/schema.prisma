@@ -98,6 +98,15 @@ model AllowedEmail {
   createdAt DateTime @default(now())
 }
 
+model ExtrasLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  routineId   String
+  category    String
+  dayType     String
+  completedAt DateTime @default(now())
+}
+
 // Better Auth tables
 model User {
   id            String      @id

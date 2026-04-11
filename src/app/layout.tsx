@@ -6,6 +6,7 @@ import { SetupGuide } from "@/components/SetupGuide";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { OrientationLockInit } from "@/components/OrientationLockInit";
 import { UpdateSplash } from "@/components/UpdateSplash";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "gymtracker_",
@@ -53,6 +54,7 @@ export default function RootLayout({
         ) : (
           <SetupGuide />
         )}
+        <Analytics />
       </body>
     </html>
   );

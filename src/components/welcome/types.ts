@@ -8,9 +8,7 @@ export type Step =
   | "gender"
   | "goal"
   | "plan"
-  | "extras"
   | "saving"
-  | "nav"
   | "pwa"
   | "notifications"
   | "ready";
@@ -23,7 +21,6 @@ export const STEPS: Step[] = [
   "gender",
   "goal",
   "plan",
-  "extras",
   "saving",
   "pwa",
   "notifications",
@@ -37,7 +34,6 @@ export const NUMBERED_STEPS: Step[] = [
   "gender",
   "goal",
   "plan",
-  "extras",
   "pwa",
   "notifications",
 ];

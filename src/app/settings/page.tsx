@@ -347,6 +347,29 @@ export default function Settings() {
     }
   }
 
+  // ── Post-session extras & debrief ─────────────────────────────────────────
+  const [extrasEnabled, setExtrasEnabled] = useState(true);
+  const [debriefEnabled, setDebriefEnabled] = useState(true);
+
+  useEffect(() => {
+    setExtrasEnabled(localStorage.getItem("gym-disable-extras") !== "true");
+    setDebriefEnabled(localStorage.getItem("gym-disable-debrief") !== "true");
+  }, []);
+
+  function handleExtrasToggle() {
+    const next = !extrasEnabled;
+    setExtrasEnabled(next);
+    if (next) localStorage.removeItem("gym-disable-extras");
+    else localStorage.setItem("gym-disable-extras", "true");
+  }
+
+  function handleDebriefToggle() {
+    const next = !debriefEnabled;
+    setDebriefEnabled(next);
+    if (next) localStorage.removeItem("gym-disable-debrief");
+    else localStorage.setItem("gym-disable-debrief", "true");
+  }
+
   // ── Warmup sets ───────────────────────────────────────────────────────────
   const [warmupsEnabled, setWarmupsEnabled] = useState(true);
 
@@ -497,9 +520,17 @@ export default function Settings() {
       {/* Workout */}
       <div>
         <SectionLabel>Workout</SectionLabel>
-        <div className="border border-border rounded p-3">
+        <div className="border border-border rounded p-3 space-y-3">
           <Row label="Warmup sets" description="Include a warmup set before each exercise">
             <Toggle enabled={warmupsEnabled} onToggle={handleWarmupsToggle} />
+          </Row>
+          <div className="border-t border-border" />
+          <Row label="Post-session extras" description="Core, cardio or stretch after lifting">
+            <Toggle enabled={extrasEnabled} onToggle={handleExtrasToggle} />
+          </Row>
+          <div className="border-t border-border" />
+          <Row label="Post-workout debrief" description="Summary and notes after each session">
+            <Toggle enabled={debriefEnabled} onToggle={handleDebriefToggle} />
           </Row>
         </div>
       </div>

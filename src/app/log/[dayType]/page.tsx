@@ -242,7 +242,8 @@ export default function LogPage() {
   }
 
   function handleGuidedFinish() {
-    if (selectedExtras.length > 0) {
+    const extrasDisabled = localStorage.getItem("gym-disable-extras") === "true";
+    if (!extrasDisabled && selectedExtras.length > 0) {
       setGuidedExtrasMode(true);
       return;
     }
@@ -320,8 +321,14 @@ export default function LogPage() {
 
     if (res.ok) {
       const { id } = await res.json();
-      setSavedSessionId(id);
       clearBackup();
+      const debriefDisabled = localStorage.getItem("gym-disable-debrief") === "true";
+      if (debriefDisabled) {
+        setSaving(false);
+        router.replace("/");
+        return;
+      }
+      setSavedSessionId(id);
       const exLookup: Record<string, string> = {};
       for (const ex of day.exercises) exLookup[ex.id] = ex.name;
       setSummaryData(

@@ -2,8 +2,9 @@
 // Each string is one bullet point shown on the "What's new" screen.
 
 export const WHATS_NEW: string[] = [
-  "Multi-user support — friends can now sign in with Google",
-  "System/Auto theme option follows your device",
-  "Install prompt moved to home screen, no longer covers content",
-  "Update animation when a new version lands",
+  "Warmup sets now show ~weight and skip straight to working sets",
+  "Disable warmups forever — Settings → Workout",
+  "Post-session extras and debrief can each be turned off in Settings",
+  "Onboarding streamlined — extras set up separately in Settings",
+  "Vercel Analytics added for performance monitoring",
 ];

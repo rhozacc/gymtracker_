@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/swr";
-import type { ExtraCategory, ExtrasSelection } from "@/lib/extras";
 import {
   STEPS,
   NUMBERED_STEPS,
@@ -21,7 +20,6 @@ import {
   getRecommendedFallback,
   getAllForGenderFallback,
   savePrefs,
-  saveExtras,
 } from "./utils";
 import {
   WelcomeStep,
@@ -31,7 +29,6 @@ import {
   GenderStep,
   GoalStep,
   PlanStep,
-  ExtrasStep,
   SavingStep,
   PwaStep,
   NotificationsStep,
@@ -90,8 +87,6 @@ export function Welcome({ onDone }: { onDone: () => void }) {
   const [goal, setGoal] = useState<Goal>("balanced");
   const [selectedPlan, setSelectedPlan] = useState("upper_lower");
   const [showAllPlans, setShowAllPlans] = useState(false);
-  const [extras, setExtras] = useState<ExtrasSelection>({ abs: null, cardio: null, stretch: null });
-  const [extraCategory, setExtraCategory] = useState<ExtraCategory>("abs");
   const [fade, setFade] = useState(false);
   const [savingState, setSavingState] = useState<"saving" | "done" | null>(null);
   const [notifResult, setNotifResult] = useState<"granted" | "denied" | "default" | null>(null);
@@ -133,36 +128,8 @@ export function Welcome({ onDone }: { onDone: () => void }) {
   }
 
   function goBack() {
-    if (step === "extras") {
-      const EXTRA_CATEGORIES = ["abs", "cardio", "stretch"] as const;
-      const idx = EXTRA_CATEGORIES.indexOf(extraCategory as "abs" | "cardio" | "stretch");
-      if (idx > 0) {
-        setExtraCategory(EXTRA_CATEGORIES[idx - 1]);
-        return;
-      }
-    }
     const idx = STEPS.indexOf(step);
     if (idx > 0) next(STEPS[idx - 1]);
-  }
-
-  function toggleExtra(category: ExtraCategory, optionId: string) {
-    setExtras((prev) => ({ ...prev, [category]: prev[category] === optionId ? null : optionId }));
-    setTimeout(() => advanceExtraCategory(), 500);
-  }
-
-  function skipExtraCategory() {
-    setExtras((prev) => ({ ...prev, [extraCategory]: null }));
-    advanceExtraCategory();
-  }
-
-  function advanceExtraCategory() {
-    const EXTRA_CATEGORIES = ["abs", "cardio", "stretch"] as const;
-    const idx = EXTRA_CATEGORIES.indexOf(extraCategory as "abs" | "cardio" | "stretch");
-    if (idx < EXTRA_CATEGORIES.length - 1) {
-      setExtraCategory(EXTRA_CATEGORIES[idx + 1]);
-    } else {
-      next("saving");
-    }
   }
 
   async function requestNotifications() {
@@ -177,10 +144,7 @@ export function Welcome({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     if (step !== "saving") return;
     setSavingState("saving");
-    Promise.all([
-      savePrefs({ onboarded: true, activePlan: selectedPlan, theme, unit }),
-      saveExtras(extras),
-    ]).then(() => {
+    savePrefs({ onboarded: true, activePlan: selectedPlan, theme, unit }).then(() => {
       localStorage.setItem("gym-onboarded", "true");
       localStorage.setItem("gym-active-plan", selectedPlan);
       setSavingState("done");
@@ -247,7 +211,7 @@ export function Welcome({ onDone }: { onDone: () => void }) {
         )}
         {step === "plan" && (
           <button
-            onClick={() => next("extras")}
+            onClick={() => next("saving")}
             disabled={!selectedPlan}
             className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity disabled:opacity-40"
           >
@@ -314,16 +278,6 @@ export function Welcome({ onDone }: { onDone: () => void }) {
               showAllPlans={showAllPlans}
               onSelectPlan={setSelectedPlan}
               onShowAll={() => setShowAllPlans(true)}
-            />
-          )}
-          {step === "extras" && (
-            <ExtrasStep
-              stepNum={stepNum}
-              totalSteps={totalSteps}
-              extraCategory={extraCategory}
-              extras={extras}
-              onToggle={toggleExtra}
-              onSkip={skipExtraCategory}
             />
           )}
           {step === "saving" && <SavingStep savingState={savingState} />}

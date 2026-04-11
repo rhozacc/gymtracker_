@@ -87,6 +87,9 @@ export function GuidedSession({
   // Per-exercise name overrides (only for this session)
   const [exerciseNameOverrides, setExerciseNameOverrides] = useState<Record<string, string>>({});
 
+  // Track how many times user has skipped warmup — to offer "Disable Warmups Forever"
+  const [skipWarmupCount, setSkipWarmupCount] = useState(0);
+
   const { playBeep } = useBeep();
   const { notifyIfBackgrounded, startRestTimer, cancelRestTimer } = useBackgroundNotification();
 
@@ -112,6 +115,10 @@ export function GuidedSession({
     const nextEx = day.exercises[nextExIdx];
     const nextExName = exerciseNameOverrides[nextEx.id] ?? nextEx.name;
     const nextSetData = exercises[nextExIdx]?.sets[nextSetIdx];
+    const nextExSets = exercises[nextExIdx]?.sets ?? [];
+    const hasWarmup = nextExSets[0]?.isWarmup ?? false;
+    const warmupOffset = hasWarmup ? 1 : 0;
+    const isNextWarmup = nextExSets[nextSetIdx]?.isWarmup ?? false;
     return {
       exerciseIndex: nextExIdx,
       setIndex: nextSetIdx,
@@ -120,8 +127,8 @@ export function GuidedSession({
         name: nextExName,
         weight: nextSetData?.weight || "",
         reps: `${nextEx.repRange[0]}–${nextEx.repRange[1]}`,
-        setNumber: nextSetIdx + 1,
-        totalSets: exercises[nextExIdx]?.sets.length || nextEx.sets,
+        setNumber: isNextWarmup ? 0 : nextSetIdx - warmupOffset + 1,
+        totalSets: nextExSets.length > 0 ? nextExSets.length - warmupOffset : nextEx.sets,
       },
     };
   }, [state.exerciseIndex, state.setIndex, day.exercises, exercises, exerciseNameOverrides]);
@@ -225,9 +232,14 @@ export function GuidedSession({
   const handleSkipWarmup = useCallback(() => {
     cancelRestTimer();
     setRestEndsAt(null);
+    setSkipWarmupCount((n) => n + 1);
     dispatch({ type: "NEXT_SET", nextExIdx: state.exerciseIndex, nextSetIdx: 1 });
     triggerSetFlash();
   }, [state.exerciseIndex, cancelRestTimer]);
+
+  function handleDisableWarmups() {
+    localStorage.setItem("gym-disable-warmups", "true");
+  }
 
   // Safety: if state is inconsistent, finish the session
   if (!currentExercise || !currentExState || !currentSetData) {
@@ -256,6 +268,8 @@ export function GuidedSession({
       onSkipRest={handleSkipRest}
       onSkip={handleSkipExercise}
       onSkipWarmup={handleSkipWarmup}
+      onDisableWarmups={handleDisableWarmups}
+      skipWarmupCount={skipWarmupCount}
       onStop={onStop}
       onNameChange={(name) =>
         setExerciseNameOverrides((prev) => ({ ...prev, [currentExercise.id]: name }))

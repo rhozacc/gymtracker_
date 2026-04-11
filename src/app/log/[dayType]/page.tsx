@@ -112,11 +112,14 @@ export default function LogPage() {
     if (initializedForDayRef.current === dayType) return;
     initializedForDayRef.current = dayType;
 
+    const warmupsEnabled = localStorage.getItem("gym-disable-warmups") !== "true";
     setExercises(
       day.exercises.map((ex) => ({
         exerciseId: ex.id,
         sets: [
-          { reps: ex.repRange[0].toString(), weight: "", rir: "", done: false, isWarmup: true },
+          ...(warmupsEnabled
+            ? [{ reps: ex.repRange[0].toString(), weight: "", rir: "", done: false, isWarmup: true }]
+            : []),
           ...Array.from({ length: ex.sets }, () => ({
             reps: ex.repRange[0].toString(),
             weight: "",
@@ -164,9 +167,11 @@ export default function LogPage() {
               }
 
               if (s.isWarmup) {
+                // Round warmup weight down to nearest 2.5 kg plate increment
+                const warmupKg = Math.floor((baseKg * 0.5) / 2.5) * 2.5;
                 return {
                   ...s,
-                  weight: s.weight || kgToDisplay(baseKg * 0.5, unit).toString(),
+                  weight: s.weight || kgToDisplay(warmupKg, unit).toString(),
                 };
               }
 

@@ -56,7 +56,17 @@ export default function SignInPage() {
         </div>
 
         <p className="text-muted text-xs text-center">
-          Access is by invitation only.
+          Access is by invitation only.{" "}
+          <br />
+          Request here:{" "}
+          <a
+            href="https://instagram.com/alenrozac"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-text hover:text-accent transition-colors"
+          >
+            @alenrozac
+          </a>
         </p>
       </div>
     </div>

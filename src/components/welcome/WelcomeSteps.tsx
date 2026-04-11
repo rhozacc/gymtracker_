@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { EXTRAS_BY_CATEGORY, CATEGORY_INFO, type ExtraCategory, type ExtrasSelection } from "@/lib/extras";
 import { GOAL_INFO, EXTRA_CATEGORIES, type Gender, type Goal, type EnrichedPlan } from "./types";
 import { isStandalone } from "./utils";
@@ -43,37 +44,43 @@ export function PlanCard({
 
 // ─── Step components ─────────────────────────────────────────────────
 
-export function WelcomeStep() {
+const WELCOME_CIRCLES: [number, number, number, number][] = [
+  [50, 50,  85,   0],
+  [18, 28,  50,  180],
+  [80, 20,  42,  300],
+  [65, 78,  58,  120],
+  [12, 70,  38,  420],
+  [85, 62,  46,  240],
+];
+
+export function WelcomeStep({ onDone }: { onDone: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDone, 2200);
+    return () => clearTimeout(t);
+  }, [onDone]);
+
   return (
-    <div className="text-center">
-      <div className="mb-8" style={{ animation: "welcome-icon-in 0.6s ease-out" }}>
-        <svg
-          width="64"
-          height="64"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="var(--color-accent)"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="mx-auto"
-        >
-          <path d="M6.5 6.5a3.5 3.5 0 1 0 7 0 3.5 3.5 0 0 0-7 0Z" />
-          <path d="M1.5 20.4a6.5 6.5 0 0 1 13 0" />
-          <path d="M16 15l2 2 4-4" />
-        </svg>
-      </div>
-      <h1
-        className="text-2xl font-semibold text-text mb-2"
-        style={{ animation: "welcome-text-in 0.6s ease-out 0.1s both" }}
-      >
-        gymtracker_
-      </h1>
+    <div className="fixed inset-0 flex items-center justify-center overflow-hidden pointer-events-none">
+      {WELCOME_CIRCLES.map(([cx, cy, size, delay], i) => (
+        <div
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            left: `${cx}%`,
+            top: `${cy}%`,
+            width: `${size}vw`,
+            height: `${size}vw`,
+            transform: "translate(-50%, -50%) scale(0)",
+            border: "1.5px solid var(--color-accent)",
+            animation: `uc-expand 1.8s cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms both`,
+          }}
+        />
+      ))}
       <p
-        className="text-muted text-sm"
-        style={{ animation: "welcome-text-in 0.6s ease-out 0.2s both" }}
+        className="relative z-10 font-bold text-3xl tracking-tight text-text"
+        style={{ animation: "uc-text 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both" }}
       >
-        Track sessions. Progressive overload. Stay consistent.
+        You&apos;re in.
       </p>
     </div>
   );

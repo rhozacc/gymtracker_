@@ -220,15 +220,6 @@ export function Welcome({ onDone }: { onDone: () => void }) {
           ))}
         </div>
 
-        {step === "welcome" && (
-          <button
-            onClick={() => next("about")}
-            className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity"
-            style={{ animation: "welcome-text-in 0.6s ease-out 0.3s both" }}
-          >
-            Get started
-          </button>
-        )}
         {step === "about" && (
           <button onClick={() => next("theme")} className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity">
             Continue
@@ -305,7 +296,7 @@ export function Welcome({ onDone }: { onDone: () => void }) {
             fade ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"
           }`}
         >
-          {step === "welcome" && <WelcomeStep />}
+          {step === "welcome" && <WelcomeStep onDone={() => next("about")} />}
           {step === "about" && <AboutStep stepNum={stepNum} totalSteps={totalSteps} />}
           {step === "theme" && <ThemeStep stepNum={stepNum} totalSteps={totalSteps} theme={theme} onApply={applyTheme} />}
           {step === "unit" && <UnitStep stepNum={stepNum} totalSteps={totalSteps} unit={unit} onApply={applyUnit} />}

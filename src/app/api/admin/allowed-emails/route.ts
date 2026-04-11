@@ -17,14 +17,15 @@ async function sendInviteEmail(toEmail: string) {
   await resend.emails.send({
     from: "gymtracker_ <gymtracker@alenrozac.com>",
     to: toEmail,
-    subject: "You've been invited to gymtracker_",
+    subject: "you're in — gymtracker_",
     html: `
       <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #0a0a0a; color: #e8e8e8;">
-        <h1 style="font-size: 20px; font-weight: 600; margin: 0 0 8px;">gymtracker_</h1>
-        <p style="color: #666; font-size: 13px; margin: 0 0 32px;">Track sessions. Progressive overload. Stay consistent.</p>
-        <p style="font-size: 14px; margin: 0 0 24px;">You've been given access. Sign in with your Google account to get started.</p>
+        <h1 style="font-size: 20px; font-weight: 600; margin: 0 0 32px;">gymtracker_</h1>
+        <p style="font-size: 15px; line-height: 1.6; margin: 0 0 12px;">Hey — thanks for trying out my app.</p>
+        <p style="font-size: 15px; line-height: 1.6; margin: 0 0 32px; color: #aaa;">Sign in with your Google account and let me know what you think.</p>
         <a href="${appUrl}" style="display: inline-block; background: #39ff14; color: #0a0a0a; font-weight: 600; font-size: 14px; padding: 12px 28px; border-radius: 6px; text-decoration: none;">Open gymtracker_</a>
-        <p style="color: #444; font-size: 12px; margin: 32px 0 0;">Sign in at ${appUrl} using the Google account this email was sent to.</p>
+        <p style="color: #555; font-size: 13px; margin: 40px 0 0;">— Alen</p>
+        <p style="color: #333; font-size: 11px; margin: 8px 0 0;">Use the Google account this was sent to when signing in.</p>
       </div>
     `,
   });

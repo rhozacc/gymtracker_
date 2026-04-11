@@ -90,6 +90,12 @@ export function suggestExtra(
     if (catRank === 0) score += 6;
     else if (catRank === 1) score += 3;
 
+    // ① bonus: day-specific stretch options get a strong nudge when they match
+    const lower = dayType.toLowerCase();
+    if (opt.id === "stretch_post_legs" && (lower.includes("leg") || lower.includes("lower"))) score += 5;
+    if (opt.id === "stretch_post_push" && (lower.includes("push") || lower.includes("chest"))) score += 5;
+    if (opt.id === "stretch_post_pull" && (lower.includes("pull") || lower.includes("back")))  score += 5;
+
     // ② Recency penalty — same option
     const lastSeen = history.findIndex((h) => h.routineId === opt.id);
     if (lastSeen === 0) score -= 12; // just did this exact one

@@ -4,7 +4,6 @@ import "./globals.css";
 import { AuthGuard } from "@/components/AuthGuard";
 import { SetupGuide } from "@/components/SetupGuide";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
-import { InstallPrompt } from "@/components/InstallPrompt";
 import { OrientationLockInit } from "@/components/OrientationLockInit";
 
 export const metadata: Metadata = {
@@ -47,7 +46,6 @@ export default function RootLayout({
         <OrientationLockInit />
         {hasDb ? (
           <AuthGuard>
-            <InstallPrompt />
             <main className="max-w-lg mx-auto px-4 pt-4 pb-8">{children}</main>
           </AuthGuard>
         ) : (

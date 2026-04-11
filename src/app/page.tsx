@@ -15,6 +15,7 @@ import { kgToDisplay } from "@/lib/units";
 import { calculateStreak, formatDate } from "@/lib/utils";
 import { StreakCalendar } from "@/components/StreakCalendar";
 import { getMuscleGroup, MUSCLE_GROUPS } from "@/lib/muscleGroups";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 const MuscleRadar = dynamic(
   () => import("@/components/MuscleRadar").then((m) => m.MuscleRadarInner),
@@ -161,6 +162,8 @@ export default function Dashboard() {
   }, [chartData, plan]);
 
   return (
+    <>
+      <InstallPrompt />
     <div className="space-y-14">
       {sessionsError && (
         <div className="border border-red-500/30 bg-red-950/20 rounded p-3 text-sm">
@@ -368,5 +371,6 @@ export default function Dashboard() {
       </div>
 
     </div>
+    </>
   );
 }

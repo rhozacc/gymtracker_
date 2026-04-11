@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTheme } from "@/lib/useTheme";
 import { useUnit } from "@/lib/useUnit";
 import { authClient } from "@/lib/auth-client";
-import { Welcome } from "@/components/welcome/Welcome";
 
 const NOTIF_OPTED_OUT = "gym-notifications-off";
 const ORIENT_LOCK_KEY = "gym-orientation-lock";
@@ -272,9 +272,9 @@ function AccessSection() {
 }
 
 export default function Settings() {
+  const router = useRouter();
   const { theme, preference: themePref, setTheme } = useTheme();
   const { unit, setUnit } = useUnit();
-  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // ── Notifications ──────────────────────────────────────────────────────────
   const [notifSupported, setNotifSupported] = useState<boolean | null>(null);
@@ -474,7 +474,7 @@ export default function Settings() {
         <SectionLabel>Account</SectionLabel>
         <div className="border border-border rounded p-3 space-y-3">
           <button
-            onClick={() => setShowOnboarding(true)}
+            onClick={() => router.push("/onboarding")}
             className="w-full text-left text-sm text-muted hover:text-text transition-colors"
           >
             Onboarding
@@ -495,9 +495,6 @@ export default function Settings() {
         </div>
       </div>
 
-      {showOnboarding && (
-        <Welcome onDone={() => setShowOnboarding(false)} />
-      )}
     </div>
   );
 }

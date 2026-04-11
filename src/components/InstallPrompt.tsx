@@ -44,8 +44,9 @@ export function InstallPrompt() {
   const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
-    // Already installed or recently dismissed
+    // Already installed, recently dismissed, or on an auth page
     if (isStandalone() || wasDismissed()) return;
+    if (window.location.pathname.startsWith("/auth")) return;
 
     if (isIosSafari()) {
       setShowIos(true);

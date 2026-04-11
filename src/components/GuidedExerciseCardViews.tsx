@@ -1,10 +1,22 @@
 "use client";
 
+import { useMemo } from "react";
 import { type WeightUnit, kgToDisplay } from "@/lib/units";
 import type { Exercise } from "@/lib/program";
 import type { OverloadResult } from "@/lib/overload";
 import type { SetInput } from "@/components/SetRow";
 import { OverloadBanner } from "@/components/OverloadBanner";
+
+const WARMUP_HINTS = [
+  "just do a few easy reps",
+  "go light — get the blood flowing",
+  "no weight data yet — feel it out today",
+  "pick something comfortable and warm up",
+  "start easy, ramp up from here",
+  "next session I'll have numbers for you",
+  "warm up however feels right",
+  "no rush — loosen up at your own pace",
+];
 
 // ── Shared types ─────────────────────────────────────────────────────────────
 
@@ -160,6 +172,7 @@ interface MainViewProps {
   onSkipConfirm: () => void;
   onSkipCancel: () => void;
   onSkipRequest: () => void;
+  onSkipWarmup: () => void;
   onStop: () => void;
 }
 
@@ -193,10 +206,18 @@ export function MainView({
   onSkipConfirm,
   onSkipCancel,
   onSkipRequest,
+  onSkipWarmup,
   onStop,
 }: MainViewProps) {
   const selectedReps = parseInt(setData.reps) || null;
   const selectedRir = setData.rir !== "" ? parseInt(setData.rir) : null;
+
+  // Stable random hint for "no warmup data" case
+  const warmupHint = useMemo(
+    () => WARMUP_HINTS[Math.floor(Math.random() * WARMUP_HINTS.length)],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [setData.isWarmup, setIndex, exerciseIndex]
+  );
 
   const repStart = Math.max(1, exercise.repRange[0] - 10);
   const repEnd = exercise.repRange[1];
@@ -266,37 +287,46 @@ export function MainView({
         </div>
       )}
 
-      <button
-        onClick={onWeightTap}
-        className="mt-5 flex items-baseline gap-1.5 group"
-      >
-        <span className="text-4xl font-bold tabular-nums text-accent group-hover:opacity-80 transition-opacity">
-          {setData.weight || "0"}
-        </span>
-        <span className="text-muted text-sm">{unit}</span>
-        <span className="text-muted text-xs ml-1 opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
-      </button>
+      {setData.isWarmup && !setData.weight ? (
+        <p className="mt-5 text-muted text-sm text-center max-w-xs italic">{warmupHint}</p>
+      ) : (
+        <button
+          onClick={onWeightTap}
+          className="mt-5 flex items-baseline gap-1.5 group"
+        >
+          {setData.isWarmup && (
+            <span className="text-4xl font-bold tabular-nums text-accent/60 group-hover:opacity-80 transition-opacity">~</span>
+          )}
+          <span className="text-4xl font-bold tabular-nums text-accent group-hover:opacity-80 transition-opacity">
+            {setData.isWarmup ? setData.weight : (setData.weight || "0")}
+          </span>
+          <span className="text-muted text-sm">{unit}</span>
+          <span className="text-muted text-xs ml-1 opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
+        </button>
+      )}
 
-      <div className="mt-5 w-full max-w-xs">
-        <p className="text-muted text-[10px] uppercase tracking-wide text-center mb-2">Reps</p>
-        <div className="grid grid-cols-5 gap-1.5">
-          {repButtons.map((n) => (
-            <button
-              key={n}
-              onClick={() => onChange({ ...setData, reps: n.toString() })}
-              className={`h-11 rounded font-medium text-base transition-colors ${
-                selectedReps === n
-                  ? "bg-accent text-bg ring-2 ring-accent/50"
-                  : n >= exercise.repRange[0] && n <= exercise.repRange[1]
-                    ? "bg-surface border border-accent/30 text-accent"
-                    : "bg-surface border border-border text-muted"
-              }`}
-            >
-              {n}
-            </button>
-          ))}
+      {!setData.isWarmup && (
+        <div className="mt-5 w-full max-w-xs">
+          <p className="text-muted text-[10px] uppercase tracking-wide text-center mb-2">Reps</p>
+          <div className="grid grid-cols-5 gap-1.5">
+            {repButtons.map((n) => (
+              <button
+                key={n}
+                onClick={() => onChange({ ...setData, reps: n.toString() })}
+                className={`h-11 rounded font-medium text-base transition-colors ${
+                  selectedReps === n
+                    ? "bg-accent text-bg ring-2 ring-accent/50"
+                    : n >= exercise.repRange[0] && n <= exercise.repRange[1]
+                      ? "bg-surface border border-accent/30 text-accent"
+                      : "bg-surface border border-border text-muted"
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {!setData.isWarmup && (
         <div className="mt-4 w-full max-w-xs">
@@ -339,11 +369,11 @@ export function MainView({
       ) : (
         <button
           onClick={() => {
-            if (!setData.weight || !setData.reps) return;
+            if (!setData.isWarmup && (!setData.weight || !setData.reps)) return;
             navigator.vibrate?.(100);
             onDone();
           }}
-          disabled={!setData.weight || !setData.reps}
+          disabled={!setData.isWarmup && (!setData.weight || !setData.reps)}
           className="mt-6 w-full max-w-xs h-14 bg-accent text-bg font-medium rounded text-sm hover:opacity-90 transition-opacity disabled:opacity-30"
         >
           Done
@@ -357,13 +387,13 @@ export function MainView({
             onClick={onSkipConfirm}
             className="flex-1 px-3 py-2.5 border border-border text-muted text-sm rounded hover:border-accent hover:text-accent transition-colors"
           >
-            Confirm skip
+            Skip Exercise
           </button>
           <button
-            onClick={onSkipCancel}
+            onClick={setData.isWarmup ? onSkipWarmup : onSkipCancel}
             className="flex-1 px-3 py-2.5 text-muted text-sm hover:text-accent transition-colors"
           >
-            Cancel
+            {setData.isWarmup ? "Skip Warmup" : "Cancel"}
           </button>
         </div>
       ) : (

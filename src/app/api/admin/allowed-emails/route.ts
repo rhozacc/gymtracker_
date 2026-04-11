@@ -15,7 +15,7 @@ async function sendInviteEmail(toEmail: string) {
   const appUrl = process.env.BETTER_AUTH_URL || "https://gym.alenrozac.com";
 
   await resend.emails.send({
-    from: "gymtracker_ <onboarding@resend.dev>",
+    from: "gymtracker_ <gymtracker@alenrozac.com>",
     to: toEmail,
     subject: "You've been invited to gymtracker_",
     html: `

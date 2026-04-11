@@ -5,6 +5,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { SetupGuide } from "@/components/SetupGuide";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { OrientationLockInit } from "@/components/OrientationLockInit";
+import { UpdateSplash } from "@/components/UpdateSplash";
 
 export const metadata: Metadata = {
   title: "gymtracker_",
@@ -46,6 +47,7 @@ export default function RootLayout({
         <OrientationLockInit />
         {hasDb ? (
           <AuthGuard>
+            <UpdateSplash />
             <main className="max-w-lg mx-auto px-4 pt-4 pb-8">{children}</main>
           </AuthGuard>
         ) : (

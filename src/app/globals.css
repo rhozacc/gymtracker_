@@ -103,3 +103,26 @@ input[type="number"]::-webkit-outer-spin-button {
   45%  { width: 26px; }
   100% { width: 16px; }
 }
+
+@keyframes splash-burst {
+  0%   { opacity: 0; transform: scale(0.2); }
+  40%  { opacity: 1; transform: scale(1.4); }
+  100% { opacity: 0.6; transform: scale(1); }
+}
+
+@keyframes splash-zap {
+  0%   { opacity: 0; transform: rotate(var(--r)) translateX(20px) translate(-50%, -50%) scale(0.3); }
+  30%  { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--r)) translateX(110px) translate(-50%, -50%) scale(1); }
+}
+
+@keyframes splash-text {
+  0%   { opacity: 0; transform: scale(0.6) translateY(16px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes splash-scan {
+  0%   { transform: translateY(-120px); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translateY(120px); opacity: 0; }
+}

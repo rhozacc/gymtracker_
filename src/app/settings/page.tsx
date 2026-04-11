@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "@/lib/useTheme";
 import { useUnit } from "@/lib/useUnit";
 import { authClient } from "@/lib/auth-client";
+import { CURRENT_VERSION } from "@/components/UpdateSplash";
 
 const NOTIF_OPTED_OUT = "gym-notifications-off";
 const ORIENT_LOCK_KEY = "gym-orientation-lock";
@@ -509,6 +510,8 @@ export default function Settings() {
           </button>
         </div>
       </div>
+
+      <p className="text-center text-[10px] text-muted/40 pt-2">v{CURRENT_VERSION}</p>
 
     </div>
   );

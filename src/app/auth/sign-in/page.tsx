@@ -22,7 +22,7 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg flex flex-col items-center justify-center p-6">
+    <div className="min-h-[calc(100dvh-3rem)] bg-bg flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-xs flex flex-col gap-8">
         <div className="flex flex-col gap-1">
           <h1 className="text-text text-xl font-medium tracking-tight">gymtracker_</h1>

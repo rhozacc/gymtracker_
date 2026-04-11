@@ -9,12 +9,14 @@ import { kgToDisplay, displayToKg, getIncrements } from "@/lib/units";
 import type { SetInput } from "@/components/SetRow";
 import { GuidedSession } from "@/components/GuidedSession";
 import { ExtrasSession } from "@/components/ExtrasSession";
+import { ExtrasSuggestion } from "@/components/ExtrasSuggestion";
 import { computeSummary } from "@/components/PostWorkoutSummary";
 import { Toast } from "@/components/Toast";
 import { EndSessionModal } from "@/components/EndSessionModal";
 import { ExerciseRenameModal } from "@/components/ExerciseRenameModal";
 import { RestTimer } from "@/components/RestTimer";
-import { useExtras } from "@/lib/useExtras";
+import type { ExtraOption } from "@/lib/extras";
+import { suggestExtra, recordExtrasHistory } from "@/lib/extras-suggest";
 import { useBeep } from "@/lib/useBeep";
 import { useBackgroundNotification } from "@/lib/useBackgroundNotification";
 import { useNavVisibility } from "@/lib/useNavVisibility";
@@ -58,8 +60,9 @@ export default function LogPage() {
   const { theme, toggleTheme } = useTheme();
 
   // Guided extras state (during workout, before review)
-  const { selectedExtras } = useExtras();
   const [guidedExtrasMode, setGuidedExtrasMode] = useState(false);
+  const [extrasSuggestion, setExtrasSuggestion] = useState<ExtraOption | null>(null);
+  const [showExtrasSuggestion, setShowExtrasSuggestion] = useState(false);
 
   // Post-session flow state
   const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
@@ -243,10 +246,29 @@ export default function LogPage() {
 
   function handleGuidedFinish() {
     const extrasDisabled = localStorage.getItem("gym-disable-extras") === "true";
-    if (!extrasDisabled && selectedExtras.length > 0) {
-      setGuidedExtrasMode(true);
+    if (!extrasDisabled) {
+      const sessionMins =
+        (Date.now() - new Date(startedAtRef.current).getTime()) / 60000;
+      const suggestion = suggestExtra(dayType, sessionMins);
+      setExtrasSuggestion(suggestion);
+      setShowExtrasSuggestion(true);
       return;
     }
+    setGuidedMode(false);
+    setWasGuidedMode(true);
+    setGuidedCompleted(true);
+  }
+
+  function handleExtrasAccept() {
+    if (extrasSuggestion) {
+      recordExtrasHistory(extrasSuggestion.id, extrasSuggestion.category, dayType);
+    }
+    setShowExtrasSuggestion(false);
+    setGuidedExtrasMode(true);
+  }
+
+  function handleExtrasSuggestionSkip() {
+    setShowExtrasSuggestion(false);
     setGuidedMode(false);
     setWasGuidedMode(true);
     setGuidedCompleted(true);
@@ -338,11 +360,22 @@ export default function LogPage() {
     setSaving(false);
   }
 
+  // Smart extras suggestion card
+  if (showExtrasSuggestion && extrasSuggestion) {
+    return (
+      <ExtrasSuggestion
+        suggestion={extrasSuggestion}
+        onAccept={handleExtrasAccept}
+        onSkip={handleExtrasSuggestionSkip}
+      />
+    );
+  }
+
   // Guided extras screen (after guided session, before review)
   if (guidedExtrasMode && guidedMode) {
     return (
       <ExtrasSession
-        extras={selectedExtras}
+        extras={extrasSuggestion ? [extrasSuggestion] : []}
         onFinish={handleExtrasFinish}
         onSkip={handleExtrasFinish}
       />

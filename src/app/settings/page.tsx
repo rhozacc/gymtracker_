@@ -372,9 +372,14 @@ export default function Settings() {
 
   // ── Warmup sets ───────────────────────────────────────────────────────────
   const [warmupsEnabled, setWarmupsEnabled] = useState(true);
+  const [hasCustomWarmupPrefs, setHasCustomWarmupPrefs] = useState(false);
 
   useEffect(() => {
     setWarmupsEnabled(localStorage.getItem("gym-disable-warmups") !== "true");
+    try {
+      const prefs = JSON.parse(localStorage.getItem("gym-warmup-prefs") || "{}");
+      setHasCustomWarmupPrefs(Object.keys(prefs).length > 0);
+    } catch { /* ignore */ }
   }, []);
 
   function handleWarmupsToggle() {
@@ -521,9 +526,27 @@ export default function Settings() {
       <div>
         <SectionLabel>Workout</SectionLabel>
         <div className="border border-border rounded p-3 space-y-3">
-          <Row label="Warmup sets" description="Include a warmup set before each exercise">
-            <Toggle enabled={warmupsEnabled} onToggle={handleWarmupsToggle} />
-          </Row>
+          <div>
+            <Row label="Warmup sets" description="Include a warmup set before each exercise">
+              <Toggle enabled={warmupsEnabled} onToggle={handleWarmupsToggle} />
+            </Row>
+            {hasCustomWarmupPrefs && (
+              <div className="mt-2 pl-0 space-y-1">
+                <p className="text-[11px] text-muted leading-relaxed">
+                  Toggling off will override your custom warmup settings, but will not delete your customization.
+                </p>
+                <Link
+                  href="/plan"
+                  className="inline-flex items-center gap-1 text-[11px] text-accent hover:opacity-80 transition-opacity"
+                >
+                  Turn on by exercise
+                  <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2 10L10 2M10 2H4.5M10 2V7.5"/>
+                  </svg>
+                </Link>
+              </div>
+            )}
+          </div>
           <div className="border-t border-border" />
           <Row label="Post-session extras" description="Core, cardio or stretch after lifting">
             <Toggle enabled={extrasEnabled} onToggle={handleExtrasToggle} />

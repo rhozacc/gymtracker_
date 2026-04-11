@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { type WeightUnit, kgToDisplay } from "@/lib/units";
 import type { Exercise } from "@/lib/program";
 import type { OverloadResult } from "@/lib/overload";
@@ -213,6 +213,7 @@ export function MainView({
   skipWarmupCount,
   onStop,
 }: MainViewProps) {
+  const [showRirInfo, setShowRirInfo] = useState(false);
   const selectedReps = parseInt(setData.reps) || null;
   const selectedRir = setData.rir !== "" ? parseInt(setData.rir) : null;
 
@@ -334,7 +335,21 @@ export function MainView({
 
       {!setData.isWarmup && (
         <div className="mt-4 w-full max-w-xs">
-          <p className="text-muted text-[10px] uppercase tracking-wide text-center mb-2">RIR</p>
+          <div className="flex items-center justify-center gap-1.5 mb-2">
+            <p className="text-muted text-[10px] uppercase tracking-wide">RIR</p>
+            <button
+              onClick={() => setShowRirInfo((v) => !v)}
+              aria-label="What is RIR?"
+              className="w-4 h-4 rounded-full border border-muted/50 flex items-center justify-center text-muted hover:border-accent hover:text-accent transition-colors"
+            >
+              <span className="text-[9px] font-medium leading-none">i</span>
+            </button>
+          </div>
+          {showRirInfo && (
+            <div className="mb-3 px-3 py-2 bg-surface border border-border rounded text-xs text-muted leading-relaxed text-left">
+              <span className="text-accent font-medium">Reps in Reserve</span> — how many more reps you could do before failure. RIR 0 means you hit failure. RIR 2 means you had 2 left. Tracking it keeps effort honest over time.
+            </div>
+          )}
           <div className="grid grid-cols-6 gap-1.5">
             {[0, 1, 2, 3, 4, 5].map((n) => (
               <button

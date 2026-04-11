@@ -155,7 +155,9 @@ export function GuidedSession({
   }, [restEndsAt, playBeep, notifyIfBackgrounded, cancelRestTimer, getNextInfo, exerciseNameOverrides]);
 
   const handleSetDone = useCallback(() => {
-    if (!currentSetData || !currentSetData.weight || !currentSetData.reps) return;
+    if (!currentSetData) return;
+    // Warmup sets don't require reps/weight to be set before marking done
+    if (!currentSetData.isWarmup && (!currentSetData.weight || !currentSetData.reps)) return;
     updateSet(state.exerciseIndex, state.setIndex, { ...currentSetData, done: true });
 
     const isLastExercise = state.exerciseIndex >= day.exercises.length - 1;
@@ -190,8 +192,8 @@ export function GuidedSession({
     }
     triggerSetFlash();
 
-    // Start inline rest timer (skip after warmup set)
-    const restSecs = currentSetData.isWarmup ? 0 : currentExercise.rest;
+    // Start inline rest timer (30s after warmup set, full rest after working sets)
+    const restSecs = currentSetData.isWarmup ? 30 : currentExercise.rest;
     if (restSecs > 0) {
       restDurationRef.current = restSecs;
       setRestEndsAt(Date.now() + restSecs * 1000);
@@ -219,6 +221,14 @@ export function GuidedSession({
     triggerExerciseFlash();
   }, [state.exerciseIndex, day.exercises.length, onFinish, cancelRestTimer]);
 
+  // Skip just the warmup set — jump straight to the first working set (index 1)
+  const handleSkipWarmup = useCallback(() => {
+    cancelRestTimer();
+    setRestEndsAt(null);
+    dispatch({ type: "NEXT_SET", nextExIdx: state.exerciseIndex, nextSetIdx: 1 });
+    triggerSetFlash();
+  }, [state.exerciseIndex, cancelRestTimer]);
+
   // Safety: if state is inconsistent, finish the session
   if (!currentExercise || !currentExState || !currentSetData) {
     onFinish();
@@ -245,6 +255,7 @@ export function GuidedSession({
       onDone={handleSetDone}
       onSkipRest={handleSkipRest}
       onSkip={handleSkipExercise}
+      onSkipWarmup={handleSkipWarmup}
       onStop={onStop}
       onNameChange={(name) =>
         setExerciseNameOverrides((prev) => ({ ...prev, [currentExercise.id]: name }))

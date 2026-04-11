@@ -403,7 +403,7 @@ export function ExtrasStep({
       </div>
       <button
         onClick={onSkip}
-        className="w-full text-center py-2 text-xs text-muted hover:text-accent transition-colors"
+        className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity"
       >
         Skip
       </button>

@@ -33,7 +33,6 @@ import {
   PlanStep,
   ExtrasStep,
   SavingStep,
-  NavStep,
   PwaStep,
   NotificationsStep,
   ReadyStep,
@@ -185,7 +184,7 @@ export function Welcome({ onDone }: { onDone: () => void }) {
       localStorage.setItem("gym-onboarded", "true");
       localStorage.setItem("gym-active-plan", selectedPlan);
       setSavingState("done");
-      setTimeout(() => next("nav"), 1200);
+      setTimeout(() => next("pwa"), 1200);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
@@ -205,15 +204,18 @@ export function Welcome({ onDone }: { onDone: () => void }) {
   function StepActions() {
     if (step === "saving" || step === "ready") return null;
     return (
-      <div className="pb-8 pt-4">
-        {/* Step dots */}
-        <div className="flex justify-center gap-2 mb-4">
-          {STEPS.map((s) => (
+      <div className="pb-12 pt-4">
+        {/* Step dots — fluid drip animation on active dot */}
+        <div key={step} className="flex justify-center gap-2 mb-5">
+          {STEPS.filter(s => s !== "saving" && s !== "ready").map((s) => (
             <div
               key={s}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                s === step ? "bg-accent w-4" : "bg-border w-1.5"
-              }`}
+              className={`h-1.5 rounded-full ${s === step ? "bg-accent" : "bg-border w-1.5"}`}
+              style={s === step ? {
+                animation: "dot-drip 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
+              } : {
+                transition: "width 300ms ease",
+              }}
             />
           ))}
         </div>
@@ -261,11 +263,6 @@ export function Welcome({ onDone }: { onDone: () => void }) {
             Continue
           </button>
         )}
-        {step === "nav" && (
-          <button onClick={() => next("pwa")} className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity">
-            Continue
-          </button>
-        )}
         {step === "pwa" && (
           <button onClick={() => next("notifications")} className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity">
             Continue
@@ -301,13 +298,13 @@ export function Welcome({ onDone }: { onDone: () => void }) {
         style={{ background: "var(--color-accent)", animation: "welcome-pulse 4s ease-in-out infinite" }}
       />
 
-      <div
-        className={`relative z-10 flex-1 flex flex-col max-w-sm w-full mx-auto px-6 transition-all duration-300 ${
-          fade ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"
-        }`}
-      >
-        {/* Step content — centered vertically */}
-        <div className="flex-1 flex flex-col justify-center">
+      <div className="relative z-10 flex-1 flex flex-col max-w-sm w-full mx-auto px-6">
+        {/* Step content — fades on exit only */}
+        <div
+          className={`flex-1 flex flex-col justify-center transition-all duration-300 ${
+            fade ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"
+          }`}
+        >
           {step === "welcome" && <WelcomeStep />}
           {step === "about" && <AboutStep stepNum={stepNum} totalSteps={totalSteps} />}
           {step === "theme" && <ThemeStep stepNum={stepNum} totalSteps={totalSteps} theme={theme} onApply={applyTheme} />}
@@ -339,7 +336,6 @@ export function Welcome({ onDone }: { onDone: () => void }) {
             />
           )}
           {step === "saving" && <SavingStep savingState={savingState} />}
-          {step === "nav" && <NavStep stepNum={stepNum} totalSteps={totalSteps} />}
           {step === "pwa" && <PwaStep stepNum={stepNum} totalSteps={totalSteps} />}
           {step === "notifications" && (
             <NotificationsStep stepNum={stepNum} totalSteps={totalSteps} notifResult={notifResult} />
@@ -347,7 +343,7 @@ export function Welcome({ onDone }: { onDone: () => void }) {
           {step === "ready" && <ReadyStep />}
         </div>
 
-        {/* Bottom actions — pinned to bottom */}
+        {/* Bottom actions — static, never fades */}
         <StepActions />
       </div>
     </div>

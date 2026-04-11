@@ -25,7 +25,6 @@ export const STEPS: Step[] = [
   "plan",
   "extras",
   "saving",
-  "nav",
   "pwa",
   "notifications",
   "ready",
@@ -39,7 +38,6 @@ export const NUMBERED_STEPS: Step[] = [
   "goal",
   "plan",
   "extras",
-  "nav",
   "pwa",
   "notifications",
 ];

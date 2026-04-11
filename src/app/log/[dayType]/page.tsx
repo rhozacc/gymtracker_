@@ -21,6 +21,7 @@ import { useBackgroundNotification } from "@/lib/useBackgroundNotification";
 import { useNavVisibility } from "@/lib/useNavVisibility";
 import { useTheme } from "@/lib/useTheme";
 import { useSessionBackup } from "./hooks/useSessionBackup";
+import { savePendingSession } from "@/lib/pendingSessions";
 import { PostSessionFlow } from "./views/PostSessionFlow";
 import { StandardModeView } from "./views/StandardModeView";
 import type { ExerciseState } from "./types";
@@ -330,36 +331,56 @@ export default function LogPage() {
 
     if (allSets.length === 0) return;
 
-    setSaving(true);
-    const res = await fetch("/api/sessions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        date: new Date().toISOString(),
-        dayType,
-        notes: notes.trim() || undefined,
-        startedAt: startedAtRef.current,
-        endedAt: new Date().toISOString(),
-        sets: allSets,
-      }),
-    });
+    const sessionPayload = {
+      date: new Date().toISOString(),
+      dayType,
+      notes: notes.trim() || undefined,
+      startedAt: startedAtRef.current,
+      endedAt: new Date().toISOString(),
+      sets: allSets,
+    };
 
-    if (res.ok) {
-      const { id } = await res.json();
-      clearBackup();
-      const debriefDisabled = localStorage.getItem("gym-disable-debrief") === "true";
-      if (debriefDisabled) {
+    setSaving(true);
+
+    try {
+      const res = await fetch("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sessionPayload),
+      });
+
+      if (res.ok) {
+        const { id } = await res.json();
+        clearBackup();
+        const debriefDisabled = localStorage.getItem("gym-disable-debrief") === "true";
+        if (debriefDisabled) {
+          setSaving(false);
+          router.replace("/");
+          return;
+        }
+        setSavedSessionId(id);
+        const exLookup: Record<string, string> = {};
+        for (const ex of day.exercises) exLookup[ex.id] = ex.name;
+        setSummaryData(
+          computeSummary(exercises, overloads, exLookup, startedAtRef.current, unit, displayToKg)
+        );
+      } else {
+        // DB error — persist locally, sync when recovered
+        savePendingSession(sessionPayload);
+        clearBackup();
         setSaving(false);
         router.replace("/");
         return;
       }
-      setSavedSessionId(id);
-      const exLookup: Record<string, string> = {};
-      for (const ex of day.exercises) exLookup[ex.id] = ex.name;
-      setSummaryData(
-        computeSummary(exercises, overloads, exLookup, startedAtRef.current, unit, displayToKg)
-      );
+    } catch {
+      // Network error — persist locally, sync when recovered
+      savePendingSession(sessionPayload);
+      clearBackup();
+      setSaving(false);
+      router.replace("/");
+      return;
     }
+
     setSaving(false);
   }
 

@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
 import dynamic from "next/dynamic";
 import { fetcher } from "@/lib/swr";
+import { getPendingSessions, removePendingSession, hasPendingSessions } from "@/lib/pendingSessions";
 import { getDayLabel } from "@/lib/program";
 import { checkOverload } from "@/lib/overload";
 import { useProgram } from "@/lib/useProgram";
@@ -57,7 +58,7 @@ export default function Dashboard() {
   const { plan } = useProgram();
   const { unit } = useUnit();
   const { theme, preference: themePref, toggleTheme } = useTheme();
-  const { data: sessions, error: sessionsError } =
+  const { data: sessions, error: sessionsError, mutate: mutateSessions } =
     useSWR<SessionSummary[]>("/api/sessions", fetcher);
   const { data: chartData } = useSWR<ChartSession[]>(
     "/api/charts/data",
@@ -77,6 +78,11 @@ export default function Dashboard() {
   const [showAbortConfirm, setShowAbortConfirm] = useState(false);
   const effectiveSelected = selectedDay || nextDayType;
 
+  // Pending session sync
+  const [syncState, setSyncState] = useState<"idle" | "success">("idle");
+  const [syncCount, setSyncCount] = useState(0);
+  const syncAttemptedRef = useRef(false);
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem("gym-guided-backup");
@@ -90,6 +96,47 @@ export default function Dashboard() {
       // ignore corrupt backup
     }
   }, []);
+
+  // Sync pending sessions when DB becomes available
+  useEffect(() => {
+    if (!sessions || sessionsError) return;
+    if (syncAttemptedRef.current) return;
+    if (!hasPendingSessions()) return;
+
+    syncAttemptedRef.current = true;
+
+    async function syncAll() {
+      const pending = getPendingSessions();
+      if (pending.length === 0) return;
+
+      let synced = 0;
+      for (const ps of pending) {
+        try {
+          const res = await fetch("/api/sessions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(ps.payload),
+          });
+          if (res.ok) {
+            removePendingSession(ps.localId);
+            synced++;
+          }
+        } catch {
+          // Keep this one for the next attempt
+        }
+      }
+
+      if (synced > 0) {
+        setSyncCount(synced);
+        setSyncState("success");
+        mutateSessions();
+        setTimeout(() => setSyncState("idle"), 6000);
+      }
+    }
+
+    syncAll();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessions, sessionsError]);
 
   const muscleRadarData = useMemo(() => {
     if (!chartData) return [];
@@ -182,14 +229,18 @@ export default function Dashboard() {
       <InstallPrompt />
     <div className="space-y-14">
       {sessionsError && (
-        <div className="border border-red-500/30 bg-red-950/20 rounded p-3 text-sm">
-          <span className="text-red-400 font-medium">
-            No database connected.
-          </span>
-          <span className="text-muted ml-1">
-            Sessions won&apos;t be saved. Add a Neon Postgres database in your
-            Vercel project settings.
-          </span>
+        <div className="border border-yellow-500/20 bg-yellow-950/10 rounded p-3">
+          <p className="text-sm text-yellow-400/90 font-medium">Resolving Technical Issues.</p>
+          <p className="text-xs text-muted mt-0.5">Your session will be stored locally, and synced to cloud when resolved.</p>
+        </div>
+      )}
+
+      {syncState === "success" && (
+        <div className="border border-green-500/30 bg-green-950/10 rounded p-3">
+          <p className="text-sm text-green-400 font-medium">Sync Successful.</p>
+          <p className="text-xs text-muted mt-0.5">
+            {syncCount === 1 ? "Your session is" : `${syncCount} sessions are`} now recorded.
+          </p>
         </div>
       )}
 

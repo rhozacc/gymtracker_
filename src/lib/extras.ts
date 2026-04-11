@@ -198,24 +198,217 @@ const STRETCH_MOBILITY: ExtraOption = {
   ],
 };
 
+// ─── ABS — additional ────────────────────────────────────────────
+
+const ABS_LOWER: ExtraOption = {
+  id: "abs_lower",
+  name: "Lower Abs",
+  description: "Hips up, legs up — pure lower ab punishment",
+  duration: "~6 min",
+  category: "abs",
+  exercises: [
+    { id: "al_reverse",  name: "Reverse crunch",       mode: "reps", value: 15, rest: 10 },
+    { id: "al_raise",    name: "Lying leg raise",       mode: "reps", value: 12, rest: 10 },
+    { id: "al_scissors", name: "Scissor kicks",         mode: "time", value: 30, rest: 10 },
+    { id: "al_tuck",     name: "Tuck crunch",           mode: "reps", value: 15, rest: 10 },
+    { id: "al_flutter",  name: "Flutter kicks",         mode: "time", value: 30, rest: 10 },
+    { id: "al_knee_tuck",name: "Plank knee tuck",       mode: "reps", value: 20, rest: 0  },
+  ],
+};
+
+const ABS_OBLIQUE: ExtraOption = {
+  id: "abs_oblique",
+  name: "Oblique Work",
+  description: "Rotation, side planks, and lateral control",
+  duration: "~7 min",
+  category: "abs",
+  exercises: [
+    { id: "ao_russian",     name: "Russian twist",            mode: "reps", value: 20, rest: 10 },
+    { id: "ao_sp_l",        name: "Side plank (left)",        mode: "time", value: 40, rest: 5  },
+    { id: "ao_sp_r",        name: "Side plank (right)",       mode: "time", value: 40, rest: 10 },
+    { id: "ao_bicycle",     name: "Bicycle crunch",           mode: "reps", value: 20, rest: 10 },
+    { id: "ao_hip_dip_l",   name: "Plank hip dip (left)",     mode: "reps", value: 15, rest: 0  },
+    { id: "ao_hip_dip_r",   name: "Plank hip dip (right)",    mode: "reps", value: 15, rest: 10 },
+    { id: "ao_wipers",      name: "Windshield wipers",        mode: "reps", value: 10, rest: 0  },
+  ],
+};
+
+const ABS_WEIGHTED: ExtraOption = {
+  id: "abs_weighted",
+  name: "Weighted Core",
+  description: "Cable, dumbbell, and pallof — add resistance",
+  duration: "~9 min",
+  category: "abs",
+  exercises: [
+    { id: "aw_cable",      name: "Cable crunch",              mode: "reps", value: 15, rest: 15 },
+    { id: "aw_side_l",     name: "DB side bend (left)",       mode: "reps", value: 15, rest: 0  },
+    { id: "aw_side_r",     name: "DB side bend (right)",      mode: "reps", value: 15, rest: 15 },
+    { id: "aw_situp",      name: "Weighted sit-up",           mode: "reps", value: 12, rest: 15 },
+    { id: "aw_pallof_l",   name: "Pallof press (left)",       mode: "reps", value: 12, rest: 0  },
+    { id: "aw_pallof_r",   name: "Pallof press (right)",      mode: "reps", value: 12, rest: 15 },
+    { id: "aw_drag",       name: "Plank plate drag",          mode: "reps", value: 10, rest: 0  },
+  ],
+};
+
+// ─── CARDIO — additional ─────────────────────────────────────────
+
+const CARDIO_TABATA: ExtraOption = {
+  id: "cardio_tabata",
+  name: "Tabata",
+  description: "4 exercises × 4 rounds — 20s on, 10s off, no mercy",
+  duration: "~8 min",
+  category: "cardio",
+  exercises: [
+    // Round 1
+    { id: "ctab_1_burp",  name: "Burpees",           mode: "time", value: 20, rest: 10 },
+    { id: "ctab_1_squat", name: "Jump squats",        mode: "time", value: 20, rest: 10 },
+    { id: "ctab_1_mc",    name: "Mountain climbers",  mode: "time", value: 20, rest: 10 },
+    { id: "ctab_1_hk",    name: "High knees",         mode: "time", value: 20, rest: 10 },
+    // Round 2
+    { id: "ctab_2_burp",  name: "Burpees",            mode: "time", value: 20, rest: 10 },
+    { id: "ctab_2_squat", name: "Jump squats",        mode: "time", value: 20, rest: 10 },
+    { id: "ctab_2_mc",    name: "Mountain climbers",  mode: "time", value: 20, rest: 10 },
+    { id: "ctab_2_hk",    name: "High knees",         mode: "time", value: 20, rest: 10 },
+    // Round 3
+    { id: "ctab_3_burp",  name: "Burpees",            mode: "time", value: 20, rest: 10 },
+    { id: "ctab_3_squat", name: "Jump squats",        mode: "time", value: 20, rest: 10 },
+    { id: "ctab_3_mc",    name: "Mountain climbers",  mode: "time", value: 20, rest: 10 },
+    { id: "ctab_3_hk",    name: "High knees",         mode: "time", value: 20, rest: 10 },
+    // Round 4
+    { id: "ctab_4_burp",  name: "Burpees",            mode: "time", value: 20, rest: 10 },
+    { id: "ctab_4_squat", name: "Jump squats",        mode: "time", value: 20, rest: 10 },
+    { id: "ctab_4_mc",    name: "Mountain climbers",  mode: "time", value: 20, rest: 10 },
+    { id: "ctab_4_hk",    name: "High knees",         mode: "time", value: 20, rest: 0  },
+  ],
+};
+
+const CARDIO_TREADMILL: ExtraOption = {
+  id: "cardio_treadmill",
+  name: "Sprint Intervals",
+  description: "Warm up, 4 hard sprints, cool down — treadmill or track",
+  duration: "~10 min",
+  category: "cardio",
+  exercises: [
+    { id: "ct_warmup",  name: "Jog (warm-up)",        mode: "time", value: 90, rest: 10 },
+    { id: "ct_s1",      name: "Sprint",                mode: "time", value: 30, rest: 10 },
+    { id: "ct_r1",      name: "Jog (recovery)",        mode: "time", value: 60, rest: 10 },
+    { id: "ct_s2",      name: "Sprint",                mode: "time", value: 30, rest: 10 },
+    { id: "ct_r2",      name: "Jog (recovery)",        mode: "time", value: 60, rest: 10 },
+    { id: "ct_s3",      name: "Sprint",                mode: "time", value: 30, rest: 10 },
+    { id: "ct_r3",      name: "Jog (recovery)",        mode: "time", value: 60, rest: 10 },
+    { id: "ct_s4",      name: "Sprint",                mode: "time", value: 30, rest: 10 },
+    { id: "ct_cooldown",name: "Jog (cool-down)",       mode: "time", value: 90, rest: 0  },
+  ],
+};
+
+const CARDIO_ROW: ExtraOption = {
+  id: "cardio_row",
+  name: "Row & Recover",
+  description: "4 hard rowing intervals with active recovery — works everything",
+  duration: "~12 min",
+  category: "cardio",
+  exercises: [
+    { id: "cr_easy",  name: "Row — easy warm-up",     mode: "time", value: 120, rest: 15 },
+    { id: "cr_p1",    name: "Row sprint",              mode: "time", value: 60,  rest: 45 },
+    { id: "cr_p2",    name: "Row sprint",              mode: "time", value: 60,  rest: 45 },
+    { id: "cr_p3",    name: "Row sprint",              mode: "time", value: 60,  rest: 45 },
+    { id: "cr_p4",    name: "Row sprint",              mode: "time", value: 60,  rest: 20 },
+    { id: "cr_cool",  name: "Row — cool-down",         mode: "time", value: 120, rest: 0  },
+  ],
+};
+
+// ─── STRETCH — additional ─────────────────────────────────────────
+
+const STRETCH_HIPS: ExtraOption = {
+  id: "stretch_hips",
+  name: "Hip Opener",
+  description: "Hip flexors, 90/90, pigeon — undo a week of sitting",
+  duration: "~7 min",
+  category: "stretch",
+  exercises: [
+    { id: "sh_hf_l",   name: "Hip flexor stretch (left)",   mode: "time", value: 45, rest: 0 },
+    { id: "sh_hf_r",   name: "Hip flexor stretch (right)",  mode: "time", value: 45, rest: 0 },
+    { id: "sh_9090_l", name: "90/90 stretch (left)",        mode: "time", value: 45, rest: 0 },
+    { id: "sh_9090_r", name: "90/90 stretch (right)",       mode: "time", value: 45, rest: 0 },
+    { id: "sh_frog",   name: "Frog stretch",                mode: "time", value: 60, rest: 0 },
+    { id: "sh_pig_l",  name: "Pigeon stretch (left)",       mode: "time", value: 45, rest: 0 },
+    { id: "sh_pig_r",  name: "Pigeon stretch (right)",      mode: "time", value: 45, rest: 0 },
+    { id: "sh_baby",   name: "Happy baby",                  mode: "time", value: 30, rest: 0 },
+  ],
+};
+
+const STRETCH_THORACIC: ExtraOption = {
+  id: "stretch_thoracic",
+  name: "T-Spine & Shoulders",
+  description: "Upper back rotation, chest opening, shoulder unlock",
+  duration: "~7 min",
+  category: "stretch",
+  exercises: [
+    { id: "st_catcow",  name: "Cat-cow",                          mode: "time", value: 45, rest: 0 },
+    { id: "st_ttn_l",   name: "Thread the needle (left)",         mode: "time", value: 35, rest: 0 },
+    { id: "st_ttn_r",   name: "Thread the needle (right)",        mode: "time", value: 35, rest: 0 },
+    { id: "st_rot_l",   name: "Thoracic rotation (left)",         mode: "time", value: 35, rest: 0 },
+    { id: "st_rot_r",   name: "Thoracic rotation (right)",        mode: "time", value: 35, rest: 0 },
+    { id: "st_door",    name: "Doorway chest stretch",            mode: "time", value: 40, rest: 0 },
+    { id: "st_tri_l",   name: "Overhead tricep stretch (left)",   mode: "time", value: 30, rest: 0 },
+    { id: "st_tri_r",   name: "Overhead tricep stretch (right)",  mode: "time", value: 30, rest: 0 },
+    { id: "st_cb_l",    name: "Cross-body shoulder (left)",       mode: "time", value: 30, rest: 0 },
+    { id: "st_cb_r",    name: "Cross-body shoulder (right)",      mode: "time", value: 30, rest: 0 },
+  ],
+};
+
+const STRETCH_FLOW: ExtraOption = {
+  id: "stretch_flow",
+  name: "Full Body Flow",
+  description: "Head to toe — foam roll, hips, hamstrings, spine, shoulders",
+  duration: "~15 min",
+  category: "stretch",
+  exercises: [
+    { id: "sf_foam_q",  name: "Foam roll quads",              mode: "time", value: 45, rest: 0 },
+    { id: "sf_foam_it", name: "Foam roll IT band (each side)",mode: "time", value: 45, rest: 0 },
+    { id: "sf_foam_lat",name: "Foam roll lats",               mode: "time", value: 30, rest: 0 },
+    { id: "sf_catcow",  name: "Cat-cow",                      mode: "time", value: 45, rest: 0 },
+    { id: "sf_dog",     name: "Downward dog",                 mode: "time", value: 45, rest: 0 },
+    { id: "sf_lunge_l", name: "Low lunge (left)",             mode: "time", value: 45, rest: 0 },
+    { id: "sf_lunge_r", name: "Low lunge (right)",            mode: "time", value: 45, rest: 0 },
+    { id: "sf_pig_l",   name: "Pigeon stretch (left)",        mode: "time", value: 60, rest: 0 },
+    { id: "sf_pig_r",   name: "Pigeon stretch (right)",       mode: "time", value: 60, rest: 0 },
+    { id: "sf_hf_l",    name: "Hip flexor (left)",            mode: "time", value: 45, rest: 0 },
+    { id: "sf_hf_r",    name: "Hip flexor (right)",           mode: "time", value: 45, rest: 0 },
+    { id: "sf_ham",     name: "Seated forward fold",          mode: "time", value: 45, rest: 0 },
+    { id: "sf_twist_l", name: "Supine spinal twist (left)",   mode: "time", value: 30, rest: 0 },
+    { id: "sf_twist_r", name: "Supine spinal twist (right)",  mode: "time", value: 30, rest: 0 },
+    { id: "sf_child",   name: "Child's pose",                 mode: "time", value: 45, rest: 0 },
+  ],
+};
+
 // ─── Registry ────────────────────────────────────────────────────
 
 export const EXTRAS: Record<string, ExtraOption> = {
   [ABS_QUICK.id]: ABS_QUICK,
   [ABS_CIRCUIT.id]: ABS_CIRCUIT,
   [ABS_BURNER.id]: ABS_BURNER,
+  [ABS_LOWER.id]: ABS_LOWER,
+  [ABS_OBLIQUE.id]: ABS_OBLIQUE,
+  [ABS_WEIGHTED.id]: ABS_WEIGHTED,
   [CARDIO_QUICK.id]: CARDIO_QUICK,
   [CARDIO_HIIT.id]: CARDIO_HIIT,
   [CARDIO_CONDITIONING.id]: CARDIO_CONDITIONING,
+  [CARDIO_TABATA.id]: CARDIO_TABATA,
+  [CARDIO_TREADMILL.id]: CARDIO_TREADMILL,
+  [CARDIO_ROW.id]: CARDIO_ROW,
   [STRETCH_QUICK.id]: STRETCH_QUICK,
   [STRETCH_COOLDOWN.id]: STRETCH_COOLDOWN,
   [STRETCH_MOBILITY.id]: STRETCH_MOBILITY,
+  [STRETCH_HIPS.id]: STRETCH_HIPS,
+  [STRETCH_THORACIC.id]: STRETCH_THORACIC,
+  [STRETCH_FLOW.id]: STRETCH_FLOW,
 };
 
 export const EXTRAS_BY_CATEGORY: Record<ExtraCategory, ExtraOption[]> = {
-  abs: [ABS_QUICK, ABS_CIRCUIT, ABS_BURNER],
-  cardio: [CARDIO_QUICK, CARDIO_HIIT, CARDIO_CONDITIONING],
-  stretch: [STRETCH_QUICK, STRETCH_COOLDOWN, STRETCH_MOBILITY],
+  abs:     [ABS_QUICK, ABS_CIRCUIT, ABS_BURNER, ABS_LOWER, ABS_OBLIQUE, ABS_WEIGHTED],
+  cardio:  [CARDIO_QUICK, CARDIO_HIIT, CARDIO_CONDITIONING, CARDIO_TABATA, CARDIO_TREADMILL, CARDIO_ROW],
+  stretch: [STRETCH_QUICK, STRETCH_COOLDOWN, STRETCH_MOBILITY, STRETCH_HIPS, STRETCH_THORACIC, STRETCH_FLOW],
 };
 
 export const CATEGORY_INFO: Record<ExtraCategory, { label: string; description: string }> = {

@@ -85,38 +85,27 @@ export function InstallPrompt() {
   // iOS Safari — manual instructions
   if (showIos) {
     return (
-      <div className="mx-auto max-w-lg px-4 mt-3">
-        <div className="bg-surface border border-border rounded-lg p-4 relative">
+      <div className="fixed bottom-6 inset-x-0 px-4 z-50 flex justify-center pointer-events-none">
+        <div className="w-full max-w-sm bg-surface border border-border rounded-lg p-3 shadow-lg pointer-events-auto animate-in slide-in-from-bottom-2 duration-300">
           <button
             onClick={dismiss}
-            className="absolute top-3 right-3 text-muted hover:text-accent transition-colors"
+            className="absolute top-3 right-3 text-muted hover:text-text transition-colors"
             aria-label="Dismiss"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
-          <div className="flex items-start gap-3 pr-6">
-            <span className="text-xl mt-0.5">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent">
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                <polyline points="16 6 12 2 8 6" />
-                <line x1="12" y1="2" x2="12" y2="15" />
-              </svg>
-            </span>
-            <div>
-              <p className="text-sm font-medium mb-1">Install gymtracker_</p>
-              <p className="text-muted text-xs leading-relaxed">
-                Tap the <span className="inline-block align-middle mx-0.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                    <polyline points="16 6 12 2 8 6" />
-                    <line x1="12" y1="2" x2="12" y2="15" />
-                  </svg>
-                </span> Share button, then <strong>Add to Home Screen</strong> for the full app experience with notifications
-              </p>
-            </div>
+          <div className="flex items-center gap-3 pr-5">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent shrink-0">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+              <polyline points="16 6 12 2 8 6" />
+              <line x1="12" y1="2" x2="12" y2="15" />
+            </svg>
+            <p className="text-xs text-muted leading-relaxed">
+              Tap <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline align-middle mx-0.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" /></svg> then <strong className="text-text">Add to Home Screen</strong>
+            </p>
           </div>
         </div>
       </div>
@@ -125,36 +114,27 @@ export function InstallPrompt() {
 
   // Android/Chrome — can trigger install directly
   return (
-    <div className="mx-auto max-w-lg px-4 mt-3">
-      <div className="bg-surface border border-border rounded-lg p-4 relative">
-        <button
-          onClick={dismiss}
-          className="absolute top-3 right-3 text-muted hover:text-accent transition-colors"
-          aria-label="Dismiss"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
+    <div className="fixed bottom-6 inset-x-0 px-4 z-50 flex justify-center pointer-events-none">
+      <div className="w-full max-w-sm bg-surface border border-border rounded-lg p-3 shadow-lg pointer-events-auto animate-in slide-in-from-bottom-2 duration-300">
+        <div className="flex items-center gap-3">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent shrink-0">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
           </svg>
-        </button>
-        <div className="flex items-center gap-3 pr-6">
-          <span className="text-xl">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-          </span>
-          <div className="flex-1">
-            <p className="text-sm font-medium">Install gymtracker_</p>
-            <p className="text-muted text-xs">Add to home screen for notifications & offline access</p>
-          </div>
+          <p className="text-xs text-muted flex-1">Add to home screen</p>
           <button
             onClick={install}
             disabled={installing}
-            className="shrink-0 px-4 h-9 bg-accent text-bg text-sm font-medium rounded hover:opacity-90 disabled:opacity-50 transition-opacity"
+            className="shrink-0 px-3 h-7 bg-accent text-bg text-xs font-medium rounded disabled:opacity-50 transition-opacity"
           >
             {installing ? "..." : "Install"}
+          </button>
+          <button onClick={dismiss} className="text-muted hover:text-text transition-colors" aria-label="Dismiss">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
       </div>

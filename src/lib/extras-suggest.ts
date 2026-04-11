@@ -6,6 +6,23 @@
 
 import { EXTRAS_BY_CATEGORY, type ExtraCategory, type ExtraOption } from "./extras";
 
+// ─── Extras Vibes (user preference hints) ────────────────────────────────────
+
+interface ExtrasVibes {
+  categoryBias: "none" | "abs" | "cardio" | "stretch";
+  duration: "any" | "quick" | "longer";
+}
+
+function getExtrasVibes(): ExtrasVibes {
+  if (typeof window === "undefined") return { categoryBias: "none", duration: "any" };
+  try {
+    const raw = JSON.parse(localStorage.getItem("gym-extras-vibes") || "{}");
+    return { categoryBias: raw.categoryBias || "none", duration: raw.duration || "any" };
+  } catch {
+    return { categoryBias: "none", duration: "any" };
+  }
+}
+
 // ─── History ─────────────────────────────────────────────────────────────────
 
 const HISTORY_KEY = "gym-extras-history";
@@ -75,6 +92,7 @@ export function suggestExtra(
 ): ExtraOption {
   const history = getExtrasHistory();
   const prefCats = preferredCategories(dayType);
+  const vibes = getExtrasVibes();
 
   const allOptions = [
     ...EXTRAS_BY_CATEGORY.abs,
@@ -124,7 +142,12 @@ export function suggestExtra(
       if (mins <= 8) score += 2;
     }
 
-    // ⑤ Small random tiebreak (so it doesn't always pick the same one)
+    // ⑤ Extras Vibes — user preference nudges
+    if (vibes.categoryBias !== "none" && opt.category === vibes.categoryBias) score += 4;
+    if (vibes.duration === "quick" && mins <= 5) score += 3;
+    else if (vibes.duration === "longer" && mins >= 10) score += 3;
+
+    // ⑥ Small random tiebreak (so it doesn't always pick the same one)
     score += Math.random() * 0.5;
 
     return { opt, score };

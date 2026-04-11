@@ -235,8 +235,38 @@ export default function PlanPage() {
   const [tab, setTab] = useState<CategoryTab>(initialTab);
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
 
+  const [showWarmupPrefs, setShowWarmupPrefs] = useState(false);
+  const [showExtrasVibes, setShowExtrasVibes] = useState(false);
+  const [warmupPrefs, setWarmupPrefs] = useState<Record<string, boolean>>(() => {
+    if (typeof window === "undefined") return {};
+    try { return JSON.parse(localStorage.getItem("gym-warmup-prefs") || "{}"); } catch { return {}; }
+  });
+  const [extrasVibes, setExtrasVibes] = useState<{
+    categoryBias: "none" | "abs" | "cardio" | "stretch";
+    duration: "any" | "quick" | "longer";
+  }>(() => {
+    if (typeof window === "undefined") return { categoryBias: "none", duration: "any" };
+    try {
+      const raw = JSON.parse(localStorage.getItem("gym-extras-vibes") || "{}");
+      return { categoryBias: raw.categoryBias || "none", duration: raw.duration || "any" };
+    } catch { return { categoryBias: "none", duration: "any" }; }
+  });
+
   function toggleExpand(slug: string) {
     setExpandedSlug((prev) => (prev === slug ? null : slug));
+  }
+
+  function toggleWarmupPref(exerciseId: string) {
+    const current = warmupPrefs[exerciseId] !== false; // default true
+    const next = { ...warmupPrefs, [exerciseId]: !current };
+    setWarmupPrefs(next);
+    localStorage.setItem("gym-warmup-prefs", JSON.stringify(next));
+  }
+
+  function updateVibes(update: Partial<typeof extrasVibes>) {
+    const next = { ...extrasVibes, ...update };
+    setExtrasVibes(next);
+    localStorage.setItem("gym-extras-vibes", JSON.stringify(next));
   }
 
   async function handleDelete(slug: string) {
@@ -389,6 +419,114 @@ export default function PlanPage() {
                   + Add session extras (abs, cardio, stretch)
                 </Link>
               )}
+
+              {/* ── Customize Warmups + Extras Vibes ── */}
+              <div className="border-t border-border pt-3 mt-1">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setShowWarmupPrefs(!showWarmupPrefs); setShowExtrasVibes(false); }}
+                    className={`flex-1 text-xs py-2 border rounded-md transition-colors ${
+                      showWarmupPrefs ? "border-accent text-accent bg-accent/5" : "border-border text-muted hover:border-muted"
+                    }`}
+                  >
+                    Customize Warmups
+                  </button>
+                  <button
+                    onClick={() => { setShowExtrasVibes(!showExtrasVibes); setShowWarmupPrefs(false); }}
+                    className={`flex-1 text-xs py-2 border rounded-md transition-colors ${
+                      showExtrasVibes ? "border-accent text-accent bg-accent/5" : "border-border text-muted hover:border-muted"
+                    }`}
+                  >
+                    Extras Vibes
+                  </button>
+                </div>
+
+                {showWarmupPrefs && (() => {
+                  const globalOff = typeof window !== "undefined" && localStorage.getItem("gym-disable-warmups") === "true";
+                  return (
+                    <div className="mt-3 space-y-3">
+                      {globalOff && (
+                        <p className="text-[11px] text-muted border border-border rounded p-2 leading-relaxed">
+                          Warmups are globally disabled in Settings → Workout. Per-exercise settings apply when re-enabled.
+                        </p>
+                      )}
+                      {days.map((day) => {
+                        const shortLabel = day.label.includes("—") ? day.label.split("—")[1].trim() : day.label;
+                        return (
+                          <div key={day.label}>
+                            <p className="text-[10px] font-medium uppercase tracking-widest text-muted mb-1.5">{shortLabel}</p>
+                            <div className="space-y-0.5">
+                              {day.exercises.map((ex) => {
+                                const enabled = warmupPrefs[ex.id] !== false;
+                                return (
+                                  <div key={ex.id} className="flex items-center justify-between py-1.5">
+                                    <span className="text-xs text-text">{ex.name}</span>
+                                    <button
+                                      onClick={() => toggleWarmupPref(ex.id)}
+                                      aria-label={enabled ? "Disable warmup" : "Enable warmup"}
+                                      className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 ${
+                                        enabled && !globalOff ? "bg-accent" : "bg-border"
+                                      }`}
+                                    >
+                                      <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-bg transition-transform ${
+                                        enabled && !globalOff ? "translate-x-4" : "translate-x-0.5"
+                                      }`} />
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+
+                {showExtrasVibes && (
+                  <div className="mt-3 space-y-4">
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-widest text-muted mb-2">Category nudge</p>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {(["none", "abs", "cardio", "stretch"] as const).map((cat) => (
+                          <button
+                            key={cat}
+                            onClick={() => updateVibes({ categoryBias: cat })}
+                            className={`text-xs px-3 py-1.5 border rounded-full transition-colors ${
+                              extrasVibes.categoryBias === cat
+                                ? "border-accent text-accent bg-accent/5"
+                                : "border-border text-muted hover:border-muted"
+                            }`}
+                          >
+                            {cat === "none" ? "No bias" : cat.charAt(0).toUpperCase() + cat.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-widest text-muted mb-2">Duration preference</p>
+                      <div className="flex gap-1.5">
+                        {(["any", "quick", "longer"] as const).map((dur) => (
+                          <button
+                            key={dur}
+                            onClick={() => updateVibes({ duration: dur })}
+                            className={`text-xs px-3 py-1.5 border rounded-full transition-colors ${
+                              extrasVibes.duration === dur
+                                ? "border-accent text-accent bg-accent/5"
+                                : "border-border text-muted hover:border-muted"
+                            }`}
+                          >
+                            {dur.charAt(0).toUpperCase() + dur.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted leading-relaxed">
+                      Nudges the post-session suggestion engine toward your preferences.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         );

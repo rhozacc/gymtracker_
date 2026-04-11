@@ -114,21 +114,28 @@ export default function LogPage() {
     initializedForDayRef.current = dayType;
 
     const warmupsEnabled = localStorage.getItem("gym-disable-warmups") !== "true";
+    let warmupPrefsMap: Record<string, boolean> = {};
+    if (warmupsEnabled) {
+      try { warmupPrefsMap = JSON.parse(localStorage.getItem("gym-warmup-prefs") || "{}"); } catch {}
+    }
     setExercises(
-      day.exercises.map((ex) => ({
-        exerciseId: ex.id,
-        sets: [
-          ...(warmupsEnabled
-            ? [{ reps: ex.repRange[0].toString(), weight: "", rir: "", done: false, isWarmup: true }]
-            : []),
-          ...Array.from({ length: ex.sets }, () => ({
-            reps: ex.repRange[0].toString(),
-            weight: "",
-            rir: "",
-            done: false,
-          })),
-        ],
-      }))
+      day.exercises.map((ex) => {
+        const exWarmupOn = warmupsEnabled && warmupPrefsMap[ex.id] !== false;
+        return {
+          exerciseId: ex.id,
+          sets: [
+            ...(exWarmupOn
+              ? [{ reps: ex.repRange[0].toString(), weight: "", rir: "", done: false, isWarmup: true }]
+              : []),
+            ...Array.from({ length: ex.sets }, () => ({
+              reps: ex.repRange[0].toString(),
+              weight: "",
+              rir: "",
+              done: false,
+            })),
+          ],
+        };
+      })
     );
 
     async function fetchOverloads() {

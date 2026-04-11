@@ -173,6 +173,8 @@ interface MainViewProps {
   onSkipCancel: () => void;
   onSkipRequest: () => void;
   onSkipWarmup: () => void;
+  onDisableWarmups: () => void;
+  skipWarmupCount: number;
   onStop: () => void;
 }
 
@@ -207,6 +209,8 @@ export function MainView({
   onSkipCancel,
   onSkipRequest,
   onSkipWarmup,
+  onDisableWarmups,
+  skipWarmupCount,
   onStop,
 }: MainViewProps) {
   const selectedReps = parseInt(setData.reps) || null;
@@ -382,19 +386,32 @@ export function MainView({
 
       {/* Skip / End Session row */}
       {confirmSkip ? (
-        <div className="mt-4 flex gap-2 w-full max-w-xs">
-          <button
-            onClick={onSkipConfirm}
-            className="flex-1 px-3 py-2.5 border border-border text-muted text-sm rounded hover:border-accent hover:text-accent transition-colors"
-          >
-            Skip Exercise
-          </button>
-          <button
-            onClick={setData.isWarmup ? onSkipWarmup : onSkipCancel}
-            className="flex-1 px-3 py-2.5 text-muted text-sm hover:text-accent transition-colors"
-          >
-            {setData.isWarmup ? "Skip Warmup" : "Cancel"}
-          </button>
+        <div className="mt-4 w-full max-w-xs space-y-2">
+          <div className="flex gap-2">
+            <button
+              onClick={onSkipConfirm}
+              className="flex-1 px-3 py-2.5 border border-border text-muted text-sm rounded hover:border-accent hover:text-accent transition-colors"
+            >
+              Skip Exercise
+            </button>
+            <button
+              onClick={setData.isWarmup ? onSkipWarmup : onSkipCancel}
+              className="flex-1 px-3 py-2.5 text-muted text-sm hover:text-accent transition-colors"
+            >
+              {setData.isWarmup ? "Skip Warmup" : "Cancel"}
+            </button>
+          </div>
+          {setData.isWarmup && skipWarmupCount >= 3 && (
+            <div className="text-center pt-1">
+              <button
+                onClick={onDisableWarmups}
+                className="text-xs text-red-400 hover:text-red-300 transition-colors"
+              >
+                Disable Warmups Forever
+              </button>
+              <p className="text-[10px] text-muted mt-0.5">You can always turn Warmups back on in Settings</p>
+            </div>
+          )}
         </div>
       ) : (
         <div className="mt-4 flex gap-2 w-full max-w-xs">

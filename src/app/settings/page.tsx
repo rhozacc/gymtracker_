@@ -347,6 +347,23 @@ export default function Settings() {
     }
   }
 
+  // ── Warmup sets ───────────────────────────────────────────────────────────
+  const [warmupsEnabled, setWarmupsEnabled] = useState(true);
+
+  useEffect(() => {
+    setWarmupsEnabled(localStorage.getItem("gym-disable-warmups") !== "true");
+  }, []);
+
+  function handleWarmupsToggle() {
+    const next = !warmupsEnabled;
+    setWarmupsEnabled(next);
+    if (next) {
+      localStorage.removeItem("gym-disable-warmups");
+    } else {
+      localStorage.setItem("gym-disable-warmups", "true");
+    }
+  }
+
   // ── Left-handed mode ───────────────────────────────────────────────────────
   const [leftHanded, setLeftHanded] = useState(false);
 
@@ -474,6 +491,16 @@ export default function Settings() {
               <Toggle enabled={orientLocked} onToggle={handleOrientToggle} />
             </Row>
           )}
+        </div>
+      </div>
+
+      {/* Workout */}
+      <div>
+        <SectionLabel>Workout</SectionLabel>
+        <div className="border border-border rounded p-3">
+          <Row label="Warmup sets" description="Include a warmup set before each exercise">
+            <Toggle enabled={warmupsEnabled} onToggle={handleWarmupsToggle} />
+          </Row>
         </div>
       </div>
 

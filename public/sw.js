@@ -94,7 +94,7 @@ self.addEventListener("message", (event) => {
 
     // Show "resting" notification immediately so it appears on the lock screen
     const restBody = nextExercise
-      ? `${seconds}s rest — Next: ${nextExercise.name} (Set ${nextExercise.setNumber}/${nextExercise.totalSets})`
+      ? `${seconds}s rest — Next: ${nextExercise.name} (${nextExercise.setNumber === 0 ? "Warmup" : `Set ${nextExercise.setNumber}/${nextExercise.totalSets}`})`
       : `${seconds}s rest`;
 
     self.registration.showNotification("Resting...", {

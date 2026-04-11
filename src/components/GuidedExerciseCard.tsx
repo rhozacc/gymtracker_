@@ -27,6 +27,8 @@ interface GuidedExerciseCardProps {
   onSkipRest: () => void;
   onSkip: () => void;
   onSkipWarmup: () => void;
+  onDisableWarmups: () => void;
+  skipWarmupCount: number;
   onStop: () => void;
   onNameChange: (name: string) => void;
 }
@@ -51,6 +53,8 @@ export function GuidedExerciseCard({
   onSkipRest,
   onSkip,
   onSkipWarmup,
+  onDisableWarmups,
+  skipWarmupCount,
   onStop,
   onNameChange,
 }: GuidedExerciseCardProps) {
@@ -155,6 +159,8 @@ export function GuidedExerciseCard({
       onSkipCancel={() => setConfirmSkip(false)}
       onSkipRequest={() => setConfirmSkip(true)}
       onSkipWarmup={() => { setConfirmSkip(false); onSkipWarmup(); }}
+      onDisableWarmups={() => { setConfirmSkip(false); onDisableWarmups(); onSkipWarmup(); }}
+      skipWarmupCount={skipWarmupCount}
       onStop={onStop}
     />
   );

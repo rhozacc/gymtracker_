@@ -143,3 +143,33 @@ input[type="number"]::-webkit-outer-spin-button {
   0%   { width: 80px; height: 80px; border-radius: 12px; }
   100% { width: 100vw; height: 100vh; border-radius: 0; }
 }
+
+/* ── Animation library ───────────────────────────────────────────────────── */
+
+/* Post-session weight-up rows stagger in */
+@keyframes fade-in-up {
+  0%   { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Exercise card slide-up entrance */
+@keyframes slide-up-in {
+  0%   { opacity: 0; transform: translateY(14px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Done button flash on completion */
+@keyframes done-ripple {
+  0%   { opacity: 0.45; }
+  100% { opacity: 0; }
+}
+
+/* Rest timer urgency pulse on countdown number */
+@keyframes urgency-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.07); }
+}
+
+.rest-timer-urgent {
+  animation: urgency-pulse 0.85s ease-in-out infinite;
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Exercise } from "@/lib/program";
 import type { OverloadResult } from "@/lib/overload";
 import type { WeightUnit } from "@/lib/units";
@@ -64,6 +64,14 @@ export function GuidedExerciseCard({
   const [leftHanded, setLeftHanded] = useState(false);
   const [confirmSkip, setConfirmSkip] = useState(false);
 
+  // Slide-up entrance: starts invisible, becomes visible after first paint
+  const [visible, setVisible] = useState(false);
+  const rafRef = useRef<number>(0);
+  useEffect(() => {
+    rafRef.current = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(rafRef.current);
+  }, []);
+
   useEffect(() => {
     setTempName(exerciseName);
   }, [exerciseName]);
@@ -83,85 +91,97 @@ export function GuidedExerciseCard({
     setTempWeight((Math.round(newVal * 100) / 100).toString());
   }
 
+  const entranceStyle: React.CSSProperties = {
+    transition: "opacity 250ms ease-out, transform 250ms ease-out",
+    opacity: visible ? 1 : 0,
+    transform: visible ? "translateY(0)" : "translateY(14px)",
+  };
+
   if (view === "weight") {
     return (
-      <WeightAdjustView
-        exerciseName={exerciseName}
-        setIndex={setIndex}
-        unit={unit}
-        increments={increments}
-        setData={setData}
-        tempWeight={tempWeight}
-        onTempWeightChange={setTempWeight}
-        onAdjust={adjustWeight}
-        onConfirm={() => {
-          const n = parseFloat(tempWeight);
-          const rounded = !isNaN(n) && n >= 0
-            ? (Math.round(n * 100) / 100).toString()
-            : tempWeight;
-          onChange({ ...setData, weight: rounded });
-          setView("main");
-        }}
-        onBack={() => {
-          setTempWeight(setData.weight);
-          setView("main");
-        }}
-      />
+      <div style={entranceStyle}>
+        <WeightAdjustView
+          exerciseName={exerciseName}
+          setIndex={setIndex}
+          unit={unit}
+          increments={increments}
+          setData={setData}
+          tempWeight={tempWeight}
+          onTempWeightChange={setTempWeight}
+          onAdjust={adjustWeight}
+          onConfirm={() => {
+            const n = parseFloat(tempWeight);
+            const rounded = !isNaN(n) && n >= 0
+              ? (Math.round(n * 100) / 100).toString()
+              : tempWeight;
+            onChange({ ...setData, weight: rounded });
+            setView("main");
+          }}
+          onBack={() => {
+            setTempWeight(setData.weight);
+            setView("main");
+          }}
+        />
+      </div>
     );
   }
 
   if (view === "editName") {
     return (
-      <RenameView
-        tempName={tempName}
-        onTempNameChange={setTempName}
-        onSave={() => {
-          if (tempName.trim()) onNameChange(tempName.trim());
-          setView("main");
-        }}
-        onBack={() => {
-          setTempName(exerciseName);
-          setView("main");
-        }}
-      />
+      <div style={entranceStyle}>
+        <RenameView
+          tempName={tempName}
+          onTempNameChange={setTempName}
+          onSave={() => {
+            if (tempName.trim()) onNameChange(tempName.trim());
+            setView("main");
+          }}
+          onBack={() => {
+            setTempName(exerciseName);
+            setView("main");
+          }}
+        />
+      </div>
     );
   }
 
   return (
-    <MainView
-      exercise={exercise}
-      exerciseName={exerciseName}
-      exerciseIndex={exerciseIndex}
-      totalExercises={totalExercises}
-      setIndex={setIndex}
-      totalSets={totalSets}
-      setData={setData}
-      overload={overload}
-      unit={unit}
-      restRemaining={restRemaining}
-      restDuration={restDuration}
-      leftHanded={leftHanded}
-      setFlash={setFlash}
-      exerciseFlash={exerciseFlash}
-      confirmSkip={confirmSkip}
-      onWeightTap={() => {
-        setTempWeight(setData.weight);
-        setView("weight");
-      }}
-      onEditName={() => {
-        setTempName(exerciseName);
-        setView("editName");
-      }}
-      onChange={onChange}
-      onDone={onDone}
-      onSkipRest={onSkipRest}
-      onSkipConfirm={() => { setConfirmSkip(false); onSkip(); }}
-      onSkipCancel={() => setConfirmSkip(false)}
-      onSkipRequest={() => setConfirmSkip(true)}
-      onSkipWarmup={() => { setConfirmSkip(false); onSkipWarmup(); }}
-      onDisableWarmups={() => { setConfirmSkip(false); onDisableWarmups(); onSkipWarmup(); }}
-      skipWarmupCount={skipWarmupCount}
-      onStop={onStop}
-    />
+    <div style={entranceStyle}>
+      <MainView
+        exercise={exercise}
+        exerciseName={exerciseName}
+        exerciseIndex={exerciseIndex}
+        totalExercises={totalExercises}
+        setIndex={setIndex}
+        totalSets={totalSets}
+        setData={setData}
+        overload={overload}
+        unit={unit}
+        restRemaining={restRemaining}
+        restDuration={restDuration}
+        leftHanded={leftHanded}
+        setFlash={setFlash}
+        exerciseFlash={exerciseFlash}
+        confirmSkip={confirmSkip}
+        onWeightTap={() => {
+          setTempWeight(setData.weight);
+          setView("weight");
+        }}
+        onEditName={() => {
+          setTempName(exerciseName);
+          setView("editName");
+        }}
+        onChange={onChange}
+        onDone={onDone}
+        onSkipRest={onSkipRest}
+        onSkipConfirm={() => { setConfirmSkip(false); onSkip(); }}
+        onSkipCancel={() => setConfirmSkip(false)}
+        onSkipRequest={() => setConfirmSkip(true)}
+        onSkipWarmup={() => { setConfirmSkip(false); onSkipWarmup(); }}
+        onDisableWarmups={() => { setConfirmSkip(false); onDisableWarmups(); onSkipWarmup(); }}
+        skipWarmupCount={skipWarmupCount}
+        onStop={onStop}
+      />
+    </div>
   );
 }

@@ -115,11 +115,18 @@ export function RestTimer({ seconds, onDismiss, onTimerEnd, nextExercise }: Rest
           strokeDashoffset={circumference * (1 - progress)}
           transform="rotate(-90 100 100)"
           className="transition-all duration-300 ease-linear"
+          style={remaining > 0 && remaining <= 5 ? {
+            filter: "drop-shadow(0 0 8px var(--color-accent))",
+          } : undefined}
         />
       </svg>
 
-      {/* Big countdown */}
-      <div className="text-7xl font-bold tabular-nums text-accent">
+      {/* Big countdown — pulses urgently when ≤5 s remain */}
+      <div
+        className={`text-7xl font-bold tabular-nums text-accent ${
+          remaining > 0 && remaining <= 5 ? "rest-timer-urgent" : ""
+        }`}
+      >
         {display}
       </div>
 

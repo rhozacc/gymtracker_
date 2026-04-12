@@ -249,6 +249,7 @@ export function GuidedSession({
 
   return (
     <GuidedExerciseCard
+      key={state.exerciseIndex}
       exercise={currentExercise}
       exerciseName={currentDisplayName}
       exerciseIndex={state.exerciseIndex}

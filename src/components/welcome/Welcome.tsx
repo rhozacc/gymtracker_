@@ -116,6 +116,7 @@ export function Welcome({ onDone }: { onDone: () => void }) {
   const totalSteps = NUMBERED_STEPS.length;
 
   function applyTheme(t: "dark" | "light" | "system") {
+    triggerColorTransition();
     setTheme(t);
     localStorage.setItem("gym-theme", t);
     const resolved = t === "system"

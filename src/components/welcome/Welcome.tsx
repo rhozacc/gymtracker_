@@ -34,6 +34,7 @@ import {
   NotificationsStep,
   ReadyStep,
 } from "./WelcomeSteps";
+import { triggerColorTransition } from "@/lib/useTheme";
 
 // ─── useOnboarded hook ───────────────────────────────────────────────
 
@@ -82,6 +83,16 @@ export function Welcome({ onDone }: { onDone: () => void }) {
     if (stored === "dark" || stored === "light" || stored === "system") return stored;
     return "dark";
   });
+  const [darkAccent, setDarkAccentState] = useState<string>(() =>
+    typeof window !== "undefined"
+      ? (localStorage.getItem("gym-accent-dark") || "#39ff14")
+      : "#39ff14"
+  );
+  const [lightAccent, setLightAccentState] = useState<string>(() =>
+    typeof window !== "undefined"
+      ? (localStorage.getItem("gym-accent-light") || "#d4622b")
+      : "#d4622b"
+  );
   const [unit, setUnit] = useState<"kg" | "lbs">("kg");
   const [gender, setGender] = useState<Gender>("men");
   const [goal, setGoal] = useState<Goal>("balanced");
@@ -105,12 +116,32 @@ export function Welcome({ onDone }: { onDone: () => void }) {
   const totalSteps = NUMBERED_STEPS.length;
 
   function applyTheme(t: "dark" | "light" | "system") {
+    triggerColorTransition();
     setTheme(t);
     localStorage.setItem("gym-theme", t);
     const resolved = t === "system"
       ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
       : t;
     document.documentElement.setAttribute("data-theme", resolved);
+    // Re-apply accent for the resolved theme
+    const storedAccent = localStorage.getItem(resolved === "dark" ? "gym-accent-dark" : "gym-accent-light")
+      || (resolved === "dark" ? "#39ff14" : "#d4622b");
+    const r = document.documentElement.style;
+    r.setProperty("--color-accent", storedAccent);
+    r.setProperty("--color-chart-bar-1", storedAccent);
+    r.setProperty("--color-chart-line", storedAccent);
+  }
+
+  function handleAccent(color: string, forTheme: "dark" | "light") {
+    triggerColorTransition();
+    const key = forTheme === "dark" ? "gym-accent-dark" : "gym-accent-light";
+    localStorage.setItem(key, color);
+    if (forTheme === "dark") setDarkAccentState(color);
+    else setLightAccentState(color);
+    const r = document.documentElement.style;
+    r.setProperty("--color-accent", color);
+    r.setProperty("--color-chart-bar-1", color);
+    r.setProperty("--color-chart-line", color);
   }
 
   function applyUnit(u: "kg" | "lbs") {
@@ -262,7 +293,7 @@ export function Welcome({ onDone }: { onDone: () => void }) {
         >
           {step === "welcome" && <WelcomeStep onDone={() => next("about")} />}
           {step === "about" && <AboutStep stepNum={stepNum} totalSteps={totalSteps} />}
-          {step === "theme" && <ThemeStep stepNum={stepNum} totalSteps={totalSteps} theme={theme} onApply={applyTheme} />}
+          {step === "theme" && <ThemeStep stepNum={stepNum} totalSteps={totalSteps} theme={theme} darkAccent={darkAccent} lightAccent={lightAccent} onApply={applyTheme} onAccent={handleAccent} />}
           {step === "unit" && <UnitStep stepNum={stepNum} totalSteps={totalSteps} unit={unit} onApply={applyUnit} />}
           {step === "gender" && <GenderStep stepNum={stepNum} totalSteps={totalSteps} gender={gender} onSelect={setGender} />}
           {step === "goal" && <GoalStep stepNum={stepNum} totalSteps={totalSteps} goal={goal} onSelect={setGoal} />}

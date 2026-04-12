@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { EXTRAS_BY_CATEGORY, CATEGORY_INFO, type ExtraCategory, type ExtrasSelection } from "@/lib/extras";
 import { GOAL_INFO, EXTRA_CATEGORIES, type Gender, type Goal, type EnrichedPlan } from "./types";
 import { isStandalone } from "./utils";
+import { DARK_ACCENTS, LIGHT_ACCENTS } from "@/lib/useTheme";
 
 // ─── Shared sub-components ───────────────────────────────────────────
 
@@ -116,18 +117,26 @@ export function ThemeStep({
   stepNum,
   totalSteps,
   theme,
+  darkAccent,
+  lightAccent,
   onApply,
+  onAccent,
 }: {
   stepNum: number;
   totalSteps: number;
   theme: "dark" | "light" | "system";
+  darkAccent: string;
+  lightAccent: string;
   onApply: (t: "dark" | "light" | "system") => void;
+  onAccent: (color: string, forTheme: "dark" | "light") => void;
 }) {
+  const showDark = theme === "dark" || theme === "system";
+  const showLight = theme === "light" || theme === "system";
   return (
     <div className="text-center pt-8">
       <StepHeader stepNum={stepNum} totalSteps={totalSteps} />
       <h2 className="text-lg font-medium text-text mb-2">Pick your vibe</h2>
-      <p className="text-muted text-xs mb-8">You can change this later</p>
+      <p className="text-muted text-xs mb-6">You can change this later</p>
       <div className="flex gap-3">
         <button
           onClick={() => onApply("dark")}
@@ -136,7 +145,7 @@ export function ThemeStep({
           }`}
         >
           <div className="w-10 h-10 rounded-full bg-[#0a0a0a] border border-[#222] flex items-center justify-center">
-            <span className="text-[#39ff14] text-lg">&#9679;</span>
+            <span className="text-lg" style={{ color: darkAccent }}>&#9679;</span>
           </div>
           <span className={`text-xs font-medium ${theme === "dark" ? "text-accent" : "text-muted"}`}>
             Dark
@@ -163,12 +172,81 @@ export function ThemeStep({
           }`}
         >
           <div className="w-10 h-10 rounded-full bg-[#f5f5f5] border border-[#e0e0e0] flex items-center justify-center">
-            <span className="text-[#d4622b] text-lg">&#9679;</span>
+            <span className="text-lg" style={{ color: lightAccent }}>&#9679;</span>
           </div>
           <span className={`text-xs font-medium ${theme === "light" ? "text-accent" : "text-muted"}`}>
             Light
           </span>
         </button>
+      </div>
+
+      {/* Accent swatches */}
+      <div className="mt-6 space-y-4">
+        {showDark && (
+          <div>
+            {theme === "system" && (
+              <p className="text-[10px] uppercase tracking-widest text-muted mb-3">Dark accent</p>
+            )}
+            {theme !== "system" && (
+              <p className="text-[10px] uppercase tracking-widest text-muted mb-3">Accent</p>
+            )}
+            <div className="flex justify-center gap-6">
+              {DARK_ACCENTS.map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => onAccent(a.value, "dark")}
+                  className="flex flex-col items-center gap-1.5"
+                >
+                  <div
+                    className={`w-10 h-10 rounded-full transition-all duration-200 ${
+                      darkAccent === a.value ? "scale-110" : "opacity-50 hover:opacity-75"
+                    }`}
+                    style={{
+                      backgroundColor: a.value,
+                      boxShadow: darkAccent === a.value
+                        ? `0 0 0 2px var(--color-bg), 0 0 0 4px ${a.value}, 0 0 12px ${a.value}60`
+                        : "none",
+                    }}
+                  />
+                  <span className={`text-[10px] ${darkAccent === a.value ? "text-text" : "text-muted"}`}>
+                    {a.name}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {showLight && (
+          <div>
+            {theme === "system" && (
+              <p className="text-[10px] uppercase tracking-widest text-muted mb-3">Light accent</p>
+            )}
+            <div className="flex justify-center gap-6">
+              {LIGHT_ACCENTS.map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => onAccent(a.value, "light")}
+                  className="flex flex-col items-center gap-1.5"
+                >
+                  <div
+                    className={`w-10 h-10 rounded-full transition-all duration-200 ${
+                      lightAccent === a.value ? "scale-110" : "opacity-50 hover:opacity-75"
+                    }`}
+                    style={{
+                      backgroundColor: a.value,
+                      boxShadow: lightAccent === a.value
+                        ? `0 0 0 2px var(--color-bg), 0 0 0 4px ${a.value}, 0 0 8px ${a.value}50`
+                        : "none",
+                    }}
+                  />
+                  <span className={`text-[10px] ${lightAccent === a.value ? "text-text" : "text-muted"}`}>
+                    {a.name}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -229,7 +229,7 @@ export function MainView({
   const repButtons = Array.from({ length: repEnd - repStart + 1 }, (_, i) => repStart + i);
 
   const isResting = restRemaining > 0;
-  const restFillPct = restDuration > 0 ? (restRemaining / restDuration) * 100 : 0;
+  const restFillPct = restDuration > 0 ? ((restDuration - restRemaining) / restDuration) * 100 : 0;
 
   const endSessionBtn = (
     <button

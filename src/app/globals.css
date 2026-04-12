@@ -58,6 +58,15 @@ body {
   color: var(--color-text);
 }
 
+/* Smooth color transitions when switching theme or accent.
+   Class is added for ~350ms then removed — keeps interactive states fast. */
+html.color-transitioning,
+html.color-transitioning * {
+  transition-property: background-color, color, border-color, fill, stroke, box-shadow, filter !important;
+  transition-duration: 300ms !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
 /* Hide number input spinners */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {

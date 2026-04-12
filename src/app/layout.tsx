@@ -54,6 +54,8 @@ export default function RootLayout({
         ) : (
           <SetupGuide />
         )}
+        {/* Laser sweep — animated by fireLaser() in useTheme */}
+        <div id="gymtracker-laser" aria-hidden="true" />
         <Analytics />
       </body>
     </html>

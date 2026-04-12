@@ -9,16 +9,19 @@ const STORAGE_KEY = "gym-theme";
 const ACCENT_DARK_KEY = "gym-accent-dark";
 const ACCENT_LIGHT_KEY = "gym-accent-light";
 
+// Dark: neon accents (named). Light: rich bold (paired 1:1 by family).
 export const DARK_ACCENTS = [
-  { id: "green", name: "Green", value: "#39ff14" },
-  { id: "cyan",  name: "Cyan",  value: "#00f5ff" },
-  { id: "pink",  name: "Pink",  value: "#ff2d78" },
+  { id: "neon",   name: "Neon",   value: "#39ff14" }, // electric green
+  { id: "violet", name: "Violet", value: "#c084fc" }, // soft lavender violet
+  { id: "banana", name: "Banana", value: "#fde047" }, // warm banana yellow
+  { id: "rose",   name: "Rose",   value: "#fb2d6e" }, // hot rose
 ];
 
 export const LIGHT_ACCENTS = [
-  { id: "orange", name: "Orange", value: "#d4622b" },
-  { id: "blue",   name: "Blue",   value: "#2563eb" },
-  { id: "violet", name: "Violet", value: "#7c3aed" },
+  { id: "jungle",  name: "Jungle",  value: "#15803d" }, // rich dark jungle green
+  { id: "magenta", name: "Magenta", value: "#c026d3" }, // vivid magenta
+  { id: "orange",  name: "Orange",  value: "#d4622b" }, // burnt orange (OG)
+  { id: "terrano", name: "Terrano", value: "#be5a38" }, // deep terracotta
 ];
 
 function getSystemTheme(): ResolvedTheme {
@@ -49,10 +52,14 @@ export function applyAccentToDom(accent: string) {
   document.documentElement.style.setProperty("--color-chart-line", accent);
 }
 
-export function triggerColorTransition() {
+/** Fire the laser sweep animation. Call AFTER the color change is applied to DOM. */
+export function fireLaser() {
   if (typeof window === "undefined") return;
-  document.documentElement.classList.add("color-transitioning");
-  setTimeout(() => document.documentElement.classList.remove("color-transitioning"), 350);
+  const el = document.getElementById("gymtracker-laser");
+  if (!el) return;
+  el.style.animation = "none";
+  void el.offsetWidth; // force reflow to reset animation
+  el.style.animation = "laser-sweep 320ms cubic-bezier(0.4, 0, 0.2, 1) forwards";
 }
 
 export function useTheme() {
@@ -76,10 +83,15 @@ export function useTheme() {
 
   const accent = theme === "dark" ? darkAccent : lightAccent;
 
-  // Apply theme + accent to DOM whenever resolved theme changes
+  // Apply theme + accent to DOM. Fire laser only on actual theme *changes* (not initial mount).
+  const prevThemeRef = useRef<string | null>(null);
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     applyAccentToDom(getStoredAccent(theme));
+    if (prevThemeRef.current !== null && prevThemeRef.current !== theme) {
+      fireLaser();
+    }
+    prevThemeRef.current = theme;
   }, [theme]);
 
   // Track OS preference changes when in system mode
@@ -92,10 +104,10 @@ export function useTheme() {
   }, [preference]);
 
   const setTheme = useCallback((pref: ThemePreference) => {
-    triggerColorTransition();
     localStorage.setItem(STORAGE_KEY, pref);
     if (pref === "system") setSystemTheme(getSystemTheme());
     setPreferenceState(pref);
+    // Laser fires from the useEffect above once the new theme is applied to DOM
   }, []);
 
   const setAccent = useCallback((color: string, forTheme: ResolvedTheme) => {
@@ -104,14 +116,13 @@ export function useTheme() {
     if (forTheme === "dark") setDarkAccentState(color);
     else setLightAccentState(color);
     if (forTheme === themeRef.current) {
-      triggerColorTransition();
-      applyAccentToDom(color);
+      applyAccentToDom(color); // apply first — laser shows new color
+      fireLaser();
     }
   }, []);
 
   // Header button: cycle dark → light → system
   const toggleTheme = useCallback(() => {
-    triggerColorTransition();
     setPreferenceState((prev) => {
       const next: ThemePreference =
         prev === "dark" ? "light" : prev === "light" ? "system" : "dark";
@@ -119,6 +130,7 @@ export function useTheme() {
       if (next === "system") setSystemTheme(getSystemTheme());
       return next;
     });
+    // Laser fires from the useEffect above once the new theme is applied to DOM
   }, []);
 
   return { theme, preference, accent, darkAccent, lightAccent, setTheme, setAccent, toggleTheme };

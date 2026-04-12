@@ -59,7 +59,7 @@ function SessionLoadingScreen() {
   );
 
   return (
-    <div className="fixed inset-0 z-[200] bg-bg flex items-center justify-center overflow-hidden pointer-events-none">
+    <div className="fixed inset-0 z-[200] bg-bg overflow-hidden pointer-events-none">
       {SESSION_LOADING_CIRCLES.map(([cx, cy, size, duration, delay], i) => (
         <div
           key={i}
@@ -75,7 +75,7 @@ function SessionLoadingScreen() {
           }}
         />
       ))}
-      <p className="relative z-10 text-muted text-[10px] uppercase tracking-widest">
+      <p className="absolute bottom-16 left-6 z-10 text-3xl font-bold text-text leading-tight">
         {message}
       </p>
     </div>

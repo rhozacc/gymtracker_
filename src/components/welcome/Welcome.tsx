@@ -34,7 +34,7 @@ import {
   NotificationsStep,
   ReadyStep,
 } from "./WelcomeSteps";
-import { triggerColorTransition } from "@/lib/useTheme";
+import { fireLaser } from "@/lib/useTheme";
 
 // ─── useOnboarded hook ───────────────────────────────────────────────
 
@@ -116,24 +116,22 @@ export function Welcome({ onDone }: { onDone: () => void }) {
   const totalSteps = NUMBERED_STEPS.length;
 
   function applyTheme(t: "dark" | "light" | "system") {
-    triggerColorTransition();
     setTheme(t);
     localStorage.setItem("gym-theme", t);
     const resolved = t === "system"
       ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
       : t;
     document.documentElement.setAttribute("data-theme", resolved);
-    // Re-apply accent for the resolved theme
     const storedAccent = localStorage.getItem(resolved === "dark" ? "gym-accent-dark" : "gym-accent-light")
       || (resolved === "dark" ? "#39ff14" : "#d4622b");
     const r = document.documentElement.style;
     r.setProperty("--color-accent", storedAccent);
     r.setProperty("--color-chart-bar-1", storedAccent);
     r.setProperty("--color-chart-line", storedAccent);
+    fireLaser(); // after DOM is updated — laser shows new accent color
   }
 
   function handleAccent(color: string, forTheme: "dark" | "light") {
-    triggerColorTransition();
     const key = forTheme === "dark" ? "gym-accent-dark" : "gym-accent-light";
     localStorage.setItem(key, color);
     if (forTheme === "dark") setDarkAccentState(color);
@@ -142,6 +140,7 @@ export function Welcome({ onDone }: { onDone: () => void }) {
     r.setProperty("--color-accent", color);
     r.setProperty("--color-chart-bar-1", color);
     r.setProperty("--color-chart-line", color);
+    fireLaser(); // after DOM is updated — laser shows new accent color
   }
 
   function applyUnit(u: "kg" | "lbs") {

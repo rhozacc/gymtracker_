@@ -15,8 +15,8 @@ export const WHATS_NEW: WhatsNewEntry[] = [
     text: "Pick your color. Three neons for dark mode, three bold tones for light — each theme keeps its own. Change anytime in Settings or during onboarding.",
   },
   {
-    area: "Theme & accent transitions",
-    text: "Switching themes or accents now animates smoothly across the whole UI.",
+    area: "Laser transitions",
+    text: "Switching theme or accent fires a neon laser sweep across the screen. The laser color matches whatever you just picked.",
   },
   {
     area: "Rest timer",

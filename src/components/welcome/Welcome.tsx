@@ -34,6 +34,7 @@ import {
   NotificationsStep,
   ReadyStep,
 } from "./WelcomeSteps";
+import { triggerColorTransition } from "@/lib/useTheme";
 
 // ─── useOnboarded hook ───────────────────────────────────────────────
 
@@ -115,6 +116,7 @@ export function Welcome({ onDone }: { onDone: () => void }) {
   const totalSteps = NUMBERED_STEPS.length;
 
   function applyTheme(t: "dark" | "light" | "system") {
+    triggerColorTransition();
     setTheme(t);
     localStorage.setItem("gym-theme", t);
     const resolved = t === "system"
@@ -131,6 +133,7 @@ export function Welcome({ onDone }: { onDone: () => void }) {
   }
 
   function handleAccent(color: string, forTheme: "dark" | "light") {
+    triggerColorTransition();
     const key = forTheme === "dark" ? "gym-accent-dark" : "gym-accent-light";
     localStorage.setItem(key, color);
     if (forTheme === "dark") setDarkAccentState(color);

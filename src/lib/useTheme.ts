@@ -49,6 +49,12 @@ export function applyAccentToDom(accent: string) {
   document.documentElement.style.setProperty("--color-chart-line", accent);
 }
 
+export function triggerColorTransition() {
+  if (typeof window === "undefined") return;
+  document.documentElement.classList.add("color-transitioning");
+  setTimeout(() => document.documentElement.classList.remove("color-transitioning"), 350);
+}
+
 export function useTheme() {
   const [preference, setPreferenceState] = useState<ThemePreference>(getStoredPreference);
   const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme);
@@ -86,6 +92,7 @@ export function useTheme() {
   }, [preference]);
 
   const setTheme = useCallback((pref: ThemePreference) => {
+    triggerColorTransition();
     localStorage.setItem(STORAGE_KEY, pref);
     if (pref === "system") setSystemTheme(getSystemTheme());
     setPreferenceState(pref);
@@ -96,12 +103,15 @@ export function useTheme() {
     localStorage.setItem(key, color);
     if (forTheme === "dark") setDarkAccentState(color);
     else setLightAccentState(color);
-    // Apply immediately if picking for the currently visible theme
-    if (forTheme === themeRef.current) applyAccentToDom(color);
+    if (forTheme === themeRef.current) {
+      triggerColorTransition();
+      applyAccentToDom(color);
+    }
   }, []);
 
   // Header button: cycle dark → light → system
   const toggleTheme = useCallback(() => {
+    triggerColorTransition();
     setPreferenceState((prev) => {
       const next: ThemePreference =
         prev === "dark" ? "light" : prev === "light" ? "system" : "dark";

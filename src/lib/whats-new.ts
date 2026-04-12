@@ -11,23 +11,19 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
-    area: "Warmup sets",
-    text: "Warmup weight now shows as ~N kg, rounded to the nearest plate increment. Skip warmup 3+ times to unlock Disable Warmups Forever.",
+    area: "Accent colors",
+    text: "Pick your color. Three neons for dark mode, three bold tones for light — each theme keeps its own. Change anytime in Settings or during onboarding.",
   },
   {
-    area: "Smart extras",
-    text: "After your session, the app picks one routine for you — abs, cardio, or stretch — based on your workout type, session length, and history.",
+    area: "Theme & accent transitions",
+    text: "Switching themes or accents now animates smoothly across the whole UI.",
   },
   {
-    area: "Settings",
-    text: "New Workout section: toggle post-session extras and post-workout debrief on or off independently.",
+    area: "Rest timer",
+    text: "Cooldown bar now fills up instead of draining. No more phantom 30-second rest after warmup sets.",
   },
   {
-    area: "Onboarding",
-    text: "Setup is now shorter — extras are handled automatically, no manual category selection needed.",
-  },
-  {
-    area: "Analytics",
-    text: "Vercel Analytics added for performance monitoring.",
+    area: "Home",
+    text: "Loading screen with animated circles while your session history syncs — no more flash of the default day selection.",
   },
 ];

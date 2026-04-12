@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTheme } from "@/lib/useTheme";
+import { useTheme, DARK_ACCENTS, LIGHT_ACCENTS } from "@/lib/useTheme";
 import { useUnit } from "@/lib/useUnit";
 import { authClient } from "@/lib/auth-client";
 import { CURRENT_VERSION } from "@/components/UpdateSplash";
@@ -308,7 +308,7 @@ function AccessSection() {
 
 export default function Settings() {
   const router = useRouter();
-  const { theme, preference: themePref, setTheme } = useTheme();
+  const { theme, preference: themePref, setTheme, darkAccent, lightAccent, setAccent } = useTheme();
   const { unit, setUnit } = useUnit();
 
   // ── Notifications ──────────────────────────────────────────────────────────
@@ -511,6 +511,75 @@ export default function Settings() {
               ))}
             </div>
           </Row>
+          <div className="border-t border-border" />
+          {/* Accent picker */}
+          <div className="space-y-3">
+            {(theme === "dark" || themePref !== "light") && (
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-muted mb-2">
+                  {themePref === "system" ? "Dark accent" : "Accent"}
+                </p>
+                <div className="flex gap-4">
+                  {DARK_ACCENTS.map((a) => (
+                    <button
+                      key={a.id}
+                      onClick={() => setAccent(a.value, "dark")}
+                      title={a.name}
+                      className="flex flex-col items-center gap-1"
+                    >
+                      <div
+                        className={`w-8 h-8 rounded-full transition-all duration-200 ${
+                          darkAccent === a.value ? "scale-110" : "opacity-40 hover:opacity-70"
+                        }`}
+                        style={{
+                          backgroundColor: a.value,
+                          boxShadow: darkAccent === a.value
+                            ? `0 0 0 2px var(--color-bg), 0 0 0 3px ${a.value}`
+                            : "none",
+                        }}
+                      />
+                      <span className={`text-[10px] ${darkAccent === a.value ? "text-text" : "text-muted"}`}>
+                        {a.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {(theme === "light" || themePref !== "dark") && (
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-muted mb-2">
+                  {themePref === "system" ? "Light accent" : "Accent"}
+                </p>
+                <div className="flex gap-4">
+                  {LIGHT_ACCENTS.map((a) => (
+                    <button
+                      key={a.id}
+                      onClick={() => setAccent(a.value, "light")}
+                      title={a.name}
+                      className="flex flex-col items-center gap-1"
+                    >
+                      <div
+                        className={`w-8 h-8 rounded-full transition-all duration-200 ${
+                          lightAccent === a.value ? "scale-110" : "opacity-40 hover:opacity-70"
+                        }`}
+                        style={{
+                          backgroundColor: a.value,
+                          boxShadow: lightAccent === a.value
+                            ? `0 0 0 2px var(--color-bg), 0 0 0 3px ${a.value}`
+                            : "none",
+                        }}
+                      />
+                      <span className={`text-[10px] ${lightAccent === a.value ? "text-text" : "text-muted"}`}>
+                        {a.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="border-t border-border" />
           <Row label="Left-handed mode" description="End Session on the right during workouts">
             <Toggle enabled={leftHanded} onToggle={handleLeftHandedToggle} />
           </Row>
@@ -530,22 +599,22 @@ export default function Settings() {
             <Row label="Warmup sets" description="Include a warmup set before each exercise">
               <Toggle enabled={warmupsEnabled} onToggle={handleWarmupsToggle} />
             </Row>
-            {hasCustomWarmupPrefs && (
-              <div className="mt-2 pl-0 space-y-1">
+            <div className="mt-2 pl-0 space-y-1">
+              {hasCustomWarmupPrefs && (
                 <p className="text-[11px] text-muted leading-relaxed">
                   Toggling off will override your custom warmup settings, but will not delete your customization.
                 </p>
-                <Link
-                  href="/plan"
-                  className="inline-flex items-center gap-1 text-[11px] text-accent hover:opacity-80 transition-opacity"
-                >
-                  Turn on by exercise
-                  <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M2 10L10 2M10 2H4.5M10 2V7.5"/>
-                  </svg>
-                </Link>
-              </div>
-            )}
+              )}
+              <Link
+                href="/plan"
+                className="inline-flex items-center gap-1 text-[11px] text-accent hover:opacity-80 transition-opacity"
+              >
+                Turn on by exercise
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2 10L10 2M10 2H4.5M10 2V7.5"/>
+                </svg>
+              </Link>
+            </div>
           </div>
           <div className="border-t border-border" />
           <Row label="Post-session extras" description="Core, cardio or stretch after lifting">

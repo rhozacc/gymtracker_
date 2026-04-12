@@ -199,8 +199,8 @@ export function GuidedSession({
     }
     triggerSetFlash();
 
-    // Start inline rest timer (30s after warmup set, full rest after working sets)
-    const restSecs = currentSetData.isWarmup ? 30 : currentExercise.rest;
+    // Start inline rest timer (no rest after warmup — you already rested from the prior exercise)
+    const restSecs = currentSetData.isWarmup ? 0 : currentExercise.rest;
     if (restSecs > 0) {
       restDurationRef.current = restSecs;
       setRestEndsAt(Date.now() + restSecs * 1000);

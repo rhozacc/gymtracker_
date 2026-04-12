@@ -25,9 +25,9 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-// Inline script to set theme before first paint (prevents flash)
+// Inline script to set theme + accent before first paint (prevents flash)
 // Defaults to dark when nothing stored. Handles "system" by reading OS preference.
-const themeScript = `(function(){var p=localStorage.getItem('gym-theme');var t;if(p==='dark'||p==='light'){t=p}else if(p==='system'){t=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'}else{t='dark'}document.documentElement.setAttribute('data-theme',t)})()`;
+const themeScript = `(function(){var p=localStorage.getItem('gym-theme');var t;if(p==='dark'||p==='light'){t=p}else if(p==='system'){t=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'}else{t='dark'}document.documentElement.setAttribute('data-theme',t);var ak=t==='dark'?'gym-accent-dark':'gym-accent-light';var ac=localStorage.getItem(ak);if(ac){var r=document.documentElement.style;r.setProperty('--color-accent',ac);r.setProperty('--color-chart-bar-1',ac);r.setProperty('--color-chart-line',ac)}})()`;
 
 export default function RootLayout({
   children,

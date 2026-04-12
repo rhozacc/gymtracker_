@@ -464,13 +464,17 @@ export default function PlanPage() {
                                     <button
                                       onClick={() => toggleWarmupPref(ex.id)}
                                       aria-label={enabled ? "Disable warmup" : "Enable warmup"}
-                                      className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 ${
-                                        enabled && !globalOff ? "bg-accent" : "bg-border"
+                                      className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition-colors ${
+                                        enabled && !globalOff
+                                          ? "border-accent bg-accent"
+                                          : "border-border bg-transparent"
                                       }`}
                                     >
-                                      <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-bg transition-transform ${
-                                        enabled && !globalOff ? "translate-x-4" : "translate-x-0.5"
-                                      }`} />
+                                      {enabled && !globalOff && (
+                                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="var(--color-bg)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M2 5l2 2 4-4" />
+                                        </svg>
+                                      )}
                                     </button>
                                   </div>
                                 );

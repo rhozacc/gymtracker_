@@ -1,0 +1,19 @@
+name: Notify users on deploy
+
+# Vercel updates deployment_status when a deployment finishes.
+# This fires the push notification only when the Production deployment succeeds.
+on:
+  deployment_status:
+
+jobs:
+  push-notification:
+    if: |
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment == 'Production'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send update push notification
+        run: |
+          curl -sf -X POST https://gym.alenrozac.com/api/admin/send-update-push \
+            -H "Authorization: Bearer ${{ secrets.ADMIN_PUSH_SECRET }}" \
+            -H "Content-Type: application/json"

@@ -58,6 +58,7 @@ export interface Preferences {
   activePlan: string;
   theme: string;
   unit: string;
+  onboardingStep?: string | null;
 }
 
 export interface DbPlanRaw {

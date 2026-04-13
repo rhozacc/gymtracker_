@@ -70,14 +70,15 @@ model WebAuthnChallenge {
 }
 
 model UserPreferences {
-  id         String   @id @default("default")
-  userId     String?
-  onboarded  Boolean  @default(false)
-  activePlan String   @default("upper_lower")
-  theme      String   @default("dark")
-  unit       String   @default("kg")
-  dayOrder   Json     @default("{}")
-  updatedAt  DateTime @updatedAt
+  id             String   @id @default("default")
+  userId         String?
+  onboarded      Boolean  @default(false)
+  activePlan     String   @default("upper_lower")
+  theme          String   @default("dark")
+  unit           String   @default("kg")
+  dayOrder       Json     @default("{}")
+  onboardingStep String?
+  updatedAt      DateTime @updatedAt
 }
 
 model Plan {

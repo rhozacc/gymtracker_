@@ -41,20 +41,32 @@ import { fireLaser } from "@/lib/useTheme";
 
 export const ONBOARDING_STEP_KEY = "gym-onboarding-step";
 
+const VALID_RESUME_STEPS = new Set<Step>(
+  STEPS.filter((s) => s !== "saving" && s !== "ready" && s !== "welcome")
+);
+
 export function useOnboarded() {
   const { data, isLoading } = useSWR<Preferences>("/api/preferences", fetcher);
 
   let localOnboarded = false;
-  let inProgress = false;
+  let localStep: Step | null = null;
   if (typeof window !== "undefined") {
     localOnboarded = localStorage.getItem("gym-onboarded") === "true";
-    // If there's a saved step, the user is mid-onboarding — don't skip to home
-    inProgress = !!localStorage.getItem(ONBOARDING_STEP_KEY);
+    const raw = localStorage.getItem(ONBOARDING_STEP_KEY) as Step | null;
+    if (raw && VALID_RESUME_STEPS.has(raw)) localStep = raw;
   }
+
+  // API-persisted step — used when PWA opens with empty localStorage
+  const apiStep = (data?.onboardingStep as Step | null | undefined) ?? null;
+  const resumeStep: Step | null =
+    localStep ?? (apiStep && VALID_RESUME_STEPS.has(apiStep) ? apiStep : null);
+
+  const inProgress = !!resumeStep;
 
   return {
     onboarded: !inProgress && (localOnboarded || (data?.onboarded ?? false)),
     checked: localOnboarded || !isLoading,
+    savedStep: resumeStep,
   };
 }
 
@@ -81,11 +93,13 @@ function BackButton({ step, onBack }: { step: Step; onBack: () => void }) {
 
 // ─── Welcome component ───────────────────────────────────────────────
 
-export function Welcome({ onDone }: { onDone: () => void }) {
+export function Welcome({ onDone, initialStep }: { onDone: () => void; initialStep?: Step | null }) {
   const [step, setStep] = useState<Step>(() => {
-    if (typeof window === "undefined") return "welcome";
+    if (typeof window === "undefined") return initialStep ?? "welcome";
+    // Local storage takes priority (same-browser sessions), then API-provided step
     const saved = localStorage.getItem(ONBOARDING_STEP_KEY) as Step | null;
-    if (saved && STEPS.includes(saved) && saved !== "saving" && saved !== "ready") return saved;
+    if (saved && VALID_RESUME_STEPS.has(saved)) return saved;
+    if (initialStep && VALID_RESUME_STEPS.has(initialStep)) return initialStep;
     return "welcome";
   });
   const [theme, setTheme] = useState<"dark" | "light" | "system">(() => {
@@ -165,9 +179,10 @@ export function Welcome({ onDone }: { onDone: () => void }) {
       setStep(nextStep);
       setFade(false);
       setShowAllPlans(false);
-      // Persist progress so same-browser sessions and PWA reinstalls can resume
-      if (nextStep !== "saving" && nextStep !== "ready") {
+      if (VALID_RESUME_STEPS.has(nextStep)) {
+        // Persist to localStorage (same-browser) AND DB (cross-context: PWA after install)
         localStorage.setItem(ONBOARDING_STEP_KEY, nextStep);
+        savePrefs({ onboardingStep: nextStep });
       } else {
         localStorage.removeItem(ONBOARDING_STEP_KEY);
       }
@@ -207,8 +222,8 @@ export function Welcome({ onDone }: { onDone: () => void }) {
 
   useEffect(() => {
     if (step !== "ready") return;
-    // Mark onboarding fully complete — only now set onboarded:true in DB + localStorage
-    savePrefs({ onboarded: true });
+    // Mark onboarding fully complete — set onboarded:true and clear the step in DB + localStorage
+    savePrefs({ onboarded: true, onboardingStep: null });
     localStorage.setItem("gym-onboarded", "true");
     localStorage.removeItem(ONBOARDING_STEP_KEY);
 

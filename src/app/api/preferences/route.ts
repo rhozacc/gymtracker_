@@ -35,7 +35,7 @@ export async function PUT(req: Request) {
 
   try {
     const body = await req.json();
-    const { onboarded, activePlan, theme, unit, dayOrder } = body;
+    const { onboarded, activePlan, theme, unit, dayOrder, onboardingStep } = body;
 
     const data: Record<string, unknown> = {};
     if (onboarded !== undefined) data.onboarded = onboarded;
@@ -43,6 +43,7 @@ export async function PUT(req: Request) {
     if (theme !== undefined) data.theme = theme;
     if (unit !== undefined) data.unit = unit;
     if (dayOrder !== undefined) data.dayOrder = dayOrder;
+    if (onboardingStep !== undefined) data.onboardingStep = onboardingStep;
 
     // Upsert by the fixed "default" id — works for legacy records (userId=null)
     // and for users whose record hasn't been created yet

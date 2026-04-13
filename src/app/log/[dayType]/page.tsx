@@ -448,7 +448,7 @@ export default function LogPage() {
   }
 
   return (
-    <div className={`space-y-6 ${!guidedMode ? "pb-32" : ""}`}>
+    <div className={`space-y-6 ${!guidedMode && !wasGuidedMode ? "pb-32" : ""}`}>
       {backupFound && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/80 backdrop-blur-sm p-4">
           <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-sm space-y-4">

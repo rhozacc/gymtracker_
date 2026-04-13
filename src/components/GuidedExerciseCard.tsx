@@ -186,9 +186,15 @@ export function GuidedExerciseCard({
           >
             Cancel
           </button>
+          <button
+            onClick={onStop}
+            className="mt-4 text-red-400 text-xs hover:text-red-300 transition-colors"
+          >
+            End Session
+          </button>
         </div>
       </div>
-    );
+);
   }
 
   return (

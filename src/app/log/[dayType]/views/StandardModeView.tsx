@@ -53,7 +53,7 @@ export function StandardModeView({
     <>
       {/* Continue Guided Session — sticky top, only when not yet completed */}
       {wasGuidedMode && !guidedCompleted && (
-        <div className="sticky top-0 z-40">
+        <div className="sticky top-0 z-40 bg-bg pb-2">
           <button
             onClick={onContinueGuided}
             className="w-full h-14 bg-accent text-bg font-medium rounded-lg text-base hover:opacity-90 transition-opacity"

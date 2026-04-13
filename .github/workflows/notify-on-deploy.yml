@@ -7,9 +7,10 @@ on:
 
 jobs:
   push-notification:
-    if: |
+    if: >-
       github.event.deployment_status.state == 'success' &&
-      github.event.deployment.environment == 'Production'
+      (github.event.deployment.environment == 'Production' ||
+       github.event.deployment.environment == 'production')
     runs-on: ubuntu-latest
     steps:
       - name: Send update push notification

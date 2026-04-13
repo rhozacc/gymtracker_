@@ -1,3 +1,5 @@
+import { getJson } from "@/lib/storage";
+
 export interface ExerciseAlternative {
   id: string;  // unique ID (used for tracking history separately)
   name: string;
@@ -838,15 +840,9 @@ export const EXERCISE_ALTERNATIVES: Record<string, ExerciseAlternative[]> = {
 export function getAlternatives(exerciseId: string): ExerciseAlternative[] {
   const programAlts = EXERCISE_ALTERNATIVES[exerciseId] ?? [];
   if (typeof window === "undefined") return programAlts;
-  try {
-    const stored: Record<string, ExerciseAlternative[]> = JSON.parse(
-      localStorage.getItem("gym-alt-history") ?? "{}"
-    );
-    const customAlts = (stored[exerciseId] ?? []).filter(
-      (a) => !programAlts.some((p) => p.id === a.id)
-    );
-    return [...programAlts, ...customAlts];
-  } catch {
-    return programAlts;
-  }
+  const stored = getJson<Record<string, ExerciseAlternative[]>>("gym-alt-history", {});
+  const customAlts = (stored[exerciseId] ?? []).filter(
+    (a) => !programAlts.some((p) => p.id === a.id)
+  );
+  return [...programAlts, ...customAlts];
 }

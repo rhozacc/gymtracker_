@@ -597,6 +597,31 @@ export function PwaStep({ stepNum, totalSteps }: { stepNum: number; totalSteps: 
   );
 }
 
+export function WarmupTipsStep({ stepNum, totalSteps }: { stepNum: number; totalSteps: number }) {
+  return (
+    <div className="text-center pt-8">
+      <StepHeader stepNum={stepNum} totalSteps={totalSteps} />
+      <h2 className="text-lg font-medium text-text mb-2">Warmup sets</h2>
+      <p className="text-muted text-xs mb-8">Each exercise starts with one light warmup set to get you ready</p>
+      <div className="space-y-4 text-left">
+        {[
+          { num: "01", title: "Automatic warmup", desc: "The first set of each exercise is a warmup — use a comfortable weight to prime the movement" },
+          { num: "02", title: "Skip anytime", desc: "Tap Skip during a session to jump straight to your working sets" },
+          { num: "03", title: "Turn off in Settings", desc: "If you prefer to warm up your own way, disable warmup sets in Settings or per-exercise in your plan" },
+        ].map(({ num, title, desc }) => (
+          <div key={num} className="flex items-start gap-3">
+            <span className="text-accent text-sm mt-0.5">{num}</span>
+            <div>
+              <p className="text-sm font-medium">{title}</p>
+              <p className="text-muted text-xs">{desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function NotificationsStep({
   stepNum,
   totalSteps,

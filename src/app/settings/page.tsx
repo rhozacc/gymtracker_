@@ -12,6 +12,7 @@ import { ExerciseLinksSection } from "@/components/ExerciseLinksSection";
 const NOTIF_OPTED_OUT = "gym-notifications-off";
 const ORIENT_LOCK_KEY = "gym-orientation-lock";
 const LEFT_HANDED_KEY = "gym-left-handed";
+const NO_UPDATE_SPLASH_KEY = "gym-no-update-splash";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -354,6 +355,20 @@ export default function Settings() {
     }
   }
 
+  // ── Update splash ─────────────────────────────────────────────────────────
+  const [updateSplashEnabled, setUpdateSplashEnabled] = useState(true);
+
+  useEffect(() => {
+    setUpdateSplashEnabled(localStorage.getItem(NO_UPDATE_SPLASH_KEY) !== "1");
+  }, []);
+
+  function handleUpdateSplashToggle() {
+    const next = !updateSplashEnabled;
+    setUpdateSplashEnabled(next);
+    if (next) localStorage.removeItem(NO_UPDATE_SPLASH_KEY);
+    else localStorage.setItem(NO_UPDATE_SPLASH_KEY, "1");
+  }
+
   // ── Post-session extras & debrief ─────────────────────────────────────────
   const [extrasEnabled, setExtrasEnabled] = useState(true);
   const [debriefEnabled, setDebriefEnabled] = useState(true);
@@ -494,6 +509,10 @@ export default function Settings() {
               <Toggle enabled={notifEnabled} onToggle={handleToggleNotifications} />
             </Row>
           )}
+          <div className="border-t border-border" />
+          <Row label="App update screen" description="Show what's new after each update">
+            <Toggle enabled={updateSplashEnabled} onToggle={handleUpdateSplashToggle} />
+          </Row>
         </div>
       </div>
 

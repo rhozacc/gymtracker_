@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef, useLayoutEffect, useState } from "react";
 import { getDayShortLabel } from "@/lib/program";
 
 interface Props {
@@ -12,8 +12,31 @@ const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
 // Opacity levels for volume-based intensity (GitHub-style)
 const INTENSITY_OPACITIES = [0.15, 0.3, 0.5, 0.75, 1.0];
 
+const CELL_SIZE = 18;
+const CELL_GAP = 3;
+// Day-label column: 4px margin + 16px width = ~22px
+const DAY_LABEL_WIDTH = 22;
+
 export function StreakCalendar({ sessions }: Props) {
-  const weeks = 12;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [weeks, setWeeks] = useState(12);
+
+  // Measure container and compute how many weeks fit
+  useLayoutEffect(() => {
+    function measure() {
+      if (!containerRef.current) return;
+      const width = containerRef.current.offsetWidth;
+      const available = width - DAY_LABEL_WIDTH;
+      const colWidth = CELL_SIZE + CELL_GAP;
+      const computed = Math.max(4, Math.floor(available / colWidth));
+      setWeeks(computed);
+    }
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
 
@@ -35,7 +58,7 @@ export function StreakCalendar({ sessions }: Props) {
   const { minVol, maxVol } = useMemo(() => {
     let min = Infinity;
     let max = 0;
-    for (const entry of Array.from(sessionMap.values())) {
+    for (const entry of Array.from<{ dayType: string; volume: number }>(sessionMap.values())) {
       if (entry.volume > 0) {
         min = Math.min(min, entry.volume);
         max = Math.max(max, entry.volume);
@@ -80,7 +103,7 @@ export function StreakCalendar({ sessions }: Props) {
   }
 
   return (
-    <div>
+    <div ref={containerRef} className="w-full">
       <div className="flex gap-[3px]">
         <div className="flex flex-col gap-[3px] mr-1">
           {DAY_LABELS.map((label, i) => (

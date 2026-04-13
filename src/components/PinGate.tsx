@@ -15,7 +15,7 @@ type Phase = "loading" | "biometric-attempt" | "pin" | "enroll-prompt";
 
 export function PinGate({ children }: { children: ReactNode }) {
   const [authed, setAuthed] = useState(false);
-  const { onboarded, checked: onboardChecked } = useOnboarded();
+  const { onboarded, checked: onboardChecked, savedStep } = useOnboarded();
   const [showWelcome, setShowWelcome] = useState(false);
 
   // Show welcome after auth if not onboarded
@@ -133,7 +133,7 @@ export function PinGate({ children }: { children: ReactNode }) {
   if (authed) {
     return (
       <>
-        {showWelcome && <Welcome onDone={() => setShowWelcome(false)} />}
+        {showWelcome && <Welcome onDone={() => setShowWelcome(false)} initialStep={savedStep} />}
         {children}
       </>
     );

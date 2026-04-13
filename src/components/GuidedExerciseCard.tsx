@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import type { Exercise } from "@/lib/program";
+import type { Exercise, ExerciseAlternative } from "@/lib/program";
 import type { OverloadResult } from "@/lib/overload";
 import type { WeightUnit } from "@/lib/units";
 import type { SetInput } from "@/components/SetRow";
@@ -29,6 +29,12 @@ interface GuidedExerciseCardProps {
   onSkipWarmup: () => void;
   onDisableWarmups: () => void;
   skipWarmupCount: number;
+  onGoBack: () => void;
+  canGoBack: boolean;
+  alternatives: ExerciseAlternative[];
+  onSwitchAlternative?: (alt: ExerciseAlternative) => void;
+  setRec?: { direction: "up" | "down"; suggestedWeight: string } | null;
+  onApplyRec?: () => void;
   onStop: () => void;
   onNameChange: (name: string) => void;
 }
@@ -55,10 +61,16 @@ export function GuidedExerciseCard({
   onSkipWarmup,
   onDisableWarmups,
   skipWarmupCount,
+  onGoBack,
+  canGoBack,
+  alternatives,
+  onSwitchAlternative,
+  setRec,
+  onApplyRec,
   onStop,
   onNameChange,
 }: GuidedExerciseCardProps) {
-  const [view, setView] = useState<"main" | "weight" | "editName">("main");
+  const [view, setView] = useState<"main" | "weight" | "editName" | "alternative">("main");
   const [tempWeight, setTempWeight] = useState(setData.weight);
   const [tempName, setTempName] = useState(exerciseName);
   const [leftHanded, setLeftHanded] = useState(false);
@@ -145,6 +157,40 @@ export function GuidedExerciseCard({
     );
   }
 
+  if (view === "alternative") {
+    return (
+      <div style={entranceStyle}>
+        <div className="flex flex-col items-center py-8 px-4">
+          <p className="text-muted text-xs uppercase tracking-wide">Swap Exercise</p>
+          <h2 className="text-lg font-medium mt-2 text-center">{exerciseName}</h2>
+          <p className="text-muted text-sm mt-1 mb-6">Pick an alternative — tracked separately</p>
+
+          <div className="w-full max-w-xs space-y-2">
+            {alternatives.map((alt) => (
+              <button
+                key={alt.id}
+                onClick={() => {
+                  onSwitchAlternative?.(alt);
+                  setView("main");
+                }}
+                className="w-full h-12 px-4 text-left bg-surface border border-border rounded text-sm text-text hover:border-accent hover:text-accent transition-colors"
+              >
+                {alt.name}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => setView("main")}
+            className="mt-6 text-muted text-sm hover:text-accent"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={entranceStyle}>
       <MainView
@@ -180,6 +226,12 @@ export function GuidedExerciseCard({
         onSkipWarmup={() => { setConfirmSkip(false); onSkipWarmup(); }}
         onDisableWarmups={() => { setConfirmSkip(false); onDisableWarmups(); onSkipWarmup(); }}
         skipWarmupCount={skipWarmupCount}
+        onGoBack={onGoBack}
+        canGoBack={canGoBack}
+        hasAlternatives={alternatives.length > 0}
+        onShowAlternatives={onSwitchAlternative ? () => setView("alternative") : undefined}
+        setRec={setRec}
+        onApplyRec={onApplyRec}
         onStop={onStop}
       />
     </div>

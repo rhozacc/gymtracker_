@@ -6,7 +6,6 @@ import type { Exercise } from "@/lib/program";
 import type { OverloadResult } from "@/lib/overload";
 import type { SetInput } from "@/components/SetRow";
 import { OverloadBanner } from "@/components/OverloadBanner";
-import { useExerciseLinkFn } from "@/hooks/useExerciseLinkFn";
 
 const WARMUP_HINTS = [
   "just do a few easy reps",
@@ -176,6 +175,12 @@ interface MainViewProps {
   onSkipWarmup: () => void;
   onDisableWarmups: () => void;
   skipWarmupCount: number;
+  onGoBack: () => void;
+  canGoBack: boolean;
+  hasAlternatives: boolean;
+  onShowAlternatives?: () => void;
+  setRec?: { direction: "up" | "down"; suggestedWeight: string } | null;
+  onApplyRec?: () => void;
   onStop: () => void;
 }
 
@@ -212,9 +217,14 @@ export function MainView({
   onSkipWarmup,
   onDisableWarmups,
   skipWarmupCount,
+  onGoBack,
+  canGoBack,
+  hasAlternatives,
+  onShowAlternatives,
+  setRec,
+  onApplyRec,
   onStop,
 }: MainViewProps) {
-  const getLink = useExerciseLinkFn();
   const [showRirInfo, setShowRirInfo] = useState(false);
   const [ripple, setRipple] = useState(false);
   const [skipFlash, setSkipFlash] = useState(false);
@@ -270,22 +280,24 @@ export function MainView({
 
   return (
     <div className="flex flex-col items-center py-6 px-4">
-      <p className="text-muted text-xs uppercase tracking-wide">
-        Exercise {exerciseIndex + 1}/{totalExercises}
-      </p>
+      <div className="flex items-center gap-3 w-full max-w-xs justify-center relative">
+        {canGoBack && (
+          <button
+            onClick={onGoBack}
+            className="absolute left-0 text-muted hover:text-accent transition-colors p-1"
+            aria-label="Previous set"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+        )}
+        <p className="text-muted text-xs uppercase tracking-wide">
+          Exercise {exerciseIndex + 1}/{totalExercises}
+        </p>
+      </div>
 
       <div className="flex items-center gap-2 mt-1">
-        {getLink(exerciseName) && (
-          <a
-            href={getLink(exerciseName)!}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-4 h-4 rounded-full border border-muted/40 flex items-center justify-center text-muted hover:border-accent hover:text-accent transition-colors flex-shrink-0"
-            aria-label="Exercise guide"
-          >
-            <span className="text-[9px] font-medium leading-none">i</span>
-          </a>
-        )}
         <h2 className={`text-2xl font-medium transition-colors duration-500 ${exerciseFlash ? "text-accent" : ""}`}>{exerciseName}</h2>
         <button
           onClick={onEditName}
@@ -297,6 +309,22 @@ export function MainView({
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
         </button>
+        {hasAlternatives && onShowAlternatives && (
+          <button
+            onClick={onShowAlternatives}
+            className="text-muted hover:text-accent transition-colors p-1"
+            aria-label="Swap to alternative exercise"
+            title="Gym packed? Swap to an alternative"
+          >
+            {/* fork / split icon */}
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="6" y1="3" x2="6" y2="15"/>
+              <circle cx="18" cy="6" r="3"/>
+              <circle cx="6" cy="18" r="3"/>
+              <path d="M18 9a9 9 0 0 1-9 9"/>
+            </svg>
+          </button>
+        )}
       </div>
 
       <p className={`text-lg font-medium mt-1 transition-colors duration-500 ${setFlash ? "text-accent" : "text-muted"}`}>
@@ -337,6 +365,25 @@ export function MainView({
           </span>
           <span className="text-muted text-sm">{unit}</span>
           <span className="text-muted text-xs ml-1 opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
+        </button>
+      )}
+
+      {/* Intra-session weight recommendation */}
+      {!setData.isWarmup && setRec && onApplyRec && (
+        <button
+          onClick={onApplyRec}
+          className="mt-1.5 flex items-center gap-1 text-xs text-accent/80 hover:text-accent transition-colors"
+        >
+          {setRec.direction === "up" ? (
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="18 15 12 9 6 15" />
+            </svg>
+          ) : (
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          )}
+          try {setRec.suggestedWeight} {unit}?
         </button>
       )}
 
@@ -399,7 +446,9 @@ export function MainView({
       )}
 
       {/* Done button / rest countdown */}
-      {isResting ? (
+      {/* Warmup sets: always show Done (warmup IS the active rest) — with a small Skip Rest below */}
+      {/* Working sets: block with Skip Rest button while resting */}
+      {isResting && !setData.isWarmup ? (
         <>
           {/* Full-screen flash on skip */}
           {skipFlash && (
@@ -429,19 +478,30 @@ export function MainView({
           </button>
         </>
       ) : (
-        <button
-          onClick={handleDone}
-          disabled={!setData.isWarmup && (!setData.weight || !setData.reps)}
-          className="relative mt-6 w-full max-w-xs h-14 bg-accent text-bg font-medium rounded text-sm hover:opacity-90 transition-opacity disabled:opacity-30"
-        >
-          {ripple && (
-            <span
-              className="absolute inset-0 rounded bg-white/25 pointer-events-none"
-              style={{ animation: "done-ripple 420ms ease-out forwards" }}
-            />
+        <>
+          <button
+            onClick={handleDone}
+            disabled={!setData.isWarmup && (!setData.weight || !setData.reps)}
+            className="relative mt-6 w-full max-w-xs h-14 bg-accent text-bg font-medium rounded text-sm hover:opacity-90 transition-opacity disabled:opacity-30"
+          >
+            {ripple && (
+              <span
+                className="absolute inset-0 rounded bg-white/25 pointer-events-none"
+                style={{ animation: "done-ripple 420ms ease-out forwards" }}
+              />
+            )}
+            Done
+          </button>
+          {/* During warmup with rest timer: show rest countdown as secondary info */}
+          {isResting && setData.isWarmup && (
+            <button
+              onClick={handleSkipRest}
+              className="mt-2 text-muted text-xs hover:text-accent transition-colors tabular-nums"
+            >
+              Skip Rest &nbsp;&middot;&nbsp; {formatRestTime(restRemaining)}
+            </button>
           )}
-          Done
-        </button>
+        </>
       )}
 
       {/* Skip / End Session row */}

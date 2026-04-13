@@ -60,23 +60,23 @@ export function useBackgroundNotification() {
   const startRestTimer = useCallback(async (seconds: number, nextExercise?: NextExerciseInfo) => {
     if (!notificationsEnabled()) return;
 
-    // SW-based timer (works on desktop + Android Chrome backgrounded)
     const reg = await getSWRegistration();
     if (reg?.active) {
+      // SW is available — use SW-based timer only (avoids duplicate notifications)
       reg.active.postMessage({
         type: "START_REST_TIMER",
         payload: { seconds, nextExercise },
       });
+    } else {
+      // No SW — fall back to server-side push (iOS PWA without SW, or first load)
+      const timerId = crypto.randomUUID();
+      activeTimerId.current = timerId;
+      fetch("/api/push/rest-timer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seconds, nextExercise, timerId }),
+      }).catch(() => {});
     }
-
-    // Server-side push backup (reliable on iOS PWA + aggressive background killing)
-    const timerId = crypto.randomUUID();
-    activeTimerId.current = timerId;
-    fetch("/api/push/rest-timer", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ seconds, nextExercise, timerId }),
-    }).catch(() => {});
   }, []);
 
   /** Cancel the SW rest timer (e.g. when user skips rest or dismisses early) */

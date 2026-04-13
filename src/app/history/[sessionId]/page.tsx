@@ -8,7 +8,7 @@ import { getExerciseById, getDayLabel, getDayDefinition } from "@/lib/program";
 import { useUnit } from "@/lib/useUnit";
 import { kgToDisplay, displayToKg } from "@/lib/units";
 import { formatDate, calculateVolume, formatDuration } from "@/lib/utils";
-import { getExerciseLink } from "@/lib/exerciseLinks";
+import { useExerciseLinkFn } from "@/hooks/useExerciseLinkFn";
 
 interface SetDetail {
   id: string;
@@ -50,6 +50,7 @@ interface EditableSet {
 export default function SessionDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const getLink = useExerciseLinkFn();
   const { unit } = useUnit();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -290,7 +291,7 @@ export default function SessionDetailPage() {
             const exVolume = calculateVolume(exSets);
             const topOfRange = ex?.repRange[1] || 0;
             const allHitTop = ex && exSets.every((s) => s.reps >= topOfRange);
-            const exerciseInfoLink = getExerciseLink(ex?.name || id);
+            const exerciseInfoLink = getLink(ex?.name || id);
 
             return (
               <div key={id} className="border border-border rounded p-3">

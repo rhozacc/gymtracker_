@@ -6,7 +6,7 @@ import type { Exercise } from "@/lib/program";
 import type { OverloadResult } from "@/lib/overload";
 import type { SetInput } from "@/components/SetRow";
 import { OverloadBanner } from "@/components/OverloadBanner";
-import { getExerciseLink } from "@/lib/exerciseLinks";
+import { useExerciseLinkFn } from "@/hooks/useExerciseLinkFn";
 
 const WARMUP_HINTS = [
   "just do a few easy reps",
@@ -214,6 +214,7 @@ export function MainView({
   skipWarmupCount,
   onStop,
 }: MainViewProps) {
+  const getLink = useExerciseLinkFn();
   const [showRirInfo, setShowRirInfo] = useState(false);
   const [ripple, setRipple] = useState(false);
 
@@ -266,9 +267,9 @@ export function MainView({
       </p>
 
       <div className="flex items-center gap-2 mt-1">
-        {getExerciseLink(exerciseName) && (
+        {getLink(exerciseName) && (
           <a
-            href={getExerciseLink(exerciseName)!}
+            href={getLink(exerciseName)!}
             target="_blank"
             rel="noopener noreferrer"
             className="w-4 h-4 rounded-full border border-muted/40 flex items-center justify-center text-muted hover:border-accent hover:text-accent transition-colors flex-shrink-0"

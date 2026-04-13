@@ -98,6 +98,14 @@ model AllowedEmail {
   createdAt DateTime @default(now())
 }
 
+model ExerciseLink {
+  id           String   @id @default(cuid())
+  exerciseName String   @unique
+  url          String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 model ExtrasLog {
   id          String   @id @default(cuid())
   userId      String?

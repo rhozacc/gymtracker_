@@ -11,6 +11,10 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    area: "Weight nudges",
+    text: "Between sets the app now suggests going up or down based on your reps and RIR. Tap the chip to apply it instantly — or ignore it.",
+  },
+  {
     area: "Guided session",
     text: "Navigate forward and back between sets with the arrow button. Switching to list view and back now resumes exactly where you left off — no more teleporting to the first exercise.",
   },

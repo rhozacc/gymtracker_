@@ -335,16 +335,22 @@ export default function Settings() {
     if (result === "granted") {
       localStorage.removeItem(NOTIF_OPTED_OUT);
       setNotifEnabled(true);
+      const { subscribeToPush } = await import("@/lib/push-subscribe");
+      subscribeToPush().catch(() => {});
     }
   }
 
-  function handleToggleNotifications() {
+  async function handleToggleNotifications() {
     const next = !notifEnabled;
     setNotifEnabled(next);
     if (next) {
       localStorage.removeItem(NOTIF_OPTED_OUT);
+      const { subscribeToPush } = await import("@/lib/push-subscribe");
+      subscribeToPush().catch(() => {});
     } else {
       localStorage.setItem(NOTIF_OPTED_OUT, "1");
+      const { unsubscribeFromPush } = await import("@/lib/push-subscribe");
+      unsubscribeFromPush().catch(() => {});
     }
   }
 

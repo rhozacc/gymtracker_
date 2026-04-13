@@ -169,6 +169,10 @@ export function Welcome({ onDone }: { onDone: () => void }) {
     }
     const result = await Notification.requestPermission();
     setNotifResult(result);
+    if (result === "granted") {
+      const { subscribeToPush } = await import("@/lib/push-subscribe");
+      subscribeToPush().catch(() => {});
+    }
   }
 
   useEffect(() => {

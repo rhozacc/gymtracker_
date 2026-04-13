@@ -11,6 +11,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    area: "Session complete",
+    text: "Finishing a session goes straight to debrief — no redundant extras checklist. Done button now animates and always navigates home, even on a network hiccup.",
+  },
+  {
+    area: "Extras",
+    text: "Rest between extras now shows the same draining progress bar as the main session. The intro screen lists every exercise with reps or hold time so you know what you're getting into.",
+  },
+  {
     area: "Onboarding",
     text: "Onboarding now resumes where you left off if you close the app mid-flow. iOS users installing to home screen won't be dropped to the home screen before finishing setup.",
   },

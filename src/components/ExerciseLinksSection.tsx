@@ -227,11 +227,11 @@ export function ExerciseLinksSection() {
 
             <div className="space-y-2">
               {visibleRows.map(({ key, name, dbUrl, staticUrl }) => {
-                const currentSlug = key in editSlugs
-                  ? editSlugs[key]
-                  : dbUrl ? toSlug(dbUrl) : staticUrl ? toSlug(staticUrl) : "";
                 const originalSlug = dbUrl ? toSlug(dbUrl) : staticUrl ? toSlug(staticUrl) : "";
+                const currentSlug = key in editSlugs ? editSlugs[key] : originalSlug;
                 const isDirty = key in editSlugs && editSlugs[key] !== originalSlug;
+                // Use stored URL as-is when not editing (preserves .html); rebuild only when user typed a new slug
+                const currentUrl = isDirty ? BASE + currentSlug : dbUrl ?? staticUrl ?? null;
 
                 return (
                   <div key={key} className="flex items-center gap-2">
@@ -250,7 +250,7 @@ export function ExerciseLinksSection() {
                       type="text"
                       value={currentSlug}
                       onChange={(e) => setEditSlugs((prev) => ({ ...prev, [key]: e.target.value }))}
-                      placeholder="e.g. bench-press.html"
+                      placeholder="e.g. bench-press"
                       className="flex-1 h-7 bg-bg border border-border text-text text-[11px] rounded px-2 focus:border-accent focus:outline-none min-w-0 font-mono"
                     />
 
@@ -274,9 +274,9 @@ export function ExerciseLinksSection() {
                       </button>
                     )}
 
-                    {currentSlug && (
+                    {currentUrl && (
                       <a
-                        href={BASE + currentSlug}
+                        href={currentUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-muted hover:text-accent transition-colors flex-shrink-0 text-sm leading-none"

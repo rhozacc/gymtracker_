@@ -111,12 +111,23 @@ export function GuidedSession({
   const currentExState = exercises[state.exerciseIndex];
   const currentSetData = currentExState?.sets[state.setIndex];
 
-  const currentDisplayName =
-    exerciseNameOverrides[currentExercise?.id ?? ""] ?? currentExercise?.name ?? "";
+  // The exerciseId in state might be an alternative (different from day.exercises[i].id)
+  const activeExerciseId = currentExState?.exerciseId ?? currentExercise?.id ?? "";
 
   const currentAlternatives = currentExercise
     ? getAlternatives(currentExercise.id)
     : [];
+
+  // Manual rename > alternative name > original name
+  const currentDisplayName = (() => {
+    const override = exerciseNameOverrides[currentExercise?.id ?? ""];
+    if (override) return override;
+    if (activeExerciseId && activeExerciseId !== currentExercise?.id) {
+      const altName = currentAlternatives.find((a) => a.id === activeExerciseId)?.name;
+      if (altName) return altName;
+    }
+    return currentExercise?.name ?? "";
+  })();
 
   const getNextInfo = useCallback(() => {
     let nextExIdx = state.exerciseIndex;
@@ -322,7 +333,7 @@ export function GuidedSession({
       setIndex={state.setIndex}
       totalSets={currentExState.sets.length}
       setData={currentSetData}
-      overload={overloads[currentExercise.id]}
+      overload={overloads[activeExerciseId]}
       unit={unit}
       increments={increments}
       restRemaining={restRemaining}

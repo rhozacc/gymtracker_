@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, type MutableRefObject } from "react";
+import { getJson, setJson } from "@/lib/storage";
 import { BACKUP_KEY, type BackupData, type ExerciseState } from "../types";
 
 export function useSessionBackup(
@@ -13,45 +14,30 @@ export function useSessionBackup(
 
   // Check for a backup from a crashed session on mount
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(BACKUP_KEY);
-      if (!raw) return;
-      const backup: BackupData = JSON.parse(raw);
-      if (backup.dayType === dayType) {
-        setBackupFound(true);
-        setBackupStartedAt(backup.startedAt);
-      }
-    } catch {
-      // Ignore corrupt backup
+    const backup = getJson<BackupData | null>(BACKUP_KEY, null);
+    if (backup?.dayType === dayType) {
+      setBackupFound(true);
+      setBackupStartedAt(backup.startedAt);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function writeBackup(updatedExercises: ExerciseState[]) {
     if (!guidedModeRef.current) return;
-    try {
-      const backup: BackupData = {
-        dayType,
-        startedAt: startedAtRef.current,
-        exercises: updatedExercises,
-      };
-      localStorage.setItem(BACKUP_KEY, JSON.stringify(backup));
-    } catch {
-      // Storage may be full — not critical
-    }
+    setJson<BackupData>(BACKUP_KEY, {
+      dayType,
+      startedAt: startedAtRef.current,
+      exercises: updatedExercises,
+    });
   }
 
   function restoreBackup(onRestore: (exercises: ExerciseState[]) => void) {
-    try {
-      const raw = localStorage.getItem(BACKUP_KEY);
-      if (!raw) return;
-      const backup: BackupData = JSON.parse(raw);
-      if (backup.dayType === dayType && backup.exercises) {
-        startedAtRef.current = backup.startedAt;
-        onRestore(backup.exercises);
-        setBackupFound(false);
-      }
-    } catch {
+    const backup = getJson<BackupData | null>(BACKUP_KEY, null);
+    if (backup?.dayType === dayType && backup.exercises) {
+      startedAtRef.current = backup.startedAt;
+      onRestore(backup.exercises);
+      setBackupFound(false);
+    } else {
       setBackupFound(false);
     }
   }

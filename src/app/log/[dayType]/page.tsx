@@ -20,6 +20,7 @@ import { suggestExtra, recordExtrasHistory } from "@/lib/extras-suggest";
 import { useBackgroundNotification } from "@/lib/useBackgroundNotification";
 import { useNavVisibility } from "@/lib/useNavVisibility";
 import { useTheme } from "@/lib/useTheme";
+import { getJson, setJson } from "@/lib/storage";
 import { useSessionBackup } from "./hooks/useSessionBackup";
 import { savePendingSession } from "@/lib/pendingSessions";
 import { PostSessionFlow } from "./views/PostSessionFlow";
@@ -49,10 +50,14 @@ export default function LogPage() {
   const [showTimer, setShowTimer] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
 
-  // Guided mode state
-  const [guidedMode, setGuidedMode] = useState(false);
-  const [wasGuidedMode, setWasGuidedMode] = useState(false);
-  const [guidedCompleted, setGuidedCompleted] = useState(false);
+  // Session flow — one value instead of four booleans:
+  //   idle      → standard list, no active session
+  //   guided    → guided card-by-card session in progress
+  //   extras    → post-guided extras screen (before review)
+  //   list-view → user switched from guided to full list mid-session
+  //   reviewing → guided done, reviewing sets before saving
+  type SessionMode = "idle" | "guided" | "extras" | "list-view" | "reviewing";
+  const [sessionMode, setSessionMode] = useState<SessionMode>("idle");
   const [showEndModal, setShowEndModal] = useState(false);
   // Persists the guided session position across list-view switches
   const [guidedPosition, setGuidedPosition] = useState({ exerciseIndex: 0, setIndex: 0 });
@@ -60,8 +65,6 @@ export default function LogPage() {
   const { setNavVisible } = useNavVisibility();
   const { theme, toggleTheme } = useTheme();
 
-  // Guided extras state (during workout, before review)
-  const [guidedExtrasMode, setGuidedExtrasMode] = useState(false);
   const [extrasSuggestion, setExtrasSuggestion] = useState<ExtraOption | null>(null);
 
   // Post-session flow state
@@ -77,7 +80,7 @@ export default function LogPage() {
   const hideToast = useCallback(() => setToast(false), []);
   const increments = getIncrements(unit);
 
-  guidedModeRef.current = guidedMode;
+  guidedModeRef.current = sessionMode === "guided";
 
   const { backupFound, backupStartedAt, writeBackup, restoreBackup, discardBackup, clearBackup } =
     useSessionBackup(dayType, startedAtRef, guidedModeRef);
@@ -85,30 +88,30 @@ export default function LogPage() {
   // Auto-start guided mode if ?guided=true
   useEffect(() => {
     if (searchParams.get("guided") === "true") {
-      setGuidedMode(true);
+      setSessionMode("guided");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Hide navbar when in guided mode or reviewing after guided
+  // Hide navbar during any active session
   useEffect(() => {
-    if (guidedMode || wasGuidedMode) {
+    if (sessionMode !== "idle") {
       setNavVisible(false);
     } else {
       setNavVisible(true);
     }
     return () => setNavVisible(true);
-  }, [guidedMode, wasGuidedMode, setNavVisible]);
+  }, [sessionMode, setNavVisible]);
 
   // Exit confirmation when session is in progress
   useEffect(() => {
-    if (!guidedMode && !wasGuidedMode) return;
+    if (sessionMode === "idle") return;
     function handleBeforeUnload(e: BeforeUnloadEvent) {
       e.preventDefault();
     }
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [guidedMode, wasGuidedMode]);
+  }, [sessionMode]);
 
   useEffect(() => {
     if (!day) return;
@@ -116,10 +119,9 @@ export default function LogPage() {
     initializedForDayRef.current = dayType;
 
     const warmupsEnabled = localStorage.getItem("gym-disable-warmups") !== "true";
-    let warmupPrefsMap: Record<string, boolean> = {};
-    if (warmupsEnabled) {
-      try { warmupPrefsMap = JSON.parse(localStorage.getItem("gym-warmup-prefs") || "{}"); } catch {}
-    }
+    const warmupPrefsMap: Record<string, boolean> = warmupsEnabled
+      ? getJson("gym-warmup-prefs", {} as Record<string, boolean>)
+      : {};
     setExercises(
       day.exercises.map((ex) => {
         const exWarmupOn = warmupsEnabled && warmupPrefsMap[ex.id] !== false;
@@ -242,16 +244,12 @@ export default function LogPage() {
 
     // Remember this alternative for future sessions (fork icon)
     const origId = day.exercises[exIdx].id;
-    try {
-      const stored: Record<string, ExerciseAlternative[]> = JSON.parse(
-        localStorage.getItem("gym-alt-history") ?? "{}"
-      );
-      if (!stored[origId]) stored[origId] = [];
-      if (!stored[origId].some((a) => a.id === alt.id)) {
-        stored[origId].push(alt);
-      }
-      localStorage.setItem("gym-alt-history", JSON.stringify(stored));
-    } catch { /* non-critical */ }
+    const stored = getJson<Record<string, ExerciseAlternative[]>>("gym-alt-history", {});
+    if (!stored[origId]) stored[origId] = [];
+    if (!stored[origId].some((a) => a.id === alt.id)) {
+      stored[origId].push(alt);
+    }
+    setJson("gym-alt-history", stored);
   }
 
   function updateSet(exIdx: number, setIdx: number, data: SetInput) {
@@ -305,12 +303,10 @@ export default function LogPage() {
       const suggestion = suggestExtra(dayType, sessionMins);
       recordExtrasHistory(suggestion.id, suggestion.category, dayType);
       setExtrasSuggestion(suggestion);
-      setGuidedExtrasMode(true);
+      setSessionMode("extras");
       return;
     }
-    setGuidedMode(false);
-    setWasGuidedMode(true);
-    setGuidedCompleted(true);
+    setSessionMode("reviewing");
   }
 
   function handleExtrasFinish(completed: boolean) {
@@ -326,21 +322,17 @@ export default function LogPage() {
         }),
       }).catch(() => {/* non-critical */});
     }
-    setGuidedExtrasMode(false);
-    setGuidedMode(false);
-    setWasGuidedMode(true);
-    setGuidedCompleted(true);
+    setSessionMode("reviewing");
   }
 
   function handleListView() {
-    setGuidedMode(false);
-    setWasGuidedMode(true);
+    setSessionMode("list-view");
   }
 
   function handleEndSessionAbandon() {
     clearBackup();
     setShowEndModal(false);
-    setWasGuidedMode(false);
+    setSessionMode("idle");
     router.replace("/");
   }
 
@@ -432,7 +424,7 @@ export default function LogPage() {
   }
 
   // Guided extras screen (after guided session, before review)
-  if (guidedExtrasMode && guidedMode) {
+  if (sessionMode === "extras") {
     return (
       <ExtrasSession
         extras={extrasSuggestion ? [extrasSuggestion] : []}
@@ -448,7 +440,7 @@ export default function LogPage() {
   }
 
   return (
-    <div className={`space-y-6 ${!guidedMode ? "pb-32" : ""}`}>
+    <div className={`space-y-6 ${sessionMode === "idle" ? "pb-32" : ""}`}>
       {backupFound && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/80 backdrop-blur-sm p-4">
           <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-sm space-y-4">
@@ -499,7 +491,7 @@ export default function LogPage() {
 
       <div className="flex items-start justify-between">
         <div>
-          {!wasGuidedMode && !guidedMode && (
+          {sessionMode === "idle" && (
             <button
               onClick={() => router.back()}
               className="text-muted text-sm mb-2 hover:text-accent"
@@ -508,7 +500,7 @@ export default function LogPage() {
             </button>
           )}
           <h1 className="text-lg font-medium">{day.label}</h1>
-          {guidedMode && (
+          {sessionMode === "guided" && (
             <button
               onClick={handleListView}
               className="text-muted text-xs mt-1 hover:text-accent transition-colors"
@@ -517,7 +509,7 @@ export default function LogPage() {
             </button>
           )}
         </div>
-        {guidedMode && (
+        {sessionMode === "guided" && (
           <button
             onClick={toggleTheme}
             className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-muted hover:border-accent hover:text-accent transition-colors flex-shrink-0"
@@ -540,7 +532,7 @@ export default function LogPage() {
         )}
       </div>
 
-      {guidedMode ? (
+      {sessionMode === "guided" ? (
         <GuidedSession
           day={day}
           exercises={exercises}
@@ -561,15 +553,12 @@ export default function LogPage() {
           overloads={overloads}
           unit={unit}
           increments={increments}
-          wasGuidedMode={wasGuidedMode}
-          guidedCompleted={guidedCompleted}
+          wasGuidedMode={sessionMode === "list-view" || sessionMode === "reviewing"}
+          guidedCompleted={sessionMode === "reviewing"}
           saving={saving}
           notes={notes}
           onNotesChange={setNotes}
-          onContinueGuided={() => {
-            setWasGuidedMode(false);
-            setGuidedMode(true);
-          }}
+          onContinueGuided={() => setSessionMode("guided")}
           onFinish={finish}
           onEndSession={() => setShowEndModal(true)}
           onUpdateSet={updateSet}

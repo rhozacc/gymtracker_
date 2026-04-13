@@ -14,6 +14,7 @@ export function middleware(request: NextRequest) {
   if (
     pathname.startsWith("/auth") ||
     pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/admin/send-update-push") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/public") ||
     pathname === "/manifest.json" ||

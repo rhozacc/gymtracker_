@@ -144,7 +144,7 @@ export function Nav() {
                 key={tab.href}
                 href={tab.href}
                 onClick={() => handleTap(tab.href)}
-                className={`flex items-center justify-center rounded-full transition-all duration-300 ease-out ${
+                className={`flex items-center justify-center rounded-full transition-all duration-300 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] ${
                   active
                     ? "h-9 px-4 bg-accent/10"
                     : "w-10 h-10"

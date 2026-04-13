@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { type WeightUnit, kgToDisplay } from "@/lib/units";
 import type { Exercise } from "@/lib/program";
 import type { OverloadResult } from "@/lib/overload";
@@ -214,6 +214,15 @@ export function MainView({
   onStop,
 }: MainViewProps) {
   const [showRirInfo, setShowRirInfo] = useState(false);
+  const [ripple, setRipple] = useState(false);
+
+  const handleDone = useCallback(() => {
+    if (!setData.isWarmup && (!setData.weight || !setData.reps)) return;
+    navigator.vibrate?.(100);
+    setRipple(true);
+    setTimeout(() => setRipple(false), 420);
+    onDone();
+  }, [setData, onDone]);
   const selectedReps = parseInt(setData.reps) || null;
   const selectedRir = setData.rir !== "" ? parseInt(setData.rir) : null;
 
@@ -387,14 +396,16 @@ export function MainView({
         </button>
       ) : (
         <button
-          onClick={() => {
-            if (!setData.isWarmup && (!setData.weight || !setData.reps)) return;
-            navigator.vibrate?.(100);
-            onDone();
-          }}
+          onClick={handleDone}
           disabled={!setData.isWarmup && (!setData.weight || !setData.reps)}
-          className="mt-6 w-full max-w-xs h-14 bg-accent text-bg font-medium rounded text-sm hover:opacity-90 transition-opacity disabled:opacity-30"
+          className="relative mt-6 w-full max-w-xs h-14 bg-accent text-bg font-medium rounded text-sm hover:opacity-90 transition-opacity disabled:opacity-30"
         >
+          {ripple && (
+            <span
+              className="absolute inset-0 rounded bg-white/25 pointer-events-none"
+              style={{ animation: "done-ripple 420ms ease-out forwards" }}
+            />
+          )}
           Done
         </button>
       )}

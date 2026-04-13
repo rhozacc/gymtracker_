@@ -77,11 +77,15 @@ export function useProgram() {
     setPlanSlugState(slug);
     // Optimistically update prefs cache so effectiveSlug reflects the change immediately
     mutatePrefs((prev) => ({ ...prev, activePlan: slug } as Preferences), false);
-    // Persist to DB
+    // Persist to DB; revalidate on failure so stale optimistic state doesn't linger
     fetch("/api/preferences", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ activePlan: slug }),
+    }).then((res) => {
+      if (!res.ok) mutatePrefs();
+    }).catch(() => {
+      mutatePrefs();
     });
   }, [mutatePrefs]);
 

@@ -248,6 +248,7 @@ export default function Dashboard() {
     }
 
     const results: {
+      id: string;
       name: string;
       dayLabel: string;
       status: "go_up" | "almost_ready";
@@ -265,6 +266,7 @@ export default function Dashboard() {
         const result = checkOverload(ex, lastSets);
         if (result.status === "go_up" || result.status === "almost_ready") {
           results.push({
+            id: ex.id,
             name: ex.name,
             dayLabel: day.label,
             status: result.status,
@@ -480,10 +482,26 @@ export default function Dashboard() {
       {/* ── Load Up ── */}
       {overloadHighlights.length > 0 && (
         <div>
-          <p className="text-[10px] font-medium uppercase tracking-widest text-muted mb-3">Load up</p>
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-lg font-medium">Load up</h2>
+            <Link
+              href="/stats"
+              className="flex items-center gap-1.5 text-muted hover:text-text transition-colors"
+            >
+              <span className="text-xs">Stats</span>
+              <svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 10L10 2M10 2H4.5M10 2V7.5"/>
+              </svg>
+            </Link>
+          </div>
+          <p className="text-xs text-muted mb-3">Tap an exercise to see its stats and projection.</p>
           <div>
-            {overloadHighlights.map(({ name, dayLabel, status, suggestedWeight, lastWeight }) => (
-              <div key={name} className="flex items-center justify-between py-2.5 border-b border-border last:border-0">
+            {overloadHighlights.map(({ id, name, dayLabel, status, suggestedWeight, lastWeight }) => (
+              <Link
+                key={id}
+                href={`/stats/${id}`}
+                className="flex items-center justify-between py-2.5 border-b border-border last:border-0 hover:opacity-75 transition-opacity"
+              >
                 <div>
                   <p className="text-sm font-medium">{name}</p>
                   <p className="text-[11px] text-muted">{dayLabel}</p>
@@ -504,7 +522,7 @@ export default function Dashboard() {
                     {status === "go_up" ? "ready to go up" : "almost there"}
                   </p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

@@ -11,6 +11,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    area: "Stats",
+    text: "New per-exercise Stats page — tap any exercise in Load up (or open Stats from the home screen) to see your strength over time with dots for past sessions and a projected trend line.",
+  },
+  {
+    area: "Load up",
+    text: "Load up exercises are now tappable and link directly to their stats page. Tap the northeast arrow to browse all exercises.",
+  },
+  {
     area: "Exercise guide",
     text: "Tap the (i) next to any exercise name during a session or in history to open a how-to guide on Muscle & Strength.",
   },

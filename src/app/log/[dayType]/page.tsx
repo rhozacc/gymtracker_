@@ -551,7 +551,7 @@ export default function LogPage() {
           updateSet={updateSet}
           onFinish={handleGuidedFinish}
           onStop={() => setShowEndModal(true)}
-          onPositionChange={setGuidedPosition}
+          onPositionChange={(ei, si) => setGuidedPosition({ exerciseIndex: ei, setIndex: si })}
           onSwitchAlternative={handleSwitchAlternative}
         />
       ) : (

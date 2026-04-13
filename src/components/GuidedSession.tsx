@@ -1,7 +1,7 @@
 "use client";
 
 import { useReducer, useCallback, useState, useEffect, useRef } from "react";
-import { DayDefinition } from "@/lib/program";
+import { DayDefinition, getAlternatives, type ExerciseAlternative } from "@/lib/program";
 import { OverloadResult } from "@/lib/overload";
 import { type WeightUnit } from "@/lib/units";
 import { SetInput } from "@/components/SetRow";
@@ -20,9 +20,12 @@ interface GuidedSessionProps {
   overloads: Record<string, OverloadResult>;
   unit: WeightUnit;
   increments: number[];
+  initialPosition?: { exerciseIndex: number; setIndex: number };
   updateSet: (exIdx: number, setIdx: number, data: SetInput) => void;
   onFinish: () => void;
   onStop: () => void;
+  onPositionChange?: (exerciseIndex: number, setIndex: number) => void;
+  onSwitchAlternative?: (exIdx: number, alt: ExerciseAlternative) => void;
 }
 
 interface GuidedState {
@@ -51,13 +54,16 @@ export function GuidedSession({
   overloads,
   unit,
   increments,
+  initialPosition,
   updateSet,
   onFinish,
   onStop,
+  onPositionChange,
+  onSwitchAlternative,
 }: GuidedSessionProps) {
   const [state, dispatch] = useReducer(guidedReducer, {
-    exerciseIndex: 0,
-    setIndex: 0,
+    exerciseIndex: initialPosition?.exerciseIndex ?? 0,
+    setIndex: initialPosition?.setIndex ?? 0,
   });
 
   // Inline rest timer: absolute end timestamp (null = not resting)
@@ -84,14 +90,19 @@ export function GuidedSession({
     exerciseFlashTimer.current = setTimeout(() => setExerciseFlash(false), 600);
   }
 
+  // Report position changes to parent so it can restore position on remount
+  useEffect(() => {
+    onPositionChange?.(state.exerciseIndex, state.setIndex);
+  }, [state.exerciseIndex, state.setIndex, onPositionChange]);
+
   // Per-exercise name overrides (only for this session)
   const [exerciseNameOverrides, setExerciseNameOverrides] = useState<Record<string, string>>({});
 
   // Track how many times user has skipped warmup — to offer "Disable Warmups Forever"
   const [skipWarmupCount, setSkipWarmupCount] = useState(0);
 
-  const { playBeep } = useBeep();
-  const { notifyIfBackgrounded, startRestTimer, cancelRestTimer } = useBackgroundNotification();
+  const { playBeep, initAudio } = useBeep();
+  const { startRestTimer, cancelRestTimer } = useBackgroundNotification();
 
   const currentExercise = day.exercises[state.exerciseIndex];
   const currentExState = exercises[state.exerciseIndex];
@@ -99,6 +110,10 @@ export function GuidedSession({
 
   const currentDisplayName =
     exerciseNameOverrides[currentExercise?.id ?? ""] ?? currentExercise?.name ?? "";
+
+  const currentAlternatives = currentExercise
+    ? getAlternatives(currentExercise.id)
+    : [];
 
   const getNextInfo = useCallback(() => {
     let nextExIdx = state.exerciseIndex;
@@ -146,11 +161,7 @@ export function GuidedSession({
 
       if (remaining === 0) {
         playBeep();
-        const next = getNextInfo();
-        const nextName = next
-          ? (exerciseNameOverrides[next.exercise.id] ?? next.exercise.name)
-          : "Next set";
-        notifyIfBackgrounded("Rest Complete", `Time to lift! ${nextName}`);
+        // SW timer handles the "Rest Complete" notification when app is backgrounded
         cancelRestTimer();
         setRestEndsAt(null);
       }
@@ -159,12 +170,14 @@ export function GuidedSession({
     tick(); // immediate first tick
     const id = setInterval(tick, 250);
     return () => clearInterval(id);
-  }, [restEndsAt, playBeep, notifyIfBackgrounded, cancelRestTimer, getNextInfo, exerciseNameOverrides]);
+  }, [restEndsAt, playBeep, cancelRestTimer]);
 
   const handleSetDone = useCallback(() => {
     if (!currentSetData) return;
     // Warmup sets don't require reps/weight to be set before marking done
     if (!currentSetData.isWarmup && (!currentSetData.weight || !currentSetData.reps)) return;
+    // Prime AudioContext during this user gesture so beep works when rest ends
+    initAudio();
     updateSet(state.exerciseIndex, state.setIndex, { ...currentSetData, done: true });
 
     const isLastExercise = state.exerciseIndex >= day.exercises.length - 1;
@@ -237,6 +250,24 @@ export function GuidedSession({
     triggerSetFlash();
   }, [state.exerciseIndex, cancelRestTimer]);
 
+  const handleGoBack = useCallback(() => {
+    cancelRestTimer();
+    setRestEndsAt(null);
+
+    let prevExIdx = state.exerciseIndex;
+    let prevSetIdx = state.setIndex - 1;
+
+    if (prevSetIdx < 0) {
+      prevExIdx = state.exerciseIndex - 1;
+      if (prevExIdx < 0) return; // already at the very first set
+      prevSetIdx = (exercises[prevExIdx]?.sets.length ?? 1) - 1;
+    }
+
+    dispatch({ type: "NEXT_SET", nextExIdx: prevExIdx, nextSetIdx: prevSetIdx });
+    triggerSetFlash();
+    if (prevExIdx !== state.exerciseIndex) triggerExerciseFlash();
+  }, [state.exerciseIndex, state.setIndex, exercises, cancelRestTimer]);
+
   function handleDisableWarmups() {
     localStorage.setItem("gym-disable-warmups", "true");
   }
@@ -271,6 +302,10 @@ export function GuidedSession({
       onSkipWarmup={handleSkipWarmup}
       onDisableWarmups={handleDisableWarmups}
       skipWarmupCount={skipWarmupCount}
+      onGoBack={handleGoBack}
+      canGoBack={state.exerciseIndex > 0 || state.setIndex > 0}
+      alternatives={currentAlternatives}
+      onSwitchAlternative={onSwitchAlternative ? (alt) => onSwitchAlternative(state.exerciseIndex, alt) : undefined}
       onStop={onStop}
       onNameChange={(name) =>
         setExerciseNameOverrides((prev) => ({ ...prev, [currentExercise.id]: name }))

@@ -11,6 +11,22 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    area: "Guided session",
+    text: "Navigate forward and back between sets with the arrow button. Switching to list view and back now resumes exactly where you left off — no more teleporting to the first exercise.",
+  },
+  {
+    area: "Rest timer",
+    text: "Notifications no longer double-fire. If the app is open when rest ends, only the in-app beep plays — no system notification. Warmup sets show a Done button even while the rest timer counts down so you can log the warmup without waiting.",
+  },
+  {
+    area: "Warmup weight",
+    text: "Warmup is now prefilled at 50% of your last actual working weight, not the overload target — so it's always grounded in what you actually lifted.",
+  },
+  {
+    area: "Alternatives",
+    text: "Gym packed? Tap the fork icon next to any exercise to swap to an alternative for the session. Both are tracked separately so your progress lines stay clean.",
+  },
+  {
     area: "Session complete",
     text: "Finishing a session goes straight to debrief — no redundant extras checklist. Done button now animates and always navigates home, even on a network hiccup.",
   },

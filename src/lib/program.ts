@@ -1,3 +1,8 @@
+export interface ExerciseAlternative {
+  id: string;  // unique ID (used for tracking history separately)
+  name: string;
+}
+
 export interface Exercise {
   id: string;
   name: string;
@@ -5,6 +10,7 @@ export interface Exercise {
   repRange: [number, number];
   increment: number;
   rest: number; // rest time in seconds between sets
+  alternatives?: ExerciseAlternative[];
 }
 
 export interface DayDefinition {
@@ -796,4 +802,51 @@ export function getDayDefinition(dayType: string): DayDefinition | undefined {
     if (plan.days[dayType]) return plan.days[dayType];
   }
   return undefined;
+}
+
+/**
+ * Alternatives for crowded gym days. Keyed by exercise ID.
+ * Each alternative has its own unique ID for independent progress tracking.
+ */
+export const EXERCISE_ALTERNATIVES: Record<string, ExerciseAlternative[]> = {
+  bench_press:         [{ id: "alt_incline_db_press", name: "Incline DB press" }, { id: "alt_cable_fly", name: "Cable fly" }, { id: "alt_machine_chest_press", name: "Machine chest press" }],
+  squat:               [{ id: "alt_leg_press", name: "Leg press" }, { id: "alt_hack_squat", name: "Hack squat" }, { id: "alt_goblet_squat", name: "Goblet squat" }],
+  deadlift:            [{ id: "alt_trap_bar_deadlift", name: "Trap bar deadlift" }, { id: "alt_rdl", name: "Romanian deadlift" }, { id: "alt_rack_pull", name: "Rack pull" }],
+  barbell_row:         [{ id: "alt_cable_row", name: "Cable row" }, { id: "alt_db_row", name: "DB row" }, { id: "alt_machine_row", name: "Machine row" }],
+  ohp:                 [{ id: "alt_seated_db_press", name: "Seated DB press" }, { id: "alt_machine_ohp", name: "Machine shoulder press" }, { id: "alt_arnold_press", name: "Arnold press" }],
+  weighted_pullup:     [{ id: "alt_pulldown", name: "Lat pulldown" }, { id: "alt_assisted_pullup", name: "Assisted pull-up" }, { id: "alt_cable_pullover", name: "Cable pullover" }],
+  incline_db_press:    [{ id: "alt_incline_bb_press", name: "Incline BB press" }, { id: "alt_incline_cable_fly", name: "Incline cable fly" }, { id: "alt_pec_deck", name: "Pec deck" }],
+  pulldown:            [{ id: "alt_weighted_pullup", name: "Weighted pull-up" }, { id: "alt_straight_arm_pulldown", name: "Straight-arm pulldown" }],
+  leg_press:           [{ id: "alt_squat_machine", name: "Smith machine squat" }, { id: "alt_bulgarian_split_squat", name: "Bulgarian split squat" }],
+  rdl:                 [{ id: "alt_stiff_leg_deadlift", name: "Stiff-leg deadlift" }, { id: "alt_good_morning", name: "Good morning" }, { id: "alt_cable_rdl", name: "Cable pull-through" }],
+  bulgarian_split_squat: [{ id: "alt_split_squat", name: "Split squat" }, { id: "alt_walking_lunge", name: "Walking lunge" }, { id: "alt_step_up", name: "Step-up" }],
+  hip_thrust:          [{ id: "alt_glute_bridge", name: "Glute bridge" }, { id: "alt_cable_kickback", name: "Cable kickback" }, { id: "alt_45deg_hip_ext", name: "45° hip extension" }],
+  lateral_raise:       [{ id: "alt_cable_lateral_raise", name: "Cable lateral raise" }, { id: "alt_machine_lateral_raise", name: "Machine lateral raise" }],
+  biceps_curl:         [{ id: "alt_hammer_curl", name: "Hammer curl" }, { id: "alt_cable_curl", name: "Cable curl" }, { id: "alt_incline_db_curl", name: "Incline DB curl" }],
+  triceps:             [{ id: "alt_overhead_extension", name: "Overhead triceps extension" }, { id: "alt_skull_crusher", name: "Skull crusher" }, { id: "alt_close_grip_bench", name: "Close-grip bench" }],
+  weighted_dips:       [{ id: "alt_dips", name: "Bodyweight dips" }, { id: "alt_triceps_pushdown", name: "Triceps pushdown" }],
+  face_pull:           [{ id: "alt_rear_delt_fly", name: "Rear delt fly" }, { id: "alt_band_pull_apart", name: "Band pull-apart" }],
+  cable_fly:           [{ id: "alt_pec_deck_fly", name: "Pec deck" }, { id: "alt_db_fly", name: "DB fly" }],
+  leg_extension:       [{ id: "alt_sissy_squat", name: "Sissy squat" }, { id: "alt_terminal_knee_ext", name: "Terminal knee extension" }],
+  lying_curl:          [{ id: "alt_seated_leg_curl", name: "Seated leg curl" }, { id: "alt_nordic_curl", name: "Nordic curl" }],
+  lying_curl_hyp:      [{ id: "alt_seated_leg_curl", name: "Seated leg curl" }, { id: "alt_nordic_curl", name: "Nordic curl" }],
+  calf_raise:          [{ id: "alt_seated_calf_raise", name: "Seated calf raise" }, { id: "alt_leg_press_calf", name: "Leg press calf raise" }],
+  calf_raise_hyp:      [{ id: "alt_standing_calf_raise", name: "Standing calf raise" }, { id: "alt_leg_press_calf", name: "Leg press calf raise" }],
+};
+
+/** Return alternatives for an exercise, including any previously used custom alts (from localStorage). */
+export function getAlternatives(exerciseId: string): ExerciseAlternative[] {
+  const programAlts = EXERCISE_ALTERNATIVES[exerciseId] ?? [];
+  if (typeof window === "undefined") return programAlts;
+  try {
+    const stored: Record<string, ExerciseAlternative[]> = JSON.parse(
+      localStorage.getItem("gym-alt-history") ?? "{}"
+    );
+    const customAlts = (stored[exerciseId] ?? []).filter(
+      (a) => !programAlts.some((p) => p.id === a.id)
+    );
+    return [...programAlts, ...customAlts];
+  } catch {
+    return programAlts;
+  }
 }

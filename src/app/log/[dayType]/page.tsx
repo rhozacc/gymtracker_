@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { checkOverload, OverloadResult } from "@/lib/overload";
+import type { ExerciseAlternative } from "@/lib/program";
 import { useProgram } from "@/lib/useProgram";
 import { useUnit } from "@/lib/useUnit";
 import { kgToDisplay, displayToKg, getIncrements } from "@/lib/units";
@@ -16,7 +17,6 @@ import { ExerciseRenameModal } from "@/components/ExerciseRenameModal";
 import { RestTimer } from "@/components/RestTimer";
 import type { ExtraOption } from "@/lib/extras";
 import { suggestExtra, recordExtrasHistory } from "@/lib/extras-suggest";
-import { useBeep } from "@/lib/useBeep";
 import { useBackgroundNotification } from "@/lib/useBackgroundNotification";
 import { useNavVisibility } from "@/lib/useNavVisibility";
 import { useTheme } from "@/lib/useTheme";
@@ -54,7 +54,8 @@ export default function LogPage() {
   const [wasGuidedMode, setWasGuidedMode] = useState(false);
   const [guidedCompleted, setGuidedCompleted] = useState(false);
   const [showEndModal, setShowEndModal] = useState(false);
-  const { initAudio } = useBeep();
+  // Persists the guided session position across list-view switches
+  const [guidedPosition, setGuidedPosition] = useState({ exerciseIndex: 0, setIndex: 0 });
   const { requestPermission } = useBackgroundNotification();
   const { setNavVisible } = useNavVisibility();
   const { theme, toggleTheme } = useTheme();
@@ -167,21 +168,23 @@ export default function LogPage() {
               const rawIdx = Math.min(i - 1, raw.length - 1);
               const rawSet = rawIdx >= 0 ? raw[rawIdx] : null;
 
+              if (s.isWarmup) {
+                // Warmup always uses last actual weight — never the suggested progression weight.
+                // rawIdx is -1 for warmup (i=0) so rawSet is always null here; use lastWeight.
+                const warmupKg = Math.floor((ol.lastWeight * 0.5) / 2.5) * 2.5;
+                return {
+                  ...s,
+                  weight: s.weight || kgToDisplay(warmupKg, unit).toString(),
+                };
+              }
+
+              // Working sets: use suggested weight when overload target is set
               let baseKg: number;
               if (ol.status === "go_up" || ol.status === "almost_ready") {
                 // Use suggestedWeight so the prefilled value always matches the banner
                 baseKg = ol.suggestedWeight;
               } else {
                 baseKg = rawSet?.weight ?? ol.lastWeight;
-              }
-
-              if (s.isWarmup) {
-                // Round warmup weight down to nearest 2.5 kg plate increment
-                const warmupKg = Math.floor((baseKg * 0.5) / 2.5) * 2.5;
-                return {
-                  ...s,
-                  weight: s.weight || kgToDisplay(warmupKg, unit).toString(),
-                };
               }
 
               return {
@@ -205,6 +208,50 @@ export default function LogPage() {
         <p className="text-muted">Unknown day type: {dayType}</p>
       </div>
     );
+  }
+
+  async function handleSwitchAlternative(exIdx: number, alt: ExerciseAlternative) {
+    // Fetch history for the alternative so we can pre-fill weight
+    let altOverload: OverloadResult | null = null;
+    try {
+      const res = await fetch(`/api/sets/${alt.id}`);
+      const rawSets = await res.json();
+      altOverload = checkOverload(day.exercises[exIdx], rawSets);
+    } catch { /* non-critical */ }
+
+    setExercises((prev) => {
+      const next = [...prev];
+      const baseKg = altOverload?.lastWeight ?? 0;
+      next[exIdx] = {
+        ...next[exIdx],
+        exerciseId: alt.id,
+        sets: next[exIdx].sets.map((s) => {
+          if (s.isWarmup) {
+            const warmupKg = baseKg > 0 ? Math.floor((baseKg * 0.5) / 2.5) * 2.5 : 0;
+            return { ...s, weight: warmupKg > 0 ? kgToDisplay(warmupKg, unit).toString() : "", done: false };
+          }
+          return { ...s, weight: baseKg > 0 ? kgToDisplay(baseKg, unit).toString() : "", done: false };
+        }),
+      };
+      return next;
+    });
+
+    if (altOverload) {
+      setOverloads((prev) => ({ ...prev, [alt.id]: altOverload! }));
+    }
+
+    // Remember this alternative for future sessions (fork icon)
+    const origId = day.exercises[exIdx].id;
+    try {
+      const stored: Record<string, ExerciseAlternative[]> = JSON.parse(
+        localStorage.getItem("gym-alt-history") ?? "{}"
+      );
+      if (!stored[origId]) stored[origId] = [];
+      if (!stored[origId].some((a) => a.id === alt.id)) {
+        stored[origId].push(alt);
+      }
+      localStorage.setItem("gym-alt-history", JSON.stringify(stored));
+    } catch { /* non-critical */ }
   }
 
   function updateSet(exIdx: number, setIdx: number, data: SetInput) {
@@ -500,9 +547,12 @@ export default function LogPage() {
           overloads={overloads}
           unit={unit}
           increments={increments}
+          initialPosition={guidedPosition}
           updateSet={updateSet}
           onFinish={handleGuidedFinish}
           onStop={() => setShowEndModal(true)}
+          onPositionChange={setGuidedPosition}
+          onSwitchAlternative={handleSwitchAlternative}
         />
       ) : (
         <StandardModeView

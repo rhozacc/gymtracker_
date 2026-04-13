@@ -92,16 +92,21 @@ self.addEventListener("message", (event) => {
 
     const { seconds, nextExercise } = payload;
 
-    // Show "resting" notification immediately so it appears on the lock screen
-    const restBody = nextExercise
-      ? `${seconds}s rest — Next: ${nextExercise.name} (${nextExercise.setNumber === 0 ? "Warmup" : `Set ${nextExercise.setNumber}/${nextExercise.totalSets}`})`
-      : `${seconds}s rest`;
+    // Show "resting" notification only when app is not visible (backgrounded/locked)
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      const anyVisible = clients.some((c) => c.visibilityState === "visible");
+      if (anyVisible) return; // App is in foreground — skip lock-screen notification
 
-    self.registration.showNotification("Resting...", {
-      body: restBody,
-      tag: TIMER_TAG,
-      silent: true,
-      requireInteraction: false,
+      const restBody = nextExercise
+        ? `${seconds}s rest — Next: ${nextExercise.name} (${nextExercise.setNumber === 0 ? "Warmup" : `Set ${nextExercise.setNumber}/${nextExercise.totalSets}`})`
+        : `${seconds}s rest`;
+
+      self.registration.showNotification("Resting...", {
+        body: restBody,
+        tag: TIMER_TAG,
+        silent: true,
+        requireInteraction: false,
+      });
     });
 
     // Schedule the "rest complete" notification
@@ -110,13 +115,20 @@ self.addEventListener("message", (event) => {
         ? `Time to lift! ${nextExercise.name} — ${nextExercise.weight} × ${nextExercise.reps}`
         : "Time to lift!";
 
-      self.registration.showNotification("Rest Complete", {
-        body: doneBody,
-        tag: TIMER_TAG,
-        renotify: true,
-        requireInteraction: true,
-        vibrate: [200, 100, 200, 100, 200],
+      // Only notify if app is not in foreground (app handles it with a beep if visible)
+      self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+        const anyVisible = clients.some((c) => c.visibilityState === "visible");
+        if (anyVisible) return; // App is visible — it plays beep itself, no notification needed
+
+        self.registration.showNotification("Rest Complete", {
+          body: doneBody,
+          tag: TIMER_TAG,
+          renotify: true,
+          requireInteraction: true,
+          vibrate: [200, 100, 200, 100, 200],
+        });
       });
+
       restTimeout = null;
     }, seconds * 1000);
   }

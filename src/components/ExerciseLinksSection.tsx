@@ -17,7 +17,8 @@ function normalize(name: string) {
 }
 
 function toSlug(url: string) {
-  return url.startsWith(BASE) ? url.slice(BASE.length) : url;
+  const slug = url.startsWith(BASE) ? url.slice(BASE.length) : url;
+  return slug.replace(/\.html$/, "");
 }
 
 export function ExerciseLinksSection() {
@@ -253,18 +254,6 @@ export function ExerciseLinksSection() {
                       className="flex-1 h-7 bg-bg border border-border text-text text-[11px] rounded px-2 focus:border-accent focus:outline-none min-w-0 font-mono"
                     />
 
-                    {currentSlug && (
-                      <a
-                        href={BASE + currentSlug}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-muted hover:text-accent transition-colors flex-shrink-0 text-sm leading-none"
-                        aria-label="Open link"
-                      >
-                        ↗
-                      </a>
-                    )}
-
                     {isDirty && (
                       <button
                         onClick={() => handleSave(key, name)}
@@ -283,6 +272,18 @@ export function ExerciseLinksSection() {
                       >
                         {clearing === key ? "…" : "Clear"}
                       </button>
+                    )}
+
+                    {currentSlug && (
+                      <a
+                        href={BASE + currentSlug}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted hover:text-accent transition-colors flex-shrink-0 text-sm leading-none"
+                        aria-label="Open link"
+                      >
+                        ↗
+                      </a>
                     )}
                   </div>
                 );

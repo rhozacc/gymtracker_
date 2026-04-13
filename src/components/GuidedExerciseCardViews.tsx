@@ -179,6 +179,8 @@ interface MainViewProps {
   canGoBack: boolean;
   hasAlternatives: boolean;
   onShowAlternatives?: () => void;
+  setRec?: { direction: "up" | "down"; suggestedWeight: string } | null;
+  onApplyRec?: () => void;
   onStop: () => void;
 }
 
@@ -219,6 +221,8 @@ export function MainView({
   canGoBack,
   hasAlternatives,
   onShowAlternatives,
+  setRec,
+  onApplyRec,
   onStop,
 }: MainViewProps) {
   const [showRirInfo, setShowRirInfo] = useState(false);
@@ -361,6 +365,25 @@ export function MainView({
           </span>
           <span className="text-muted text-sm">{unit}</span>
           <span className="text-muted text-xs ml-1 opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
+        </button>
+      )}
+
+      {/* Intra-session weight recommendation */}
+      {!setData.isWarmup && setRec && onApplyRec && (
+        <button
+          onClick={onApplyRec}
+          className="mt-1.5 flex items-center gap-1 text-xs text-accent/80 hover:text-accent transition-colors"
+        >
+          {setRec.direction === "up" ? (
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="18 15 12 9 6 15" />
+            </svg>
+          ) : (
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          )}
+          try {setRec.suggestedWeight} {unit}?
         </button>
       )}
 

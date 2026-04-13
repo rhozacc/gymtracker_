@@ -33,6 +33,8 @@ interface GuidedExerciseCardProps {
   canGoBack: boolean;
   alternatives: ExerciseAlternative[];
   onSwitchAlternative?: (alt: ExerciseAlternative) => void;
+  setRec?: { direction: "up" | "down"; suggestedWeight: string } | null;
+  onApplyRec?: () => void;
   onStop: () => void;
   onNameChange: (name: string) => void;
 }
@@ -63,6 +65,8 @@ export function GuidedExerciseCard({
   canGoBack,
   alternatives,
   onSwitchAlternative,
+  setRec,
+  onApplyRec,
   onStop,
   onNameChange,
 }: GuidedExerciseCardProps) {
@@ -226,6 +230,8 @@ export function GuidedExerciseCard({
         canGoBack={canGoBack}
         hasAlternatives={alternatives.length > 0}
         onShowAlternatives={onSwitchAlternative ? () => setView("alternative") : undefined}
+        setRec={setRec}
+        onApplyRec={onApplyRec}
         onStop={onStop}
       />
     </div>

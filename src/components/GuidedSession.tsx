@@ -3,7 +3,7 @@
 import { useReducer, useCallback, useState, useEffect, useRef } from "react";
 import { DayDefinition, getAlternatives, type ExerciseAlternative } from "@/lib/program";
 import { OverloadResult } from "@/lib/overload";
-import { type WeightUnit } from "@/lib/units";
+import { type WeightUnit, kgToDisplay } from "@/lib/units";
 import { SetInput } from "@/components/SetRow";
 import { GuidedExerciseCard } from "@/components/GuidedExerciseCard";
 import { useBeep } from "@/lib/useBeep";
@@ -100,6 +100,9 @@ export function GuidedSession({
 
   // Track how many times user has skipped warmup — to offer "Disable Warmups Forever"
   const [skipWarmupCount, setSkipWarmupCount] = useState(0);
+
+  // Intra-session weight recommendation for the next set (same exercise only)
+  const [setRec, setSetRec] = useState<{ direction: "up" | "down"; suggestedWeight: string } | null>(null);
 
   const { playBeep, initAudio } = useBeep();
   const { startRestTimer, cancelRestTimer } = useBackgroundNotification();
@@ -205,6 +208,35 @@ export function GuidedSession({
       }
     }
 
+    // Compute intra-session weight recommendation for next set (same exercise, non-warmup only)
+    if (!currentSetData.isWarmup && next.exerciseIndex === state.exerciseIndex) {
+      const reps = parseInt(currentSetData.reps);
+      const rir = currentSetData.rir !== "" ? parseInt(currentSetData.rir) : null;
+      const weight = parseFloat(currentSetData.weight);
+      const [minReps, maxReps] = currentExercise.repRange;
+      const delta = kgToDisplay(currentExercise.increment, unit);
+
+      if (!isNaN(reps) && !isNaN(weight)) {
+        const goUp = reps > maxReps || (reps >= minReps && rir !== null && rir >= 3);
+        const goDown = reps < minReps;
+
+        if (goUp) {
+          const suggested = (Math.round((weight + delta) * 100) / 100).toString();
+          setSetRec({ direction: "up", suggestedWeight: suggested });
+        } else if (goDown) {
+          const suggested = (Math.max(0, Math.round((weight - delta) * 100) / 100)).toString();
+          setSetRec({ direction: "down", suggestedWeight: suggested });
+        } else {
+          setSetRec(null);
+        }
+      } else {
+        setSetRec(null);
+      }
+    } else {
+      // Different exercise or warmup — clear recommendation
+      setSetRec(null);
+    }
+
     // Advance to next set immediately
     dispatch({ type: "NEXT_SET", nextExIdx: next.exerciseIndex, nextSetIdx: next.setIndex });
     if (next.exerciseIndex !== state.exerciseIndex) {
@@ -230,6 +262,7 @@ export function GuidedSession({
     // Cancel any running rest when skipping an exercise
     cancelRestTimer();
     setRestEndsAt(null);
+    setSetRec(null);
 
     const skipToExIdx = state.exerciseIndex + 1;
     if (skipToExIdx >= day.exercises.length) {
@@ -253,6 +286,7 @@ export function GuidedSession({
   const handleGoBack = useCallback(() => {
     cancelRestTimer();
     setRestEndsAt(null);
+    setSetRec(null);
 
     let prevExIdx = state.exerciseIndex;
     let prevSetIdx = state.setIndex - 1;
@@ -306,6 +340,13 @@ export function GuidedSession({
       canGoBack={state.exerciseIndex > 0 || state.setIndex > 0}
       alternatives={currentAlternatives}
       onSwitchAlternative={onSwitchAlternative ? (alt) => onSwitchAlternative(state.exerciseIndex, alt) : undefined}
+      setRec={setRec}
+      onApplyRec={() => {
+        if (!setRec) return;
+        const cur = exercises[state.exerciseIndex]?.sets[state.setIndex];
+        if (cur) updateSet(state.exerciseIndex, state.setIndex, { ...cur, weight: setRec.suggestedWeight });
+        setSetRec(null);
+      }}
       onStop={onStop}
       onNameChange={(name) =>
         setExerciseNameOverrides((prev) => ({ ...prev, [currentExercise.id]: name }))

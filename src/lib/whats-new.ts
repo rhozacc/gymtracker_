@@ -11,6 +11,10 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    area: "Exercise guide",
+    text: "Tap the (i) next to any exercise name during a session or in history to open a how-to guide on Muscle & Strength.",
+  },
+  {
     area: "Accent colors",
     text: "Pick your color. Three neons for dark mode, three bold tones for light — each theme keeps its own. Change anytime in Settings or during onboarding.",
   },

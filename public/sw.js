@@ -144,6 +144,31 @@ self.addEventListener("message", (event) => {
   }
 });
 
+// Handle server-sent Web Push notifications (update announcements + rest timer backup)
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+
+  let payload;
+  try {
+    payload = event.data.json();
+  } catch {
+    payload = { title: "gymtracker_", body: event.data.text(), tag: "gym-update" };
+  }
+
+  const { title = "gymtracker_", body = "", tag = "gym-update", renotify = false, vibrate } = payload;
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      tag,
+      renotify,
+      requireInteraction: tag === TIMER_TAG,
+      ...(vibrate ? { vibrate } : {}),
+      icon: "/icon.svg",
+    })
+  );
+});
+
 // When user taps the notification, focus/open the app
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();

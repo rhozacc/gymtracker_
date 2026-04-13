@@ -115,6 +115,25 @@ model ExtrasLog {
   completedAt DateTime @default(now())
 }
 
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model RestTimerPush {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  timerId   String
+  cancelled Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+}
+
 // Better Auth tables
 model User {
   id            String      @id

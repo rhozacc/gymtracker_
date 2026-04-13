@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 
 const NOTIF_OPTED_OUT = "gym-notifications-off";
 
@@ -28,6 +28,8 @@ async function getSWRegistration(): Promise<ServiceWorkerRegistration | null> {
 }
 
 export function useBackgroundNotification() {
+  const activeTimerId = useRef<string | null>(null);
+
   const requestPermission = useCallback(async () => {
     if (typeof window === "undefined" || !("Notification" in window)) return;
     if (Notification.permission === "default") {
@@ -58,6 +60,7 @@ export function useBackgroundNotification() {
   const startRestTimer = useCallback(async (seconds: number, nextExercise?: NextExerciseInfo) => {
     if (!notificationsEnabled()) return;
 
+    // SW-based timer (works on desktop + Android Chrome backgrounded)
     const reg = await getSWRegistration();
     if (reg?.active) {
       reg.active.postMessage({
@@ -65,6 +68,15 @@ export function useBackgroundNotification() {
         payload: { seconds, nextExercise },
       });
     }
+
+    // Server-side push backup (reliable on iOS PWA + aggressive background killing)
+    const timerId = crypto.randomUUID();
+    activeTimerId.current = timerId;
+    fetch("/api/push/rest-timer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ seconds, nextExercise, timerId }),
+    }).catch(() => {});
   }, []);
 
   /** Cancel the SW rest timer (e.g. when user skips rest or dismisses early) */
@@ -73,6 +85,15 @@ export function useBackgroundNotification() {
     if (reg?.active) {
       reg.active.postMessage({ type: "CANCEL_REST_TIMER" });
     }
+
+    // Cancel server-side timer too
+    const timerId = activeTimerId.current;
+    activeTimerId.current = null;
+    fetch("/api/push/rest-timer/cancel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ timerId }),
+    }).catch(() => {});
   }, []);
 
   return { requestPermission, notifyIfBackgrounded, startRestTimer, cancelRestTimer };

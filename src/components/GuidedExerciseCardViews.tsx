@@ -6,7 +6,6 @@ import type { Exercise } from "@/lib/program";
 import type { OverloadResult } from "@/lib/overload";
 import type { SetInput } from "@/components/SetRow";
 import { OverloadBanner } from "@/components/OverloadBanner";
-import { useExerciseLinkFn } from "@/hooks/useExerciseLinkFn";
 
 const WARMUP_HINTS = [
   "just do a few easy reps",
@@ -222,7 +221,6 @@ export function MainView({
   onShowAlternatives,
   onStop,
 }: MainViewProps) {
-  const getLink = useExerciseLinkFn();
   const [showRirInfo, setShowRirInfo] = useState(false);
   const [ripple, setRipple] = useState(false);
   const [skipFlash, setSkipFlash] = useState(false);
@@ -296,17 +294,6 @@ export function MainView({
       </div>
 
       <div className="flex items-center gap-2 mt-1">
-        {getLink(exerciseName) && (
-          <a
-            href={getLink(exerciseName)!}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-4 h-4 rounded-full border border-muted/40 flex items-center justify-center text-muted hover:border-accent hover:text-accent transition-colors flex-shrink-0"
-            aria-label="Exercise guide"
-          >
-            <span className="text-[9px] font-medium leading-none">i</span>
-          </a>
-        )}
         <h2 className={`text-2xl font-medium transition-colors duration-500 ${exerciseFlash ? "text-accent" : ""}`}>{exerciseName}</h2>
         <button
           onClick={onEditName}

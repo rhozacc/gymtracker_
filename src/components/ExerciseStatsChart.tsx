@@ -15,11 +15,13 @@ import { ChartTooltip } from "./ChartTooltip";
 interface DataPoint {
   date: string;
   e1rm: number;
+  actualWeight?: number;
 }
 
 interface CombinedPoint {
   date: string;
   actual?: number;
+  actualWeight?: number;
   projected?: number;
 }
 
@@ -43,9 +45,11 @@ function linearRegression(points: { x: number; y: number }[]): {
 export function ExerciseStatsChartInner({
   data,
   unit = "kg",
+  suggestedWeight,
 }: {
   data: DataPoint[];
   unit?: WeightUnit;
+  suggestedWeight?: number;
 }) {
   if (data.length === 0) {
     return (
@@ -60,7 +64,7 @@ export function ExerciseStatsChartInner({
   const lastMs = new Date(data[data.length - 1].date).getTime();
   const lastDayX = (lastMs - firstMs) / DAY_MS;
 
-  // Linear regression over all actual points
+  // Linear regression over e1rm points
   const regPoints = data.map((p) => ({
     x: (new Date(p.date).getTime() - firstMs) / DAY_MS,
     y: p.e1rm,
@@ -71,6 +75,7 @@ export function ExerciseStatsChartInner({
   const combined: CombinedPoint[] = data.map((p) => ({
     date: p.date,
     actual: p.e1rm,
+    actualWeight: p.actualWeight,
   }));
 
   // Attach projected value to the last actual point so the two lines connect
@@ -102,6 +107,8 @@ export function ExerciseStatsChartInner({
       day: "numeric",
     });
 
+  const hasActualWeight = data.some((p) => p.actualWeight !== undefined);
+
   return (
     <ResponsiveContainer width="100%" height={280}>
       <ComposedChart data={combined} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
@@ -126,9 +133,11 @@ export function ExerciseStatsChartInner({
         <Tooltip
           content={
             <ChartTooltip
-              formatValue={(v, name) =>
-                `${v.toFixed(1)} ${unit}${name === "Projected" ? " (proj.)" : ""}`
-              }
+              formatValue={(v, name) => {
+                if (name === "Weight") return `${v.toFixed(1)} ${unit}`;
+                if (name === "Projected") return `${v.toFixed(1)} ${unit} (proj.)`;
+                return `${v.toFixed(1)} ${unit}`;
+              }}
             />
           }
         />
@@ -139,16 +148,50 @@ export function ExerciseStatsChartInner({
           strokeWidth={1}
           strokeDasharray="2 4"
         />
-        {/* Actual data — dots, no connecting line */}
+        {/* Load up target */}
+        {suggestedWeight !== undefined && (
+          <ReferenceLine
+            y={suggestedWeight}
+            stroke="var(--color-accent)"
+            strokeWidth={1}
+            strokeDasharray="4 3"
+            opacity={0.6}
+            label={{
+              value: `target ${suggestedWeight}${unit}`,
+              position: "insideTopRight",
+              fontSize: 9,
+              fill: "var(--color-accent)",
+              opacity: 0.8,
+            }}
+          />
+        )}
+        {/* Actual max weight per session — solid accent dots */}
+        {hasActualWeight && (
+          <Line
+            type="monotone"
+            dataKey="actualWeight"
+            stroke="var(--color-accent)"
+            strokeWidth={0}
+            dot={{ r: 4, fill: "var(--color-accent)", strokeWidth: 0 }}
+            activeDot={{ r: 6, strokeWidth: 0 }}
+            connectNulls={false}
+            name="Weight"
+            isAnimationActive={true}
+            animationDuration={800}
+            animationEasing="ease-out"
+          />
+        )}
+        {/* E1RM estimate — lighter accent dots (slightly above actual weight) */}
         <Line
           type="monotone"
           dataKey="actual"
-          stroke="var(--color-chart-line)"
+          stroke="var(--color-accent)"
           strokeWidth={0}
-          dot={{ r: 4, fill: "var(--color-chart-line)", strokeWidth: 0 }}
-          activeDot={{ r: 6, strokeWidth: 0 }}
+          dot={{ r: 3, fill: "var(--color-accent)", strokeWidth: 0, opacity: 0.45 }}
+          activeDot={{ r: 5, strokeWidth: 0, opacity: 0.6 }}
           connectNulls={false}
           name="Est. 1RM"
+          opacity={0.45}
           isAnimationActive={true}
           animationDuration={800}
           animationEasing="ease-out"
@@ -157,14 +200,14 @@ export function ExerciseStatsChartInner({
         <Line
           type="monotone"
           dataKey="projected"
-          stroke="var(--color-chart-line)"
+          stroke="var(--color-accent)"
           strokeWidth={1.5}
           strokeDasharray="5 4"
           dot={false}
           activeDot={false}
           connectNulls={false}
           name="Projected"
-          opacity={0.45}
+          opacity={0.35}
           isAnimationActive={true}
           animationDuration={1000}
           animationEasing="ease-out"

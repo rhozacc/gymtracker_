@@ -217,6 +217,13 @@ export function MainView({
   const getLink = useExerciseLinkFn();
   const [showRirInfo, setShowRirInfo] = useState(false);
   const [ripple, setRipple] = useState(false);
+  const [skipFlash, setSkipFlash] = useState(false);
+
+  function handleSkipRest() {
+    setSkipFlash(true);
+    setTimeout(() => setSkipFlash(false), 380);
+    onSkipRest();
+  }
 
   const handleDone = useCallback(() => {
     if (!setData.isWarmup && (!setData.weight || !setData.reps)) return;
@@ -240,7 +247,8 @@ export function MainView({
   const repButtons = Array.from({ length: repEnd - repStart + 1 }, (_, i) => repStart + i);
 
   const isResting = restRemaining > 0;
-  const restFillPct = restDuration > 0 ? ((restDuration - restRemaining) / restDuration) * 100 : 0;
+  // Bar drains from full→empty as time runs out (shows remaining time)
+  const restFillPct = restDuration > 0 ? (restRemaining / restDuration) * 100 : 0;
 
   const endSessionBtn = (
     <button
@@ -392,21 +400,34 @@ export function MainView({
 
       {/* Done button / rest countdown */}
       {isResting ? (
-        <button
-          onClick={onSkipRest}
-          className="relative mt-6 w-full max-w-xs h-14 overflow-hidden border border-accent rounded text-sm"
-        >
-          <div
-            className="absolute inset-y-0 left-0 transition-[width] duration-[250ms] ease-linear"
-            style={{
-              width: `${restFillPct}%`,
-              backgroundColor: "var(--color-accent)",
-            }}
-          />
-          <span className="relative z-10 text-bg text-sm tabular-nums font-medium">
-            {formatRestTime(restRemaining)} — tap to skip
-          </span>
-        </button>
+        <>
+          {/* Full-screen flash on skip */}
+          {skipFlash && (
+            <div
+              className="fixed inset-0 z-50 pointer-events-none rounded-none"
+              style={{
+                backgroundColor: "var(--color-accent)",
+                animation: "skip-rest-flash 380ms ease-out forwards",
+              }}
+            />
+          )}
+          <button
+            onClick={handleSkipRest}
+            className="relative mt-6 w-full max-w-xs h-14 overflow-hidden border border-accent rounded text-sm"
+          >
+            {/* Draining bar — starts full, empties left→right as time runs out */}
+            <div
+              className="absolute inset-y-0 left-0 transition-[width] duration-[250ms] ease-linear"
+              style={{
+                width: `${restFillPct}%`,
+                backgroundColor: "var(--color-accent)",
+              }}
+            />
+            <span className="relative z-10 text-bg text-sm tabular-nums font-medium">
+              Skip Rest &nbsp;&middot;&nbsp; {formatRestTime(restRemaining)}
+            </span>
+          </button>
+        </>
       ) : (
         <button
           onClick={handleDone}

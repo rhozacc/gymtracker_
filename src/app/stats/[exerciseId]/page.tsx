@@ -10,6 +10,7 @@ import { getExerciseById } from "@/lib/program";
 import { useUnit } from "@/lib/useUnit";
 import { kgToDisplay } from "@/lib/units";
 import { estimateE1RM } from "@/lib/e1rm";
+import { checkOverload } from "@/lib/overload";
 
 const ExerciseStatsChart = dynamic(
   () =>
@@ -56,20 +57,33 @@ export default function ExerciseStatsPage() {
 
   const e1rmPoints = useMemo(() => {
     if (!chartSessions) return [];
-    const points: { date: string; e1rm: number }[] = [];
+    const points: { date: string; e1rm: number; actualWeight: number }[] = [];
     for (const session of chartSessions) {
       const exSets = session.sets.filter((s) => s.exerciseId === exerciseId);
       if (exSets.length === 0) continue;
       const bestE1rm = Math.max(
         ...exSets.map((s) => estimateE1RM(s.weight, s.reps))
       );
+      const maxWeight = Math.max(...exSets.map((s) => s.weight));
       points.push({
         date: session.date,
         e1rm: Math.round(kgToDisplay(bestE1rm, unit) * 10) / 10,
+        actualWeight: Math.round(kgToDisplay(maxWeight, unit) * 10) / 10,
       });
     }
     return points;
   }, [chartSessions, exerciseId, unit]);
+
+  // Compute overload status from the most recent session's sets
+  const overload = useMemo(() => {
+    if (!chartSessions || !exercise) return null;
+    // Find the most recent session containing this exercise
+    for (let i = chartSessions.length - 1; i >= 0; i--) {
+      const sets = chartSessions[i].sets.filter((s) => s.exerciseId === exerciseId);
+      if (sets.length > 0) return checkOverload(exercise, sets);
+    }
+    return null;
+  }, [chartSessions, exerciseId, exercise]);
 
   const bestE1rm = useMemo(
     () => (e1rmPoints.length > 0 ? Math.max(...e1rmPoints.map((p) => p.e1rm)) : null),
@@ -144,26 +158,70 @@ export default function ExerciseStatsPage() {
         </div>
       )}
 
+      {/* Load up recommendation */}
+      {overload && (overload.status === "go_up" || overload.status === "almost_ready") && (
+        <div className={`border rounded p-3 ${overload.status === "go_up" ? "border-accent/40 bg-accent/5" : "border-border"}`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className={`text-xs font-medium uppercase tracking-wide ${overload.status === "go_up" ? "text-accent" : "text-muted"}`}>
+                {overload.status === "go_up" ? "Ready to load up" : "Almost ready"}
+              </p>
+              <p className="text-sm mt-1">
+                {overload.status === "go_up" ? (
+                  <>
+                    <span className="text-muted">{kgToDisplay(overload.lastWeight, unit)} {unit}</span>
+                    <span className="text-muted mx-2">→</span>
+                    <span className="text-accent font-medium">{kgToDisplay(overload.suggestedWeight, unit)} {unit}</span>
+                  </>
+                ) : (
+                  <span className="text-muted">{kgToDisplay(overload.lastWeight, unit)} {unit} — keep pushing</span>
+                )}
+              </p>
+            </div>
+            {overload.status === "go_up" && (
+              <div className="text-accent">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="18 15 12 9 6 15"/>
+                </svg>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Chart section */}
       <div className="border border-border rounded-lg p-4 space-y-4">
         <SectionLabel>Strength over time</SectionLabel>
         <div>
-          <p className="text-muted text-xs mb-3">
-            Est. 1RM ({unit}) &mdash; dots are past sessions, dashed line is
-            projection
-          </p>
-          <ExerciseStatsChart data={e1rmPoints} unit={unit} />
+          <div className="flex gap-4 mb-3">
+            <span className="flex items-center gap-1.5 text-[10px] text-text">
+              <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: "var(--color-accent)" }} />
+              Max weight
+            </span>
+            <span className="flex items-center gap-1.5 text-[10px] text-muted">
+              <span className="w-2.5 h-2.5 rounded-full inline-block opacity-45" style={{ backgroundColor: "var(--color-accent)" }} />
+              Est. 1RM
+            </span>
+            <span className="flex items-center gap-1.5 text-[10px] text-muted">
+              <span className="inline-block w-5 border-t border-dashed opacity-35" style={{ borderColor: "var(--color-accent)" }} />
+              Projection
+            </span>
+          </div>
+          <ExerciseStatsChart
+            data={e1rmPoints}
+            unit={unit}
+            suggestedWeight={overload?.status === "go_up" ? kgToDisplay(overload.suggestedWeight, unit) : undefined}
+          />
         </div>
       </div>
 
       {/* Explainer */}
       <div className="border-t border-border pt-4">
         <p className="text-muted text-xs leading-relaxed">
-          Each dot is your best{" "}
-          <span className="text-accent font-medium">estimated 1RM</span> for
-          that session, calculated with the Epley formula: weight &times; (1 +
-          reps &divide; 30). The dashed line projects your trend forward 8
-          weeks based on your historical rate of progress.
+          <span className="text-text">Large dots</span> = max weight you lifted that session.{" "}
+          <span className="text-text">Small dots</span> = estimated 1RM (Epley: weight &times; (1 + reps &divide; 30)).{" "}
+          The dashed line projects your 1RM trend 8 weeks out.
+          {overload?.status === "go_up" && " The accent target line shows your next suggested weight."}
         </p>
       </div>
     </div>

@@ -27,6 +27,11 @@ export function UpdateSplash() {
   useEffect(() => {
     const stored = localStorage.getItem(VERSION_KEY);
     if (stored === CURRENT_VERSION) return;
+    // User opted out of update splash notifications
+    if (localStorage.getItem("gym-no-update-splash") === "1") {
+      localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
+      return;
+    }
     if (!stored) { localStorage.setItem(VERSION_KEY, CURRENT_VERSION); return; }
 
     setShow(true);
@@ -96,24 +101,26 @@ export function UpdateSplash() {
       {/* ── Phase 3: what's new content ── */}
       {phase === "whats-new" && (
         <div
-          className="fixed inset-0 z-10 flex flex-col px-8 pt-20 pb-16"
+          className="fixed inset-0 z-10 flex flex-col"
           style={{
             background: "var(--color-surface)",
             animation: "uc-text 0.35s ease-out both",
           }}
           onClick={dismiss}
         >
-          <div className="flex-1 flex flex-col justify-center gap-8 max-w-sm mx-auto w-full">
-            <div>
-              <p className="text-[10px] font-medium uppercase tracking-widest text-muted mb-3">
-                What&apos;s new · v{CURRENT_VERSION}
-              </p>
-              <h2 className="text-3xl font-bold text-text tracking-tight leading-tight">
-                Just updated.
-              </h2>
-            </div>
+          {/* Header — fixed, never scrolls away */}
+          <div className="px-8 pt-16 pb-4 max-w-sm mx-auto w-full flex-shrink-0">
+            <p className="text-[10px] font-medium uppercase tracking-widest text-muted mb-3">
+              What&apos;s new · v{CURRENT_VERSION}
+            </p>
+            <h2 className="text-3xl font-bold text-text tracking-tight leading-tight">
+              Just updated.
+            </h2>
+          </div>
 
-            <div className="space-y-5">
+          {/* Scrollable content list */}
+          <div className="flex-1 overflow-y-auto px-8 pb-20 max-w-sm mx-auto w-full">
+            <div className="space-y-5 pt-4">
               {WHATS_NEW.map((item: WhatsNewEntry, i: number) => (
                 <div key={i}>
                   <h2 className="text-accent font-bold text-base leading-snug">{item.area}</h2>
@@ -123,7 +130,9 @@ export function UpdateSplash() {
             </div>
           </div>
 
-          <div className="max-w-sm mx-auto w-full">
+          {/* Sticky footer */}
+          <div className="px-8 pb-10 pt-4 max-w-sm mx-auto w-full flex-shrink-0 pointer-events-none"
+            style={{ background: "linear-gradient(to bottom, transparent, var(--color-surface) 40%)" }}>
             <p className="text-muted text-xs text-center">tap anywhere to continue</p>
           </div>
         </div>

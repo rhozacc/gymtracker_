@@ -197,18 +197,17 @@ export default function Dashboard() {
   const muscleRadarData = useMemo(() => {
     if (!chartData) return [];
     const now = new Date();
-    const day = now.getUTCDay();
-    const diff = now.getUTCDate() - day + (day === 0 ? -6 : 1);
-    const weekStart = new Date(now);
-    weekStart.setUTCDate(diff);
-    weekStart.setUTCHours(0, 0, 0, 0);
+    // Trailing 7 days — avoids empty chart on Mondays due to calendar-week reset
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7);
+    sevenDaysAgo.setUTCHours(0, 0, 0, 0);
 
     const counts: Record<string, number> = {};
     for (const mg of MUSCLE_GROUPS) counts[mg] = 0;
 
     for (const session of chartData) {
       const d = new Date(session.date);
-      if (d < weekStart) continue;
+      if (d < sevenDaysAgo) continue;
       const exerciseSets: Record<string, number> = {};
       for (const s of session.sets) {
         exerciseSets[s.exerciseId] = (exerciseSets[s.exerciseId] || 0) + 1;
@@ -543,7 +542,7 @@ export default function Dashboard() {
         {sessions && sessions.length > 0 && (
           <div className="mb-4">
             <div className="text-muted text-xs mb-2">
-              Activity (last 12 weeks)
+              Activity
             </div>
             <StreakCalendar sessions={sessionsWithVolume} />
           </div>
@@ -551,7 +550,7 @@ export default function Dashboard() {
 
         <div>
           <div className="text-muted text-xs mb-2">
-            Muscle groups (this week)
+            Muscle groups (last 7 days)
           </div>
           <MuscleRadar data={muscleRadarData} />
         </div>

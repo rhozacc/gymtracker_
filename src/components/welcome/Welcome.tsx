@@ -31,6 +31,7 @@ import {
   PlanStep,
   SavingStep,
   PwaStep,
+  WarmupTipsStep,
   NotificationsStep,
   ReadyStep,
 } from "./WelcomeSteps";
@@ -38,16 +39,21 @@ import { fireLaser } from "@/lib/useTheme";
 
 // ─── useOnboarded hook ───────────────────────────────────────────────
 
+export const ONBOARDING_STEP_KEY = "gym-onboarding-step";
+
 export function useOnboarded() {
   const { data, isLoading } = useSWR<Preferences>("/api/preferences", fetcher);
 
   let localOnboarded = false;
+  let inProgress = false;
   if (typeof window !== "undefined") {
     localOnboarded = localStorage.getItem("gym-onboarded") === "true";
+    // If there's a saved step, the user is mid-onboarding — don't skip to home
+    inProgress = !!localStorage.getItem(ONBOARDING_STEP_KEY);
   }
 
   return {
-    onboarded: localOnboarded || (data?.onboarded ?? false),
+    onboarded: !inProgress && (localOnboarded || (data?.onboarded ?? false)),
     checked: localOnboarded || !isLoading,
   };
 }
@@ -76,7 +82,12 @@ function BackButton({ step, onBack }: { step: Step; onBack: () => void }) {
 // ─── Welcome component ───────────────────────────────────────────────
 
 export function Welcome({ onDone }: { onDone: () => void }) {
-  const [step, setStep] = useState<Step>("welcome");
+  const [step, setStep] = useState<Step>(() => {
+    if (typeof window === "undefined") return "welcome";
+    const saved = localStorage.getItem(ONBOARDING_STEP_KEY) as Step | null;
+    if (saved && STEPS.includes(saved) && saved !== "saving" && saved !== "ready") return saved;
+    return "welcome";
+  });
   const [theme, setTheme] = useState<"dark" | "light" | "system">(() => {
     if (typeof window === "undefined") return "dark";
     const stored = localStorage.getItem("gym-theme");
@@ -154,6 +165,12 @@ export function Welcome({ onDone }: { onDone: () => void }) {
       setStep(nextStep);
       setFade(false);
       setShowAllPlans(false);
+      // Persist progress so same-browser sessions and PWA reinstalls can resume
+      if (nextStep !== "saving" && nextStep !== "ready") {
+        localStorage.setItem(ONBOARDING_STEP_KEY, nextStep);
+      } else {
+        localStorage.removeItem(ONBOARDING_STEP_KEY);
+      }
     }, 300);
   }
 
@@ -178,8 +195,9 @@ export function Welcome({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     if (step !== "saving") return;
     setSavingState("saving");
-    savePrefs({ onboarded: true, activePlan: selectedPlan, theme, unit }).then(() => {
-      localStorage.setItem("gym-onboarded", "true");
+    // Save plan/theme/unit but NOT onboarded:true yet — so iOS PWA opening mid-flow
+    // won't be routed to home before finishing pwa/notifications/ready steps.
+    savePrefs({ activePlan: selectedPlan, theme, unit }).then(() => {
       localStorage.setItem("gym-active-plan", selectedPlan);
       setSavingState("done");
       setTimeout(() => next("pwa"), 1200);
@@ -189,6 +207,11 @@ export function Welcome({ onDone }: { onDone: () => void }) {
 
   useEffect(() => {
     if (step !== "ready") return;
+    // Mark onboarding fully complete — only now set onboarded:true in DB + localStorage
+    savePrefs({ onboarded: true });
+    localStorage.setItem("gym-onboarded", "true");
+    localStorage.removeItem(ONBOARDING_STEP_KEY);
+
     const t = setTimeout(() => {
       setFade(true);
       setTimeout(() => onDone(), 400);
@@ -253,6 +276,11 @@ export function Welcome({ onDone }: { onDone: () => void }) {
           </button>
         )}
         {step === "pwa" && (
+          <button onClick={() => next("warmup-tips")} className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity">
+            Continue
+          </button>
+        )}
+        {step === "warmup-tips" && (
           <button onClick={() => next("notifications")} className="w-full h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-opacity">
             Continue
           </button>
@@ -316,6 +344,7 @@ export function Welcome({ onDone }: { onDone: () => void }) {
           )}
           {step === "saving" && <SavingStep savingState={savingState} />}
           {step === "pwa" && <PwaStep stepNum={stepNum} totalSteps={totalSteps} />}
+          {step === "warmup-tips" && <WarmupTipsStep stepNum={stepNum} totalSteps={totalSteps} />}
           {step === "notifications" && (
             <NotificationsStep stepNum={stepNum} totalSteps={totalSteps} notifResult={notifResult} />
           )}

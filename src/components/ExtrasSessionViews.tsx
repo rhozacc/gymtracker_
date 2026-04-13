@@ -84,9 +84,15 @@ export function ExerciseTimer({
   );
 }
 
-// ─── Rest countdown between exercises ────────────────────────────────────────
+// ─── Rest draining bar between exercises ─────────────────────────────────────
 
-export function RestCountdown({ seconds, onDone }: { seconds: number; onDone: () => void }) {
+interface RestBarProps {
+  seconds: number;
+  onDone: () => void;
+  onSkip: () => void;
+}
+
+export function RestBar({ seconds, onDone, onSkip }: RestBarProps) {
   const [remaining, setRemaining] = useState(seconds);
   const endTimeRef = useRef<number>(Date.now() + seconds * 1000);
   const firedRef = useRef(false);
@@ -105,11 +111,27 @@ export function RestCountdown({ seconds, onDone }: { seconds: number; onDone: ()
     return () => clearInterval(interval);
   }, [seconds, onDone]);
 
+  const fillPct = seconds > 0 ? (remaining / seconds) * 100 : 0;
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+  const display = `${mins}:${secs.toString().padStart(2, "0")}`;
+
   return (
-    <div className="text-center">
-      <p className="text-muted text-sm mb-2">Rest</p>
-      <div className="text-3xl font-bold tabular-nums text-accent">{remaining}s</div>
-    </div>
+    <button
+      onClick={onSkip}
+      className="relative w-full max-w-xs h-14 overflow-hidden border border-accent rounded text-sm"
+    >
+      <div
+        className="absolute inset-y-0 left-0 transition-[width] duration-[250ms] ease-linear"
+        style={{
+          width: `${fillPct}%`,
+          backgroundColor: "var(--color-accent)",
+        }}
+      />
+      <span className="relative z-10 text-bg text-sm tabular-nums font-medium">
+        Skip Rest &nbsp;&middot;&nbsp; {display}
+      </span>
+    </button>
   );
 }
 
@@ -144,9 +166,21 @@ export function TransitionView({
       </p>
       <h2 className="text-2xl font-bold text-accent mb-1">{catInfo.label}</h2>
       <p className="text-muted text-sm mb-1">{currentExtra.name}</p>
-      <p className="text-muted text-xs mb-8">
+      <p className="text-muted text-xs mb-4">
         {currentExtra.exercises.length} exercises · {currentExtra.duration}
       </p>
+
+      {/* Exercise list */}
+      <div className="w-full max-w-xs mb-6 space-y-1">
+        {currentExtra.exercises.map((ex) => (
+          <div key={ex.id} className="flex justify-between text-sm">
+            <span className="text-text">{ex.name}</span>
+            <span className="text-muted tabular-nums">
+              {ex.mode === "reps" ? `${ex.value} reps` : `${ex.value}s`}
+            </span>
+          </div>
+        ))}
+      </div>
 
       <button
         onClick={onStart}
@@ -181,14 +215,9 @@ interface RestViewProps {
 
 export function RestView({ restSeconds, onDone, onSkip }: RestViewProps) {
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-bg/95">
-      <RestCountdown seconds={restSeconds} onDone={onDone} />
-      <button
-        onClick={onSkip}
-        className="mt-6 px-6 py-2 border border-border text-muted rounded text-sm hover:text-accent hover:border-muted transition-colors"
-      >
-        Skip
-      </button>
+    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-bg/95 px-6">
+      <p className="text-muted text-xs uppercase tracking-wide mb-6">Rest</p>
+      <RestBar seconds={restSeconds} onDone={onDone} onSkip={onSkip} />
     </div>,
     document.body
   );

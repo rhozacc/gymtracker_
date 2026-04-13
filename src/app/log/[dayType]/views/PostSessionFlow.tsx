@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { PostSessionExtras } from "@/components/PostSessionExtras";
 import { PostWorkoutSummary, computeSummary } from "@/components/PostWorkoutSummary";
 import { Debrief } from "@/components/Debrief";
 import type { WeightUnit } from "@/lib/units";
@@ -17,18 +15,6 @@ interface PostSessionFlowProps {
 
 export function PostSessionFlow({ sessionId, summaryData, unit }: PostSessionFlowProps) {
   const router = useRouter();
-  const [debriefMode, setDebriefMode] = useState(false);
-
-  if (!debriefMode) {
-    return (
-      <div className="py-4">
-        <PostSessionExtras
-          sessionId={sessionId}
-          onDone={() => setDebriefMode(true)}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="py-4 space-y-6">

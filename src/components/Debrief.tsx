@@ -16,22 +16,29 @@ const QUESTIONS = [
 export function Debrief({ sessionId, onDone }: DebriefProps) {
   const [scores, setScores] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
+  const [ripple, setRipple] = useState(false);
 
   const allAnswered = QUESTIONS.every((q) => scores[q.key] !== undefined);
 
   async function submit() {
-    if (!allAnswered) return;
+    if (!allAnswered || saving) return;
     setSaving(true);
-    await fetch("/api/debrief", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sessionId,
-        energy: scores.energy,
-        pump: scores.pump,
-        mood: scores.mood,
-      }),
-    });
+    setRipple(true);
+    setTimeout(() => setRipple(false), 420);
+    try {
+      await fetch("/api/debrief", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          energy: scores.energy,
+          pump: scores.pump,
+          mood: scores.mood,
+        }),
+      });
+    } catch {
+      // non-critical — navigate regardless
+    }
     onDone();
   }
 
@@ -72,21 +79,19 @@ export function Debrief({ sessionId, onDone }: DebriefProps) {
         </div>
       ))}
 
-      <div className="flex gap-3">
-        <button
-          onClick={onDone}
-          className="flex-1 h-12 border border-border text-muted rounded text-sm hover:text-accent hover:border-muted transition-colors"
-        >
-          Skip
-        </button>
-        <button
-          onClick={submit}
-          disabled={!allAnswered || saving}
-          className="flex-1 h-12 bg-accent text-bg font-medium rounded text-sm hover:bg-white disabled:opacity-50 transition-colors"
-        >
-          {saving ? "Saving..." : "Done"}
-        </button>
-      </div>
+      <button
+        onClick={submit}
+        disabled={!allAnswered || saving}
+        className="relative w-full h-12 bg-accent text-bg font-medium rounded text-sm overflow-hidden hover:opacity-90 disabled:opacity-30 transition-opacity"
+      >
+        {ripple && (
+          <span
+            className="absolute inset-0 rounded bg-white/25 pointer-events-none"
+            style={{ animation: "done-ripple 420ms ease-out forwards" }}
+          />
+        )}
+        {saving ? "Saving..." : "Done"}
+      </button>
     </div>
   );
 }

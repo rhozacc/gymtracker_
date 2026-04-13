@@ -266,9 +266,9 @@ export default function LogPage() {
     setGuidedCompleted(true);
   }
 
-  function handleExtrasFinish() {
-    // Log completed extras to DB (fire-and-forget)
-    if (extrasSuggestion) {
+  function handleExtrasFinish(completed: boolean) {
+    // Only log to DB if user actually did the extra (not skipped)
+    if (completed && extrasSuggestion) {
       fetch("/api/extras/log", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -389,8 +389,8 @@ export default function LogPage() {
     return (
       <ExtrasSession
         extras={extrasSuggestion ? [extrasSuggestion] : []}
-        onFinish={handleExtrasFinish}
-        onSkip={handleExtrasFinish}
+        onFinish={() => handleExtrasFinish(true)}
+        onSkip={() => handleExtrasFinish(false)}
       />
     );
   }

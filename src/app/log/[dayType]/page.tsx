@@ -622,7 +622,7 @@ export default function LogPage() {
               <p className="text-base font-semibold">Extra sets logged</p>
               <p className="text-muted text-sm mt-2">
                 You added sets for{" "}
-                {[...new Set(guidedExtraSets.current)].join(", ")}.
+                {Array.from(new Set(guidedExtraSets.current)).join(", ")}.
                 Want to update your plan to match?
               </p>
             </div>

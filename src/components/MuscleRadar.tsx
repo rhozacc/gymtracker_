@@ -79,6 +79,7 @@ export function MuscleRadarInner({ data }: MuscleRadarProps) {
             fill="none"
             strokeDasharray="4 3"
             strokeWidth={1.5}
+            strokeOpacity={0.4}
           />
           <Radar
             name="Sets"

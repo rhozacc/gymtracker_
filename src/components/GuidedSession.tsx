@@ -26,6 +26,7 @@ interface GuidedSessionProps {
   updateSet: (exIdx: number, setIdx: number, data: SetInput) => void;
   onFinish: () => void;
   onStop: () => void;
+  onAddSet?: (exIdx: number) => void;
   onPositionChange?: (exerciseIndex: number, setIndex: number) => void;
   onSwitchAlternative?: (exIdx: number, alt: ExerciseAlternative) => void;
   onRestStart?: (endsAt: number, duration: number) => void;
@@ -63,6 +64,7 @@ export function GuidedSession({
   updateSet,
   onFinish,
   onStop,
+  onAddSet,
   onPositionChange,
   onSwitchAlternative,
   onRestStart,
@@ -214,8 +216,8 @@ export function GuidedSession({
       return;
     }
 
-    // Copy weight forward immediately (same exercise → same weight)
-    if (next.exerciseIndex === state.exerciseIndex && currentSetData.weight) {
+    // Copy weight forward immediately (same exercise → same weight, but not from warmup)
+    if (!currentSetData.isWarmup && next.exerciseIndex === state.exerciseIndex && currentSetData.weight) {
       const nextSetData = exercises[next.exerciseIndex]?.sets[next.setIndex];
       if (nextSetData) {
         updateSet(next.exerciseIndex, next.setIndex, {
@@ -341,6 +343,8 @@ export function GuidedSession({
     return state.exerciseIndex + 1 < day.exercises.length;
   })();
 
+  const isLastSet = state.setIndex >= (currentExState?.sets.length ?? 1) - 1;
+
   function handleDisableWarmups() {
     localStorage.setItem("gym-disable-warmups", "true");
   }
@@ -388,6 +392,8 @@ export function GuidedSession({
         if (cur) updateSet(state.exerciseIndex, state.setIndex, { ...cur, weight: setRec.suggestedWeight });
         setSetRec(null);
       }}
+      isLastSet={isLastSet}
+      onAddSet={onAddSet ? () => onAddSet(state.exerciseIndex) : undefined}
       onStop={onStop}
       onNameChange={(name) =>
         setExerciseNameOverrides((prev) => ({ ...prev, [currentExercise.id]: name }))

@@ -183,6 +183,8 @@ interface MainViewProps {
   onShowAlternatives?: () => void;
   setRec?: { direction: "up" | "down"; suggestedWeight: string } | null;
   onApplyRec?: () => void;
+  isLastSet?: boolean;
+  onAddSet?: () => void;
   onStop: () => void;
 }
 
@@ -227,6 +229,8 @@ export function MainView({
   onShowAlternatives,
   setRec,
   onApplyRec,
+  isLastSet,
+  onAddSet,
   onStop,
 }: MainViewProps) {
   const [showRirInfo, setShowRirInfo] = useState(false);
@@ -388,7 +392,7 @@ export function MainView({
               <polyline points="6 9 12 15 18 9" />
             </svg>
           )}
-          try {setRec.suggestedWeight} {unit}?
+          try {setRec.suggestedWeight} {unit}? &middot; tap
         </button>
       )}
 
@@ -507,6 +511,16 @@ export function MainView({
             </button>
           )}
         </>
+      )}
+
+      {/* Add extra set — shown only on last working set */}
+      {isLastSet && !setData.isWarmup && !isResting && onAddSet && (
+        <button
+          onClick={onAddSet}
+          className="mt-2 text-xs text-muted hover:text-accent transition-colors"
+        >
+          + Add set
+        </button>
       )}
 
       {/* Skip / End Session row */}

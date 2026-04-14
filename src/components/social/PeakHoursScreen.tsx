@@ -36,7 +36,7 @@ export function PeakHoursChartInner({
   const maxVol = Math.max(...data.map((d) => d.volume), 1);
 
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ResponsiveContainer width="100%" height={200}>
       <BarChart data={data} barCategoryGap="20%">
         <XAxis
           dataKey="hour"
@@ -78,11 +78,8 @@ export function PeakHoursChartInner({
 }
 
 const PeakHoursChart = dynamic(
-  () =>
-    import("@/components/social/PeakHoursScreen").then(
-      (m) => m.PeakHoursChartInner
-    ),
-  { ssr: false, loading: () => <div className="h-[220px] bg-surface rounded animate-pulse" /> }
+  () => import("@/components/social/PeakHoursScreen").then((m) => m.PeakHoursChartInner),
+  { ssr: false, loading: () => <div className="h-[200px] bg-surface rounded animate-pulse" /> }
 );
 
 export function PeakHoursScreen() {
@@ -92,21 +89,13 @@ export function PeakHoursScreen() {
   });
 
   return (
-    <div className="shrink-0 w-full px-4 pt-6 pb-24">
-      <p className="text-[10px] font-medium uppercase tracking-widest text-muted mb-1">
-        Peak hours
-      </p>
-      <p className="text-muted text-xs mb-6">
-        When the community trains — last 7 days (UTC)
-      </p>
-
-      <div className="border border-border rounded-lg p-3">
-        {data ? (
-          <PeakHoursChart data={data.hourly} unit={unit} />
-        ) : (
-          <div className="h-[220px] bg-surface rounded animate-pulse" />
-        )}
-      </div>
-    </div>
+    <>
+      <p className="text-muted text-xs mb-3">When the community trains — last 7 days (UTC)</p>
+      {data ? (
+        <PeakHoursChart data={data.hourly} unit={unit} />
+      ) : (
+        <div className="h-[200px] bg-surface rounded animate-pulse" />
+      )}
+    </>
   );
 }

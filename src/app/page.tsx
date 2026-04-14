@@ -120,11 +120,11 @@ export default function Dashboard() {
     "/api/charts/data",
     fetcher
   );
-  const { data: socialData } = useSWR<{ activeThisWeek: number }>(
-    "/api/social/overview",
-    fetcher,
-    { revalidateOnFocus: false }
-  );
+  const { data: socialData } = useSWR<{
+    totalUsers: number;
+    activeThisWeek: number;
+    totalVolumeKg: number;
+  }>("/api/social/overview", fetcher, { revalidateOnFocus: false });
   const dayKeys = Object.keys(plan.days).sort((a, b) => {
     const numA = parseInt(plan.days[a].label.match(/Day (\d+)/)?.[1] ?? "0");
     const numB = parseInt(plan.days[b].label.match(/Day (\d+)/)?.[1] ?? "0");
@@ -576,15 +576,22 @@ export default function Dashboard() {
           href="/social"
           className="block border border-border rounded p-3 hover:border-muted transition-colors"
         >
-          <div className="flex justify-between items-baseline">
-            <span className="text-sm">
-              {socialData != null
-                ? `${socialData.activeThisWeek} active this week`
-                : "—"}
-            </span>
-          </div>
-          <div className="text-muted text-xs mt-1">
-            Peak hours, live sessions, and how you compare
+          <div className="flex gap-6 mb-1">
+            {[
+              { label: "Members", value: socialData ? String(socialData.totalUsers) : "—" },
+              { label: "This week", value: socialData ? String(socialData.activeThisWeek) : "—" },
+              { label: `${unit} lifted`, value: socialData ? (() => {
+                const v = kgToDisplay(socialData.totalVolumeKg, unit);
+                if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+                if (v >= 1_000) return `${Math.round(v / 1000)}k`;
+                return String(Math.round(v));
+              })() : "—" },
+            ].map(({ label, value }) => (
+              <div key={label}>
+                <p className="text-sm font-medium tabular-nums">{value}</p>
+                <p className="text-[10px] text-muted">{label}</p>
+              </div>
+            ))}
           </div>
         </Link>
       </div>

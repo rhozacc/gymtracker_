@@ -120,6 +120,11 @@ export default function Dashboard() {
     "/api/charts/data",
     fetcher
   );
+  const { data: socialData } = useSWR<{ activeThisWeek: number }>(
+    "/api/social/overview",
+    fetcher,
+    { revalidateOnFocus: false }
+  );
   const dayKeys = Object.keys(plan.days).sort((a, b) => {
     const numA = parseInt(plan.days[a].label.match(/Day (\d+)/)?.[1] ?? "0");
     const numB = parseInt(plan.days[b].label.match(/Day (\d+)/)?.[1] ?? "0");
@@ -554,6 +559,34 @@ export default function Dashboard() {
           </div>
           <MuscleRadar data={muscleRadarData} />
         </div>
+      </div>
+
+      {/* ── Social ── */}
+      <div>
+        <Link href="/social" className="flex items-center justify-between mb-3 group">
+          <h2 className="text-lg font-medium">Social</h2>
+          <span className="flex items-center gap-1.5 text-muted group-hover:text-text transition-colors">
+            <span className="text-xs">Community</span>
+            <svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 10L10 2M10 2H4.5M10 2V7.5"/>
+            </svg>
+          </span>
+        </Link>
+        <Link
+          href="/social"
+          className="block border border-border rounded p-3 hover:border-muted transition-colors"
+        >
+          <div className="flex justify-between items-baseline">
+            <span className="text-sm">
+              {socialData != null
+                ? `${socialData.activeThisWeek} active this week`
+                : "—"}
+            </span>
+          </div>
+          <div className="text-muted text-xs mt-1">
+            Peak hours, live sessions, and how you compare
+          </div>
+        </Link>
       </div>
 
     </div>

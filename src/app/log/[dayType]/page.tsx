@@ -58,6 +58,26 @@ export default function LogPage() {
   //   reviewing → guided done, reviewing sets before saving
   type SessionMode = "idle" | "guided" | "extras" | "list-view" | "reviewing";
   const [sessionMode, setSessionMode] = useState<SessionMode>("idle");
+
+  // Shared rest timer — persists when switching to list-view mid-rest
+  const [sharedRestEndsAt, setSharedRestEndsAt] = useState<number | null>(null);
+  const [sharedRestDuration, setSharedRestDuration] = useState(0);
+  const [listViewRestRemaining, setListViewRestRemaining] = useState(0);
+
+  useEffect(() => {
+    if (sessionMode !== "list-view" || !sharedRestEndsAt) {
+      setListViewRestRemaining(0);
+      return;
+    }
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((sharedRestEndsAt - Date.now()) / 1000));
+      setListViewRestRemaining(remaining);
+      if (remaining === 0) setSharedRestEndsAt(null);
+    };
+    tick();
+    const id = setInterval(tick, 250);
+    return () => clearInterval(id);
+  }, [sessionMode, sharedRestEndsAt]);
   const [showEndModal, setShowEndModal] = useState(false);
   // Persists the guided session position across list-view switches
   const [guidedPosition, setGuidedPosition] = useState({ exerciseIndex: 0, setIndex: 0 });
@@ -540,11 +560,17 @@ export default function LogPage() {
           unit={unit}
           increments={increments}
           initialPosition={guidedPosition}
+          initialRestEndsAt={sharedRestEndsAt}
+          initialRestDuration={sharedRestDuration}
           updateSet={updateSet}
           onFinish={handleGuidedFinish}
           onStop={() => setShowEndModal(true)}
           onPositionChange={(ei, si) => setGuidedPosition({ exerciseIndex: ei, setIndex: si })}
           onSwitchAlternative={handleSwitchAlternative}
+          onRestStart={(endsAt, duration) => {
+            setSharedRestEndsAt(endsAt);
+            setSharedRestDuration(duration);
+          }}
         />
       ) : (
         <StandardModeView
@@ -555,6 +581,7 @@ export default function LogPage() {
           increments={increments}
           wasGuidedMode={sessionMode === "list-view" || sessionMode === "reviewing"}
           guidedCompleted={sessionMode === "reviewing"}
+          restRemaining={listViewRestRemaining}
           saving={saving}
           notes={notes}
           onNotesChange={setNotes}

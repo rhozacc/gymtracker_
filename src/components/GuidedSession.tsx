@@ -21,11 +21,14 @@ interface GuidedSessionProps {
   unit: WeightUnit;
   increments: number[];
   initialPosition?: { exerciseIndex: number; setIndex: number };
+  initialRestEndsAt?: number | null;
+  initialRestDuration?: number;
   updateSet: (exIdx: number, setIdx: number, data: SetInput) => void;
   onFinish: () => void;
   onStop: () => void;
   onPositionChange?: (exerciseIndex: number, setIndex: number) => void;
   onSwitchAlternative?: (exIdx: number, alt: ExerciseAlternative) => void;
+  onRestStart?: (endsAt: number, duration: number) => void;
 }
 
 interface GuidedState {
@@ -55,11 +58,14 @@ export function GuidedSession({
   unit,
   increments,
   initialPosition,
+  initialRestEndsAt,
+  initialRestDuration,
   updateSet,
   onFinish,
   onStop,
   onPositionChange,
   onSwitchAlternative,
+  onRestStart,
 }: GuidedSessionProps) {
   const [state, dispatch] = useReducer(guidedReducer, {
     exerciseIndex: initialPosition?.exerciseIndex ?? 0,
@@ -67,10 +73,10 @@ export function GuidedSession({
   });
 
   // Inline rest timer: absolute end timestamp (null = not resting)
-  const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
+  const [restEndsAt, setRestEndsAt] = useState<number | null>(initialRestEndsAt ?? null);
   const [restRemaining, setRestRemaining] = useState(0);
   // Track the duration of the current rest period for the progress fill
-  const restDurationRef = useRef(0);
+  const restDurationRef = useRef(initialRestDuration ?? 0);
 
   // Flash states — triggered explicitly from handlers
   const [setFlash, setSetFlash] = useState(false);
@@ -258,9 +264,11 @@ export function GuidedSession({
     // Start inline rest timer (no rest after warmup — you already rested from the prior exercise)
     const restSecs = currentSetData.isWarmup ? 0 : currentExercise.rest;
     if (restSecs > 0) {
+      const endsAt = Date.now() + restSecs * 1000;
       restDurationRef.current = restSecs;
-      setRestEndsAt(Date.now() + restSecs * 1000);
+      setRestEndsAt(endsAt);
       startRestTimer(restSecs, next.info);
+      onRestStart?.(endsAt, restSecs);
     }
   }, [currentSetData, state.exerciseIndex, state.setIndex, updateSet, day.exercises.length, currentExState, onFinish, currentExercise, getNextInfo, exercises, startRestTimer]);
 
@@ -313,6 +321,26 @@ export function GuidedSession({
     if (prevExIdx !== state.exerciseIndex) triggerExerciseFlash();
   }, [state.exerciseIndex, state.setIndex, exercises, cancelRestTimer]);
 
+  const handleGoForward = useCallback(() => {
+    cancelRestTimer();
+    setRestEndsAt(null);
+    setSetRec(null);
+
+    const next = getNextInfo();
+    if (!next) return;
+
+    dispatch({ type: "NEXT_SET", nextExIdx: next.exerciseIndex, nextSetIdx: next.setIndex });
+    triggerSetFlash();
+    if (next.exerciseIndex !== state.exerciseIndex) triggerExerciseFlash();
+  }, [state.exerciseIndex, getNextInfo, cancelRestTimer]);
+
+  const canGoForward = (() => {
+    const nextSetIdx = state.setIndex + 1;
+    const exSets = exercises[state.exerciseIndex]?.sets;
+    if (exSets && nextSetIdx < exSets.length) return true;
+    return state.exerciseIndex + 1 < day.exercises.length;
+  })();
+
   function handleDisableWarmups() {
     localStorage.setItem("gym-disable-warmups", "true");
   }
@@ -349,6 +377,8 @@ export function GuidedSession({
       skipWarmupCount={skipWarmupCount}
       onGoBack={handleGoBack}
       canGoBack={state.exerciseIndex > 0 || state.setIndex > 0}
+      onGoForward={handleGoForward}
+      canGoForward={canGoForward}
       alternatives={currentAlternatives}
       onSwitchAlternative={onSwitchAlternative ? (alt) => onSwitchAlternative(state.exerciseIndex, alt) : undefined}
       setRec={setRec}

@@ -26,6 +26,7 @@ interface StandardModeViewProps {
   onRemoveSet: (exIdx: number, setIdx: number) => void;
   onMarkDone: (exIdx: number) => void;
   onRenameExercise: (exerciseId: string, exerciseName: string) => void;
+  restRemaining?: number;
 }
 
 export function StandardModeView({
@@ -47,18 +48,21 @@ export function StandardModeView({
   onRemoveSet,
   onMarkDone,
   onRenameExercise,
+  restRemaining = 0,
 }: StandardModeViewProps) {
 
   return (
     <>
       {/* Continue Guided Session — sticky top, only when not yet completed */}
       {wasGuidedMode && !guidedCompleted && (
-        <div className="sticky top-0 z-40 bg-bg pb-2">
+        <div className="sticky top-0 z-40 bg-bg pt-2 pb-2">
           <button
             onClick={onContinueGuided}
             className="w-full h-14 bg-accent text-bg font-medium rounded-lg text-base hover:opacity-90 transition-opacity"
           >
-            Continue Guided Session
+            {restRemaining > 0
+              ? `Continue · ${Math.floor(restRemaining / 60)}:${String(restRemaining % 60).padStart(2, "0")}`
+              : "Continue Guided Session"}
           </button>
         </div>
       )}

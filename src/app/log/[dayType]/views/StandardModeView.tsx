@@ -113,23 +113,31 @@ export function StandardModeView({
                 <span className="w-full text-center">RIR</span>
                 <span className="w-6 shrink-0" />
               </div>
-              {exState.sets.map((s, sIdx) => (
-                <SetRow
-                  key={sIdx}
-                  index={sIdx}
-                  data={s}
-                  onChange={(d) => onUpdateSet(exIdx, sIdx, d)}
-                  onRemove={
-                    exState.sets.length > 1
-                      ? () => onRemoveSet(exIdx, sIdx)
-                      : undefined
-                  }
-                  onDone={() => onMarkDone(exIdx)}
-                  increments={increments}
-                  unitLabel={unit}
-                  showIncrements={false}
-                />
-              ))}
+              {exState.sets.map((s, sIdx) =>
+                s.isWarmup ? (
+                  <div key={sIdx} className="flex items-center gap-1.5">
+                    <span className="text-muted text-xs border border-border rounded px-2 py-1">
+                      Warmup
+                    </span>
+                  </div>
+                ) : (
+                  <SetRow
+                    key={sIdx}
+                    index={exState.sets.slice(0, sIdx).filter((x) => !x.isWarmup).length + 1}
+                    data={s}
+                    onChange={(d) => onUpdateSet(exIdx, sIdx, d)}
+                    onRemove={
+                      exState.sets.filter((x) => !x.isWarmup).length > 1
+                        ? () => onRemoveSet(exIdx, sIdx)
+                        : undefined
+                    }
+                    onDone={() => onMarkDone(exIdx)}
+                    increments={increments}
+                    unitLabel={unit}
+                    showIncrements={false}
+                  />
+                )
+              )}
             </div>
 
             <button

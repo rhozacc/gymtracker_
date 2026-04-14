@@ -11,6 +11,10 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    area: "Social",
+    text: "New Social tab — see global activity, peak training hours, live sessions, and how your weekly volume stacks up against everyone else.",
+  },
+  {
     area: "Weight nudges",
     text: "Between sets the app now suggests going up or down based on your reps and RIR. Tap the chip to apply it instantly — or ignore it.",
   },

@@ -49,7 +49,7 @@ export function MuscleRadarInner({ data }: MuscleRadarProps) {
       muscle: d.muscle,
       actual: mavRatios[i] / globalMax,
       mav: 1 / globalMax,
-      mev: (mev / mav) / globalMax,
+      mev: mev / mav / globalMax,
     };
   });
 
@@ -66,7 +66,7 @@ export function MuscleRadarInner({ data }: MuscleRadarProps) {
           <Radar
             name="mev"
             dataKey="mev"
-            stroke="var(--color-muted)"
+            stroke="var(--color-accent)"
             fill="none"
             strokeDasharray="3 3"
             strokeWidth={1}
@@ -75,7 +75,7 @@ export function MuscleRadarInner({ data }: MuscleRadarProps) {
           <Radar
             name="mav"
             dataKey="mav"
-            stroke="var(--color-muted)"
+            stroke="var(--color-accent)"
             fill="none"
             strokeDasharray="4 3"
             strokeWidth={1.5}
@@ -94,11 +94,11 @@ export function MuscleRadarInner({ data }: MuscleRadarProps) {
       <p className="text-[10px] text-muted text-center -mt-2 flex items-center justify-center gap-3">
         <span className="flex items-center gap-1">
           <span className="inline-block w-4 border-t border-dashed border-muted opacity-50" />
-          atrophy
+          Atrophy
         </span>
         <span className="flex items-center gap-1">
           <span className="inline-block w-4 border-t border-dashed border-muted" />
-          hypertrophy
+          Hypertrophy
         </span>
       </p>
     </div>

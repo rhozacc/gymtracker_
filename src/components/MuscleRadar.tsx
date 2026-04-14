@@ -9,13 +9,20 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-// Weekly set targets per muscle group (MEV-ish baseline)
-const MUSCLE_TARGETS: Record<string, number> = {
+// MEV = minimum to prevent atrophy; MAV = minimum to drive hypertrophy
+const MEV_TARGETS: Record<string, number> = {
   Chest: 10,
   Back: 12,
   Shoulders: 10,
   Legs: 14,
   Arms: 8,
+};
+const MAV_TARGETS: Record<string, number> = {
+  Chest: 12,
+  Back: 14,
+  Shoulders: 12,
+  Legs: 18,
+  Arms: 10,
 };
 
 interface MuscleRadarProps {
@@ -31,16 +38,20 @@ export function MuscleRadarInner({ data }: MuscleRadarProps) {
     );
   }
 
-  const ratios = data.map((d) => d.sets / (MUSCLE_TARGETS[d.muscle] ?? 10));
-  // 1.25 = the 20% buffer: ratio 1.0–1.25 fits within the outer 20% without
-  // moving the ring. Beyond 1.25× the ring starts compressing inward.
-  const globalMax = Math.max(...ratios, 1.25);
+  // Normalise everything against MAV so MAV ring sits at ratio=1.0
+  const mavRatios = data.map((d) => d.sets / (MAV_TARGETS[d.muscle] ?? 12));
+  const globalMax = Math.max(...mavRatios, 1.25);
 
-  const normalized = data.map((d, i) => ({
-    muscle: d.muscle,
-    actual: ratios[i] / globalMax,
-    target: 1 / globalMax, // 0.8 at baseline, shrinks when globalMax > 1.25
-  }));
+  const normalized = data.map((d, i) => {
+    const mev = MEV_TARGETS[d.muscle] ?? 10;
+    const mav = MAV_TARGETS[d.muscle] ?? 12;
+    return {
+      muscle: d.muscle,
+      actual: mavRatios[i] / globalMax,
+      mav: 1 / globalMax,
+      mev: (mev / mav) / globalMax,
+    };
+  });
 
   return (
     <div>
@@ -53,8 +64,17 @@ export function MuscleRadarInner({ data }: MuscleRadarProps) {
           />
           <PolarRadiusAxis domain={[0, 1]} tick={false} axisLine={false} />
           <Radar
-            name="Target"
-            dataKey="target"
+            name="mev"
+            dataKey="mev"
+            stroke="var(--color-muted)"
+            fill="none"
+            strokeDasharray="3 3"
+            strokeWidth={1}
+            strokeOpacity={0.5}
+          />
+          <Radar
+            name="mav"
+            dataKey="mav"
             stroke="var(--color-muted)"
             fill="none"
             strokeDasharray="4 3"
@@ -70,9 +90,15 @@ export function MuscleRadarInner({ data }: MuscleRadarProps) {
           />
         </RadarChart>
       </ResponsiveContainer>
-      <p className="text-[10px] text-muted text-center -mt-2">
-        <span className="inline-block w-4 border-t border-dashed border-muted align-middle mr-1" />
-        weekly target
+      <p className="text-[10px] text-muted text-center -mt-2 flex items-center justify-center gap-3">
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-4 border-t border-dashed border-muted opacity-50" />
+          atrophy
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-4 border-t border-dashed border-muted" />
+          hypertrophy
+        </span>
       </p>
     </div>
   );

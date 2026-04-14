@@ -66,15 +66,16 @@ export function MuscleRadarInner({ data }: MuscleRadarProps) {
           <Radar
             name="mev"
             dataKey="mev"
-            stroke="var(--color-text)"
+            stroke="var(--color-muted)"
             fill="none"
+            strokeDasharray="3 3"
             strokeWidth={1}
-            strokeOpacity={0.4}
+            strokeOpacity={0.5}
           />
           <Radar
             name="mav"
             dataKey="mav"
-            stroke="var(--color-text)"
+            stroke="var(--color-muted)"
             fill="none"
             strokeDasharray="4 3"
             strokeWidth={1.5}
@@ -92,11 +93,11 @@ export function MuscleRadarInner({ data }: MuscleRadarProps) {
       </ResponsiveContainer>
       <p className="text-[10px] text-muted text-center -mt-2 flex items-center justify-center gap-3">
         <span className="flex items-center gap-1">
-          <span className="inline-block w-4 border-t border-text opacity-40" />
+          <span className="inline-block w-4 border-t border-dashed border-muted opacity-50" />
           atrophy
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block w-4 border-t border-dashed border-text opacity-40" />
+          <span className="inline-block w-4 border-t border-dashed border-muted" />
           hypertrophy
         </span>
       </p>

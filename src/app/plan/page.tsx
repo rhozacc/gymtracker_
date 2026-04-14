@@ -354,8 +354,27 @@ export default function PlanPage() {
           <div className="border border-accent rounded-lg">
             <div className="p-4">
               <div className="flex items-center justify-between mb-1">
-                <p className="text-[10px] font-medium uppercase tracking-widest text-muted">Active</p>
-                {activePlan.goal && <GoalBadge goal={activePlan.goal} />}
+                <div className="flex items-center gap-2">
+                  <p className="text-[10px] font-medium uppercase tracking-widest text-muted">Active</p>
+                  {!activePlan.builtIn && (
+                    <span className="text-[10px] text-accent border border-accent/50 rounded-full px-2 py-0.5">
+                      Customized
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {activePlan.goal && <GoalBadge goal={activePlan.goal} />}
+                  <Link
+                    href={
+                      activePlan.builtIn
+                        ? `/plan/custom?fork=${activePlan.slug}`
+                        : `/plan/custom?edit=${activePlan.slug}`
+                    }
+                    className="text-[10px] text-muted hover:text-accent transition-colors"
+                  >
+                    {activePlan.builtIn ? "Customize" : "Edit"}
+                  </Link>
+                </div>
               </div>
               <h2 className="text-sm font-medium mt-2">{activePlan.name}</h2>
               <p className="text-muted text-xs mt-1">{activePlan.description}</p>

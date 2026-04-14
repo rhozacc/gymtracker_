@@ -390,6 +390,9 @@ export function PlanStep({
       <p className="text-muted text-xs mb-4 text-center">
         Recommended for {GOAL_INFO[goal].label.toLowerCase()}
       </p>
+      <p className="text-[10px] text-muted mb-3 text-center">
+        Plans can be customized — adjust sets, reps, or add exercises any time from Plan settings.
+      </p>
       <div className="max-h-[45vh] overflow-y-auto space-y-1 mb-4 -mx-1 px-1">
         {recommended.length > 0 ? (
           recommended.map((p) => (

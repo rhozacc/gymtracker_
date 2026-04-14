@@ -87,6 +87,10 @@ export default function LogPage() {
 
   const [extrasSuggestion, setExtrasSuggestion] = useState<ExtraOption | null>(null);
 
+  // Track extra sets added during guided session
+  const guidedExtraSets = useRef<string[]>([]); // exercise names
+  const [showPlanUpdatePrompt, setShowPlanUpdatePrompt] = useState(false);
+
   // Post-session flow state
   const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
   const [summaryData, setSummaryData] = useState<ReturnType<typeof computeSummary> | null>(null);
@@ -297,6 +301,12 @@ export default function LogPage() {
     });
   }
 
+  function addSetGuided(exIdx: number) {
+    const exName = day.exercises[exIdx]?.name;
+    if (exName) guidedExtraSets.current.push(exName);
+    addSet(exIdx);
+  }
+
   function removeSet(exIdx: number, setIdx: number) {
     setExercises((prev) => {
       const next = [...prev];
@@ -315,7 +325,7 @@ export default function LogPage() {
     setShowTimer(true);
   }
 
-  function handleGuidedFinish() {
+  function continueAfterGuidedFinish() {
     const extrasDisabled = localStorage.getItem("gym-disable-extras") === "true";
     if (!extrasDisabled) {
       const sessionMins =
@@ -327,6 +337,14 @@ export default function LogPage() {
       return;
     }
     setSessionMode("reviewing");
+  }
+
+  function handleGuidedFinish() {
+    if (guidedExtraSets.current.length > 0) {
+      setShowPlanUpdatePrompt(true);
+      return;
+    }
+    continueAfterGuidedFinish();
   }
 
   function handleExtrasFinish(completed: boolean) {
@@ -563,6 +581,7 @@ export default function LogPage() {
           initialRestEndsAt={sharedRestEndsAt}
           initialRestDuration={sharedRestDuration}
           updateSet={updateSet}
+          onAddSet={addSetGuided}
           onFinish={handleGuidedFinish}
           onStop={() => setShowEndModal(true)}
           onPositionChange={(ei, si) => setGuidedPosition({ exerciseIndex: ei, setIndex: si })}
@@ -594,6 +613,41 @@ export default function LogPage() {
           onMarkDone={markDone}
           onRenameExercise={(id, name) => setRenameTarget({ exerciseId: id, exerciseName: name })}
         />
+      )}
+
+      {showPlanUpdatePrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/80 backdrop-blur-sm p-4">
+          <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-sm space-y-4">
+            <div>
+              <p className="text-base font-semibold">Extra sets logged</p>
+              <p className="text-muted text-sm mt-2">
+                You added sets for{" "}
+                {[...new Set(guidedExtraSets.current)].join(", ")}.
+                Want to update your plan to match?
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowPlanUpdatePrompt(false);
+                  router.push("/plan");
+                }}
+                className="flex-1 h-11 bg-accent text-bg font-medium rounded text-sm hover:opacity-90 transition-opacity"
+              >
+                Update plan
+              </button>
+              <button
+                onClick={() => {
+                  setShowPlanUpdatePrompt(false);
+                  continueAfterGuidedFinish();
+                }}
+                className="flex-1 h-11 border border-border text-muted rounded text-sm hover:border-accent hover:text-accent transition-colors"
+              >
+                Skip
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {showEndModal && (

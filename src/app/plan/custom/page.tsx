@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Exercise } from "@/lib/program";
+import { Exercise, PLANS } from "@/lib/program";
 
 interface DayState {
   key: string;
@@ -46,6 +46,7 @@ export default function CustomPlanPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editSlug = searchParams.get("edit");
+  const forkSlug = searchParams.get("fork");
 
   const [planName, setPlanName] = useState("");
   const [planDescription, setPlanDescription] = useState("");
@@ -78,6 +79,28 @@ export default function CustomPlanPage() {
         );
       });
   }, [editSlug]);
+
+  // Fork a built-in plan: pre-populate from PLANS constant, save as new custom plan
+  useEffect(() => {
+    if (!forkSlug) return;
+    const builtIn = PLANS[forkSlug];
+    if (!builtIn) return;
+    setPlanName(`${builtIn.name} (Custom)`);
+    setPlanDescription(builtIn.description || "");
+    setDays(
+      Object.entries(builtIn.days).map(([key, day]) => ({
+        key,
+        label: day.label.includes("—") ? day.label.split("—")[1].trim() : day.label,
+        exercises: day.exercises.map((ex: Exercise) => ({
+          name: ex.name,
+          sets: ex.sets,
+          repMin: ex.repRange[0],
+          repMax: ex.repRange[1],
+          rest: ex.rest,
+        })),
+      }))
+    );
+  }, [forkSlug]);
 
   function addDay() {
     setDays((d) => [
@@ -227,7 +250,7 @@ export default function CustomPlanPage() {
           &larr; Back
         </button>
         <h1 className="text-lg font-medium">
-          {editSlug ? "Edit Plan" : "Create Plan"}
+          {editSlug ? "Edit Plan" : forkSlug ? "Customize Plan" : "Create Plan"}
         </h1>
       </div>
 
@@ -416,7 +439,7 @@ export default function CustomPlanPage() {
         disabled={!isValid() || saving}
         className="w-full h-12 bg-accent text-bg font-medium rounded text-sm hover:bg-white disabled:opacity-50 transition-colors"
       >
-        {saving ? "Saving..." : editSlug ? "Save Changes" : "Create Plan"}
+        {saving ? "Saving..." : editSlug ? "Save Changes" : forkSlug ? "Save Custom Plan" : "Create Plan"}
       </button>
     </div>
   );

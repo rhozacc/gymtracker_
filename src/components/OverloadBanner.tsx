@@ -9,9 +9,9 @@ export function OverloadBanner({
 }) {
   if (variant === "almost_ready") {
     return (
-      <div className="border border-amber-500 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400 text-xs px-4 py-2.5 rounded text-center leading-relaxed">
+      <div className="border border-border text-muted text-xs px-4 py-2.5 rounded text-center leading-relaxed">
         Almost there — repeat{" "}
-        <span className="font-bold">
+        <span className="font-bold text-text">
           {suggestedWeight} {unit}
         </span>{" "}
         to lock it in
@@ -20,12 +20,11 @@ export function OverloadBanner({
   }
 
   return (
-    <div className="border border-green-500 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-400 text-xs px-4 py-2.5 rounded text-center leading-relaxed">
-      Ready to go up —{" "}
-      <span className="font-bold">
+    <div className="border border-accent/40 bg-accent/5 text-text text-xs px-4 py-2.5 rounded text-center leading-relaxed">
+      Load up —{" "}
+      <span className="font-bold text-accent">
         {suggestedWeight} {unit}
-      </span>{" "}
-      loaded
+      </span>
     </div>
   );
 }

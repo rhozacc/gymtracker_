@@ -572,27 +572,22 @@ export default function Dashboard() {
             </svg>
           </span>
         </Link>
-        <Link
-          href="/social"
-          className="block border border-border rounded p-3 hover:border-muted transition-colors"
-        >
-          <div className="flex gap-6 mb-1">
-            {[
-              { label: "Members", value: socialData ? String(socialData.totalUsers) : "—" },
-              { label: "This week", value: socialData ? String(socialData.activeThisWeek) : "—" },
-              { label: `${unit} lifted`, value: socialData ? (() => {
-                const v = kgToDisplay(socialData.totalVolumeKg, unit);
-                if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
-                if (v >= 1_000) return `${Math.round(v / 1000)}k`;
-                return String(Math.round(v));
-              })() : "—" },
-            ].map(({ label, value }) => (
-              <div key={label}>
-                <p className="text-sm font-medium tabular-nums">{value}</p>
-                <p className="text-[10px] text-muted">{label}</p>
-              </div>
-            ))}
-          </div>
+        <Link href="/social" className="flex gap-2">
+          {[
+            { label: "Members", value: socialData ? String(socialData.totalUsers) : "—" },
+            { label: "This week", value: socialData ? String(socialData.activeThisWeek) : "—" },
+            { label: `${unit} lifted`, value: socialData ? (() => {
+              const v = kgToDisplay(socialData.totalVolumeKg, unit);
+              if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+              if (v >= 1_000) return `${Math.round(v / 1000)}k`;
+              return String(Math.round(v));
+            })() : "—" },
+          ].map(({ label, value }) => (
+            <div key={label} className="flex flex-col items-center border border-border rounded-lg px-3 py-3 flex-1">
+              <span className="text-[22px] font-bold tabular-nums">{value}</span>
+              <span className="text-[10px] font-medium uppercase tracking-widest text-muted mt-0.5 text-center">{label}</span>
+            </div>
+          ))}
         </Link>
       </div>
 

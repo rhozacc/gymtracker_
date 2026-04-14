@@ -11,6 +11,7 @@ const tabs = [
   { href: "/plan", label: "Plan" },
   { href: "/history", label: "Log" },
   { href: "/charts", label: "Trends" },
+  { href: "/social", label: "Social" },
 ];
 
 function BeamSweep({ onDone }: { onDone: () => void }) {

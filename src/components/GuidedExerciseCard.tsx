@@ -41,6 +41,7 @@ interface GuidedExerciseCardProps {
   onAddSet?: () => void;
   onStop: () => void;
   onNameChange: (name: string) => void;
+  onGoHome: () => void;
 }
 
 export function GuidedExerciseCard({
@@ -77,6 +78,7 @@ export function GuidedExerciseCard({
   onAddSet,
   onStop,
   onNameChange,
+  onGoHome,
 }: GuidedExerciseCardProps) {
   const [view, setView] = useState<"main" | "weight" | "editName" | "alternative">("main");
   const [tempWeight, setTempWeight] = useState(setData.weight);
@@ -251,6 +253,7 @@ export function GuidedExerciseCard({
         isLastSet={isLastSet}
         onAddSet={onAddSet}
         onStop={onStop}
+        onGoHome={onGoHome}
       />
     </div>
   );

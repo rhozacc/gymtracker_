@@ -41,6 +41,7 @@ interface WeightAdjustViewProps extends ViewProps {
 export function WeightAdjustView({
   exerciseName,
   setIndex,
+  setData,
   unit,
   increments,
   tempWeight,

@@ -45,9 +45,13 @@ export function SetRow({
 
   return (
     <div
-      className={`rounded transition-colors ${data.isWarmup ? "opacity-60" : ""} ${
-        data.done ? "border-l-2 border-green-500 bg-green-950/10 pl-1" : ""
-      }`}
+      className={`rounded transition-colors ${data.isWarmup ? "opacity-60" : ""}`}
+      style={data.done ? {
+        borderLeftWidth: "2px",
+        borderLeftColor: "var(--color-accent)",
+        backgroundColor: "color-mix(in srgb, var(--color-accent) 10%, transparent)",
+        paddingLeft: "0.25rem",
+      } : undefined}
     >
       {/* Row 1: check | weight | reps | rir | remove */}
       <div className="flex items-center gap-1.5">
@@ -56,9 +60,13 @@ export function SetRow({
           onClick={handleCheckDone}
           className={`shrink-0 w-8 h-8 rounded-full border text-xs flex items-center justify-center transition-colors ${
             data.done
-              ? "bg-green-600 border-green-600 text-white"
+              ? "text-white"
               : "border-border text-muted hover:border-accent hover:text-accent"
           }`}
+          style={data.done ? {
+            backgroundColor: "var(--color-accent)",
+            borderColor: "var(--color-accent)",
+          } : undefined}
         >
           {data.done ? "✓" : data.isWarmup ? "W" : index}
         </button>

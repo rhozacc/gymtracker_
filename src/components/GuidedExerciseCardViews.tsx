@@ -53,7 +53,7 @@ export function WeightAdjustView({
     <div className="flex flex-col items-center py-8 px-4">
       <p className="text-muted text-xs uppercase tracking-wide">Adjust Weight</p>
       <h2 className="text-lg font-medium mt-2">
-        {exerciseName} — Set {setIndex + 1}
+        {exerciseName} — {setData.isWarmup ? "Warmup" : `Set ${setIndex}`}
       </h2>
 
       <div className="flex items-baseline gap-2 mt-6">
@@ -337,7 +337,7 @@ export function MainView({
       </div>
 
       <p className={`text-lg font-medium mt-1 transition-colors duration-500 ${setFlash ? "text-accent" : "text-muted"}`}>
-        {setData.isWarmup ? "Warmup" : `Set ${setIndex}/${totalSets - 1}`}
+        {setData.isWarmup ? "Warmup" : `Set ${setIndex}/${totalSets}`}
       </p>
       <p className="text-muted text-sm opacity-70">
         {exercise.repRange[0]}–{exercise.repRange[1]} reps

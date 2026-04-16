@@ -79,8 +79,11 @@ export default function LogPage() {
     return () => clearInterval(id);
   }, [sessionMode, sharedRestEndsAt]);
   const [showEndModal, setShowEndModal] = useState(false);
-  // Persists the guided session position across list-view switches
+  // Persists the guided session position across list-view switches and backup restores
   const [guidedPosition, setGuidedPosition] = useState({ exerciseIndex: 0, setIndex: 0 });
+  const guidedPositionRef = useRef({ exerciseIndex: 0, setIndex: 0 });
+  // Incrementing this key force-remounts GuidedSession so initialPosition takes effect
+  const [sessionKey, setSessionKey] = useState(0);
   const { requestPermission } = useBackgroundNotification();
   const { setNavVisible } = useNavVisibility();
   const { theme, toggleTheme } = useTheme();
@@ -106,7 +109,7 @@ export default function LogPage() {
 
   guidedModeRef.current = sessionMode === "guided";
 
-  const { backupFound, backupStartedAt, writeBackup, restoreBackup, discardBackup, clearBackup } =
+  const { backupFound, backupStartedAt, writeBackup, patchPositionInBackup, restoreBackup, discardBackup, clearBackup } =
     useSessionBackup(dayType, startedAtRef, guidedModeRef);
 
   // Auto-start guided mode if ?guided=true
@@ -281,7 +284,7 @@ export default function LogPage() {
       const next = [...prev];
       next[exIdx] = { ...next[exIdx], sets: [...next[exIdx].sets] };
       next[exIdx].sets[setIdx] = data;
-      writeBackup(next);
+      writeBackup(next, guidedPositionRef.current);
       return next;
     });
   }
@@ -502,7 +505,14 @@ export default function LogPage() {
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => restoreBackup(setExercises)}
+                onClick={() => {
+                  const pos = restoreBackup(setExercises);
+                  const resolved = pos ?? { exerciseIndex: 0, setIndex: 0 };
+                  guidedPositionRef.current = resolved;
+                  setGuidedPosition(resolved);
+                  setSessionKey((k) => k + 1);
+                  setSessionMode("guided");
+                }}
                 className="flex-1 h-11 bg-accent text-bg font-medium rounded text-sm hover:opacity-90 transition-opacity"
               >
                 Continue on
@@ -572,6 +582,7 @@ export default function LogPage() {
 
       {sessionMode === "guided" ? (
         <GuidedSession
+          key={sessionKey}
           day={day}
           exercises={exercises}
           overloads={overloads}
@@ -584,7 +595,11 @@ export default function LogPage() {
           onAddSet={addSetGuided}
           onFinish={handleGuidedFinish}
           onStop={() => setShowEndModal(true)}
-          onPositionChange={(ei, si) => setGuidedPosition({ exerciseIndex: ei, setIndex: si })}
+          onPositionChange={(ei, si) => {
+              guidedPositionRef.current = { exerciseIndex: ei, setIndex: si };
+              setGuidedPosition({ exerciseIndex: ei, setIndex: si });
+              patchPositionInBackup({ exerciseIndex: ei, setIndex: si });
+            }}
           onSwitchAlternative={handleSwitchAlternative}
           onRestStart={(endsAt, duration) => {
             setSharedRestEndsAt(endsAt);
@@ -605,6 +620,16 @@ export default function LogPage() {
           notes={notes}
           onNotesChange={setNotes}
           onContinueGuided={() => setSessionMode("guided")}
+          onJumpToExercise={(exIdx) => {
+            const sets = exercises[exIdx]?.sets ?? [];
+            const firstUndone = sets.findIndex((s) => !s.done);
+            const setIdx = firstUndone >= 0 ? firstUndone : 0;
+            const pos = { exerciseIndex: exIdx, setIndex: setIdx };
+            guidedPositionRef.current = pos;
+            setGuidedPosition(pos);
+            setSessionKey((k) => k + 1);
+            setSessionMode("guided");
+          }}
           onFinish={finish}
           onEndSession={() => setShowEndModal(true)}
           onUpdateSet={updateSet}

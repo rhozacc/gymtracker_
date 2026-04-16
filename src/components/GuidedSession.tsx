@@ -355,6 +355,12 @@ export function GuidedSession({
     return null;
   }
 
+  // Warmup-adjusted set counter values for display
+  const hasWarmup = currentExState.sets[0]?.isWarmup ?? false;
+  const warmupOffset = hasWarmup ? 1 : 0;
+  const displaySetNumber = currentSetData.isWarmup ? 0 : state.setIndex - warmupOffset + 1;
+  const displayTotalSets = currentExState.sets.length - warmupOffset;
+
   return (
     <GuidedExerciseCard
       key={state.exerciseIndex}
@@ -362,8 +368,8 @@ export function GuidedSession({
       exerciseName={currentDisplayName}
       exerciseIndex={state.exerciseIndex}
       totalExercises={day.exercises.length}
-      setIndex={state.setIndex}
-      totalSets={currentExState.sets.length}
+      setIndex={displaySetNumber}
+      totalSets={displayTotalSets}
       setData={currentSetData}
       overload={overloads[activeExerciseId]}
       unit={unit}

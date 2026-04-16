@@ -6,6 +6,8 @@ export interface BackupData {
   dayType: string;
   startedAt: string;
   exercises: { exerciseId: string; sets: SetInput[] }[];
+  exerciseIndex?: number;
+  setIndex?: number;
 }
 
 export interface ExerciseState {

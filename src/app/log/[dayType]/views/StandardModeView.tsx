@@ -26,6 +26,7 @@ interface StandardModeViewProps {
   onRemoveSet: (exIdx: number, setIdx: number) => void;
   onMarkDone: (exIdx: number) => void;
   onRenameExercise: (exerciseId: string, exerciseName: string) => void;
+  onJumpToExercise?: (exIdx: number) => void;
   restRemaining?: number;
 }
 
@@ -48,6 +49,7 @@ export function StandardModeView({
   onRemoveSet,
   onMarkDone,
   onRenameExercise,
+  onJumpToExercise,
   restRemaining = 0,
 }: StandardModeViewProps) {
 
@@ -78,6 +80,17 @@ export function StandardModeView({
             <div className="flex justify-between items-baseline mb-1">
               <div className="flex items-center gap-1.5">
                 <h2 className="text-sm font-medium">{ex.name}</h2>
+                {wasGuidedMode && !guidedCompleted && onJumpToExercise && (
+                  <button
+                    onClick={() => onJumpToExercise(exIdx)}
+                    className="text-muted hover:text-accent transition-colors p-0.5"
+                    aria-label="Jump to this exercise in guided view"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </button>
+                )}
                 <button
                   onClick={() => onRenameExercise(ex.id, ex.name)}
                   className="text-muted hover:text-accent transition-colors p-0.5"

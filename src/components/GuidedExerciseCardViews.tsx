@@ -290,7 +290,17 @@ export function MainView({
 
   return (
     <div className="flex flex-col items-center py-6 px-4">
-      <div className="flex items-center gap-3 w-full max-w-xs justify-center relative mb-2">
+      <button
+        onClick={onGoHome}
+        className="fixed top-4 left-4 text-muted hover:text-accent transition-colors py-2 px-2 z-40"
+        aria-label="Go home"
+        title="Back to home"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </button>
+      <div className="flex items-center gap-3 w-full max-w-xs justify-center relative">
         {canGoBack && (
           <button
             onClick={onGoBack}
@@ -317,17 +327,6 @@ export function MainView({
           </button>
         )}
       </div>
-      <button
-        onClick={onGoHome}
-        className="text-muted hover:text-accent transition-colors py-2 px-3 text-xs"
-        aria-label="Go home"
-        title="Check stats (session will be saved)"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-          <polyline points="9 22 9 12 15 12 15 22" />
-        </svg>
-      </button>
 
       <div className="flex items-center gap-2 mt-1">
         <h2 className={`text-2xl font-medium transition-colors duration-500 ${exerciseFlash ? "text-accent" : ""}`}>{exerciseName}</h2>

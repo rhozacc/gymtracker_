@@ -107,9 +107,11 @@ export default function LogPage() {
   const hideToast = useCallback(() => setToast(false), []);
   const increments = getIncrements(unit);
 
-  guidedModeRef.current = sessionMode === "guided";
+  // Backup is written for any active session (guided or list-view), so mid-session
+  // edits in list mode survive a crash / navigation. Idle mode still skips backup.
+  guidedModeRef.current = sessionMode !== "idle";
 
-  const { backupFound, backupStartedAt, writeBackup, patchPositionInBackup, restoreBackup, discardBackup, clearBackup } =
+  const { backupFound, writeBackup, patchPositionInBackup, restoreBackup, clearBackup } =
     useSessionBackup(dayType, startedAtRef, guidedModeRef);
 
   // Auto-start guided mode if ?guided=true
@@ -119,6 +121,18 @@ export default function LogPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-restore unfinished session silently — no modal. User can end via End Session flow.
+  useEffect(() => {
+    if (!backupFound) return;
+    const pos = restoreBackup(setExercises);
+    const resolved = pos ?? { exerciseIndex: 0, setIndex: 0 };
+    guidedPositionRef.current = resolved;
+    setGuidedPosition(resolved);
+    setSessionKey((k) => k + 1);
+    setSessionMode("guided");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [backupFound]);
 
   // Hide navbar during any active session
   useEffect(() => {
@@ -482,52 +496,6 @@ export default function LogPage() {
 
   return (
     <div className={`space-y-6 ${sessionMode === "idle" ? "pb-32" : ""}`}>
-      {backupFound && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/80 backdrop-blur-sm p-4">
-          <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-sm space-y-4">
-            <div>
-              <p className="text-base font-semibold">Oops, but no sweat!</p>
-              {backupStartedAt && (
-                <p className="text-muted text-xs mt-1">
-                  Session from{" "}
-                  {new Date(backupStartedAt).toLocaleString(undefined, {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </p>
-              )}
-              <p className="text-muted text-sm mt-2">
-                Your last session didn&apos;t finish. Pick up where you left off?
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  const pos = restoreBackup(setExercises);
-                  const resolved = pos ?? { exerciseIndex: 0, setIndex: 0 };
-                  guidedPositionRef.current = resolved;
-                  setGuidedPosition(resolved);
-                  setSessionKey((k) => k + 1);
-                  setSessionMode("guided");
-                }}
-                className="flex-1 h-11 bg-accent text-bg font-medium rounded text-sm hover:opacity-90 transition-opacity"
-              >
-                Continue on
-              </button>
-              <button
-                onClick={discardBackup}
-                className="flex-1 h-11 border border-border text-muted rounded text-sm hover:border-accent hover:text-accent transition-colors"
-              >
-                Abort
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <Toast message="Session saved!" visible={toast} onDone={hideToast} />
 
       {showTimer && timerSeconds > 0 && (
@@ -537,16 +505,18 @@ export default function LogPage() {
         />
       )}
 
-      <div className="flex items-start justify-between">
-        <div>
-          {sessionMode === "idle" && (
-            <button
-              onClick={() => router.back()}
-              className="text-muted text-sm mb-2 hover:text-accent"
-            >
-              &larr; Back
-            </button>
-          )}
+      <div className="flex items-start gap-2">
+        <button
+          onClick={() => (sessionMode === "idle" ? router.back() : router.push("/"))}
+          className="text-muted hover:text-accent transition-colors py-1 pr-1 shrink-0"
+          aria-label={sessionMode === "idle" ? "Back" : "Home (session stays in progress)"}
+          title={sessionMode === "idle" ? "Back" : "Home — session stays in progress"}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <div className="flex-1 min-w-0">
           <h1 className="text-lg font-medium">{day.label}</h1>
           {sessionMode === "guided" && (
             <button
@@ -554,6 +524,14 @@ export default function LogPage() {
               className="text-muted text-xs mt-1 hover:text-accent transition-colors"
             >
               Show List View
+            </button>
+          )}
+          {sessionMode === "list-view" && (
+            <button
+              onClick={() => setSessionMode("guided")}
+              className="text-muted text-xs mt-1 hover:text-accent transition-colors"
+            >
+              Show Guided View
             </button>
           )}
         </div>
@@ -622,8 +600,17 @@ export default function LogPage() {
           onContinueGuided={() => setSessionMode("guided")}
           onJumpToExercise={(exIdx) => {
             const sets = exercises[exIdx]?.sets ?? [];
-            const firstUndone = sets.findIndex((s) => !s.done);
-            const setIdx = firstUndone >= 0 ? firstUndone : 0;
+            // Prefer first undone working set; fall back to any undone, then first set.
+            // Skipping warmup here prevents jumping *back* to warmup after the user is
+            // clearly past it — if they wanted warmup they'd have started from scratch.
+            const firstUndoneWorking = sets.findIndex((s) => !s.done && !s.isWarmup);
+            const firstWorking = sets.findIndex((s) => !s.isWarmup);
+            const setIdx =
+              firstUndoneWorking >= 0
+                ? firstUndoneWorking
+                : firstWorking >= 0
+                  ? firstWorking
+                  : 0;
             const pos = { exerciseIndex: exIdx, setIndex: setIdx };
             guidedPositionRef.current = pos;
             setGuidedPosition(pos);

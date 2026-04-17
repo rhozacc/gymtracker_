@@ -187,7 +187,6 @@ interface MainViewProps {
   isLastSet?: boolean;
   onAddSet?: () => void;
   onStop: () => void;
-  onGoHome: () => void;
 }
 
 function formatRestTime(seconds: number): string {
@@ -234,7 +233,6 @@ export function MainView({
   isLastSet,
   onAddSet,
   onStop,
-  onGoHome,
 }: MainViewProps) {
   const [showRirInfo, setShowRirInfo] = useState(false);
   const [ripple, setRipple] = useState(false);
@@ -291,16 +289,6 @@ export function MainView({
 
   return (
     <div className="flex flex-col items-center py-6 px-4">
-      <button
-        onClick={onGoHome}
-        className="fixed top-4 left-4 text-muted hover:text-accent transition-colors py-2 px-2 z-40"
-        aria-label="Go home"
-        title="Back to home"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="15 18 9 12 15 6" />
-        </svg>
-      </button>
       <div className="flex items-center gap-3 w-full max-w-xs justify-center relative">
         {canGoBack && (
           <button
@@ -394,7 +382,7 @@ export function MainView({
       {!setData.isWarmup && setRec && onApplyRec && (
         <button
           onClick={onApplyRec}
-          className="mt-1.5 flex items-center gap-1 text-xs text-accent/80 hover:text-accent transition-colors"
+          className="tap-pulse mt-1.5 flex items-center gap-1 text-xs text-accent hover:opacity-100 transition-colors"
         >
           {setRec.direction === "up" ? (
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

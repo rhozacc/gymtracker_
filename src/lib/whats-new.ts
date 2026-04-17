@@ -11,6 +11,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    area: "Session navigation",
+    text: "A back arrow now sits top-left in both guided and list views — tap it to go home without quitting; your session waits for you. Jumping to an exercise from list view lands on the next working set instead of warping back to the warmup.",
+  },
+  {
+    area: "No more 'oops' modal",
+    text: "Unfinished sessions resume automatically — no confirmation popup. A session only ends when you tap End Session and confirm, or Record it.",
+  },
+  {
+    area: "Weight nudges",
+    text: "The in-session weight suggestion now gently pulses so the 'tap' hint is easier to spot without being loud.",
+  },
+  {
     area: "Social",
     text: "Social stats are here! See who's training live, global activity, peak gym hours, and how your weekly volume compares to everyone else.",
   },

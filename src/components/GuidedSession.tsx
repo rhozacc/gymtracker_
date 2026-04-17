@@ -1,7 +1,6 @@
 "use client";
 
 import { useReducer, useCallback, useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { DayDefinition, getAlternatives, type ExerciseAlternative } from "@/lib/program";
 import { OverloadResult } from "@/lib/overload";
 import { type WeightUnit, kgToDisplay } from "@/lib/units";
@@ -70,7 +69,6 @@ export function GuidedSession({
   onSwitchAlternative,
   onRestStart,
 }: GuidedSessionProps) {
-  const router = useRouter();
   const [state, dispatch] = useReducer(guidedReducer, {
     exerciseIndex: initialPosition?.exerciseIndex ?? 0,
     setIndex: initialPosition?.setIndex ?? 0,
@@ -338,11 +336,6 @@ export function GuidedSession({
     if (next.exerciseIndex !== state.exerciseIndex) triggerExerciseFlash();
   }, [state.exerciseIndex, getNextInfo, cancelRestTimer]);
 
-  const handleGoHome = useCallback(() => {
-    cancelRestTimer();
-    router.push("/");
-  }, [cancelRestTimer, router]);
-
   const canGoForward = (() => {
     const nextSetIdx = state.setIndex + 1;
     const exSets = exercises[state.exerciseIndex]?.sets;
@@ -411,7 +404,6 @@ export function GuidedSession({
       onNameChange={(name) =>
         setExerciseNameOverrides((prev) => ({ ...prev, [currentExercise.id]: name }))
       }
-      onGoHome={handleGoHome}
     />
   );
 }

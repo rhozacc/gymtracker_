@@ -32,7 +32,7 @@ export async function GET(request: Request) {
 
     if (!weeklyData.has(key)) weeklyData.set(key, {});
 
-    const vol = session.sets.reduce((sum, s) => sum + s.reps * s.weight, 0);
+    const vol = session.sets.filter((s) => !s.isWarmup).reduce((sum, s) => sum + s.reps * s.weight, 0);
     const entry = weeklyData.get(key)!;
     entry[session.dayType] = (entry[session.dayType] || 0) + vol;
   }

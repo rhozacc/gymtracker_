@@ -11,7 +11,7 @@ export async function GET() {
   const sessions = await prisma.session.findMany({
     where: { userId },
     include: {
-      sets: { orderBy: [{ exerciseId: "asc" }, { setNumber: "asc" }] },
+      sets: { where: { isWarmup: false }, orderBy: [{ exerciseId: "asc" }, { setNumber: "asc" }] },
       debrief: true,
     },
     orderBy: { date: "desc" },

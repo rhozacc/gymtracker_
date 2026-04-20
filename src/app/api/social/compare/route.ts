@@ -26,7 +26,7 @@ export async function GET() {
     select: {
       userId: true,
       date: true,
-      sets: { select: { reps: true, weight: true } },
+      sets: { select: { reps: true, weight: true, isWarmup: true } },
     },
     orderBy: { date: "asc" },
   });
@@ -36,7 +36,7 @@ export async function GET() {
 
   for (const session of sessions) {
     const week = getWeekKey(session.date);
-    const vol = session.sets.reduce((sum, s) => sum + s.reps * s.weight, 0);
+    const vol = session.sets.filter((s) => !s.isWarmup).reduce((sum, s) => sum + s.reps * s.weight, 0);
     const uid = session.userId ?? "anon";
     if (!weekUserVol.has(week)) weekUserVol.set(week, new Map());
     const userMap = weekUserVol.get(week)!;

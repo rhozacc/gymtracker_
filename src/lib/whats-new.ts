@@ -11,6 +11,10 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    area: "Warmup tracking",
+    text: "Warmup sets are now saved to your session history (not counted in volume or stats). This fixes a bug where the first working set could show the wrong pre-filled weight if you had previously logged a light first set manually.",
+  },
+  {
     area: "Session navigation",
     text: "A back arrow now sits top-left in both guided and list views — tap it to go home without quitting; your session waits for you. Jumping to an exercise from list view lands on the next working set instead of warping back to the warmup.",
   },

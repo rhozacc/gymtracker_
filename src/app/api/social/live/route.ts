@@ -25,7 +25,7 @@ export async function GET() {
     }),
     prisma.set.groupBy({
       by: ["exerciseId"],
-      where: { session: { date: { gte: weekStart } } },
+      where: { isWarmup: false, session: { date: { gte: weekStart } } },
       _count: { id: true },
       orderBy: { _count: { id: "desc" } },
       take: 6,

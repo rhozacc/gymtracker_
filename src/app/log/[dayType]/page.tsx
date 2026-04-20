@@ -204,11 +204,12 @@ export default function LogPage() {
           const raw = rawSets[exState.exerciseId] || [];
           if (!ol || ol.lastWeight === 0) return exState;
 
+          const warmupCount = exState.sets.filter((s) => s.isWarmup).length;
           return {
             ...exState,
             sets: exState.sets.map((s, i) => {
-              // i=0 is warmup; working sets start at i=1, mapped to raw[i-1]
-              const rawIdx = Math.min(i - 1, raw.length - 1);
+              const workingIdx = i - warmupCount;
+              const rawIdx = s.isWarmup ? -1 : Math.min(workingIdx, raw.length - 1);
               const rawSet = rawIdx >= 0 ? raw[rawIdx] : null;
 
               if (s.isWarmup) {
@@ -403,12 +404,26 @@ export default function LogPage() {
       reps: number;
       weight: number;
       rir?: number;
+      isWarmup?: boolean;
     }[] = [];
 
     for (const ex of exercises) {
       let setNum = 1;
       for (const s of ex.sets) {
-        if (s.isWarmup) continue;
+        if (s.isWarmup) {
+          const reps = parseInt(s.reps);
+          const displayWeight = parseFloat(s.weight);
+          if (!isNaN(reps) && !isNaN(displayWeight) && reps > 0 && displayWeight > 0) {
+            allSets.push({
+              exerciseId: ex.exerciseId,
+              setNumber: 0,
+              reps,
+              weight: displayToKg(displayWeight, unit),
+              isWarmup: true,
+            });
+          }
+          continue;
+        }
         const reps = parseInt(s.reps);
         const displayWeight = parseFloat(s.weight);
         if (isNaN(reps) || isNaN(displayWeight) || reps <= 0 || displayWeight <= 0) continue;
@@ -419,6 +434,7 @@ export default function LogPage() {
           reps,
           weight,
           rir: s.rir ? parseInt(s.rir) : undefined,
+          isWarmup: false,
         });
       }
     }

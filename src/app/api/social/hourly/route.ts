@@ -18,7 +18,7 @@ export async function GET() {
   const hourlyMap = new Map<number, number>();
   for (const session of sessions) {
     const hour = new Date(session.startedAt!).getUTCHours();
-    const vol = session.sets.reduce((sum, s) => sum + s.reps * s.weight, 0);
+    const vol = session.sets.filter((s) => !s.isWarmup).reduce((sum, s) => sum + s.reps * s.weight, 0);
     hourlyMap.set(hour, (hourlyMap.get(hour) ?? 0) + vol);
   }
 

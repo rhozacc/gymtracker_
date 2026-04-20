@@ -32,6 +32,7 @@ model Set {
   reps       Int
   weight     Float
   rir        Int?
+  isWarmup   Boolean @default(false)
 }
 
 model Debrief {

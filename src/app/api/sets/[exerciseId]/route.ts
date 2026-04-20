@@ -16,7 +16,7 @@ export async function GET(
     orderBy: { date: "desc" },
     include: {
       sets: {
-        where: { exerciseId: params.exerciseId },
+        where: { exerciseId: params.exerciseId, isWarmup: false },
         orderBy: { setNumber: "asc" },
       },
     },

@@ -26,7 +26,7 @@ export async function GET() {
         distinct: ["userId"],
       }),
       prisma.$queryRaw<[{ total: number | null }]>(
-        Prisma.sql`SELECT SUM(reps::float8 * weight) AS total FROM "Set"`
+        Prisma.sql`SELECT SUM(reps::float8 * weight) AS total FROM "Set" WHERE "isWarmup" = false`
       ),
       prisma.session.findMany({
         where: { date: { gte: cutoff90 } },
@@ -39,7 +39,7 @@ export async function GET() {
   const dayMap = new Map<string, number>();
   for (const session of recentSessions) {
     const key = new Date(session.date).toISOString().split("T")[0];
-    const vol = session.sets.reduce((sum, s) => sum + s.reps * s.weight, 0);
+    const vol = session.sets.filter((s) => !s.isWarmup).reduce((sum, s) => sum + s.reps * s.weight, 0);
     dayMap.set(key, (dayMap.get(key) ?? 0) + vol);
   }
 

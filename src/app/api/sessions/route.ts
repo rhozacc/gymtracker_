@@ -13,7 +13,6 @@ export async function GET() {
     orderBy: { date: "desc" },
     include: {
       sets: true,
-      _count: { select: { sets: true } },
     },
   });
 
@@ -24,8 +23,8 @@ export async function GET() {
     notes: s.notes,
     startedAt: s.startedAt?.toISOString() ?? null,
     endedAt: s.endedAt?.toISOString() ?? null,
-    setCount: s._count.sets,
-    totalVolume: s.sets.reduce((sum, set) => sum + set.reps * set.weight, 0),
+    setCount: s.sets.filter((set) => !set.isWarmup).length,
+    totalVolume: s.sets.filter((set) => !set.isWarmup).reduce((sum, set) => sum + set.reps * set.weight, 0),
     createdAt: s.createdAt.toISOString(),
   }));
 
@@ -62,12 +61,14 @@ export async function POST(request: Request) {
             reps: number;
             weight: number;
             rir?: number;
+            isWarmup?: boolean;
           }) => ({
             exerciseId: s.exerciseId,
             setNumber: s.setNumber,
             reps: s.reps,
             weight: s.weight,
             rir: s.rir ?? null,
+            isWarmup: s.isWarmup ?? false,
           })
         ),
       },

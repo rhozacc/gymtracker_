@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
@@ -8,9 +8,16 @@ import dynamic from "next/dynamic";
 import { fetcher } from "@/lib/swr";
 import { getExerciseById } from "@/lib/program";
 import { useUnit } from "@/lib/useUnit";
-import { kgToDisplay } from "@/lib/units";
+import { kgToDisplay, displayToKg } from "@/lib/units";
 import { estimateE1RM } from "@/lib/e1rm";
 import { checkOverload } from "@/lib/overload";
+import {
+  getStandard,
+  computeStanding,
+  linearRegressionSlope,
+  TIER_ORDER,
+  type TierName,
+} from "@/lib/standards";
 
 const ExerciseStatsChart = dynamic(
   () =>
@@ -44,11 +51,27 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+const TIER_LABELS: Record<TierName, string> = {
+  novice: "Novice",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
+  elite: "Elite",
+};
+
+const BW_KEY = "gym-bodyweight-kg";
+
 export default function ExerciseStatsPage() {
   const params = useParams();
   const exerciseId = params.exerciseId as string;
   const { unit } = useUnit();
   const exercise = getExerciseById(exerciseId);
+
+  const [bodyweightKg, setBodyweightKg] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null;
+    const v = localStorage.getItem(BW_KEY);
+    return v ? parseFloat(v) : null;
+  });
+  const [bwInput, setBwInput] = useState("");
 
   const { data: chartSessions } = useSWR<ChartSession[]>(
     "/api/charts/data",
@@ -74,6 +97,29 @@ export default function ExerciseStatsPage() {
     return points;
   }, [chartSessions, exerciseId, unit]);
 
+  // Raw kg E1RM points for standards comparison and projection
+  const e1rmPointsKg = useMemo(() => {
+    if (!chartSessions) return [];
+    const points: { date: string; e1rm: number }[] = [];
+    for (const session of chartSessions) {
+      const exSets = session.sets.filter((s) => s.exerciseId === exerciseId);
+      if (exSets.length === 0) continue;
+      const bestE1rm = Math.max(
+        ...exSets.map((s) => estimateE1RM(s.weight, s.reps))
+      );
+      points.push({ date: session.date, e1rm: bestE1rm });
+    }
+    return points;
+  }, [chartSessions, exerciseId]);
+
+  const bestE1rmKg = useMemo(
+    () =>
+      e1rmPointsKg.length > 0
+        ? Math.max(...e1rmPointsKg.map((p) => p.e1rm))
+        : null,
+    [e1rmPointsKg]
+  );
+
   // Compute overload status from the most recent session's sets
   const overload = useMemo(() => {
     if (!chartSessions || !exercise) return null;
@@ -97,6 +143,37 @@ export default function ExerciseStatsPage() {
     if (prev === 0) return null;
     return Math.round(((recent - prev) / prev) * 1000) / 10; // percent, 1 dp
   }, [e1rmPoints]);
+
+  const standard = useMemo(() => getStandard(exerciseId), [exerciseId]);
+
+  const standardsData = useMemo(() => {
+    if (!standard || bodyweightKg === null || bestE1rmKg === null) return null;
+    return computeStanding(bestE1rmKg, bodyweightKg, standard);
+  }, [standard, bodyweightKg, bestE1rmKg]);
+
+  const projectionWeeks = useMemo(() => {
+    if (
+      !standardsData?.nextThresholdKg ||
+      bestE1rmKg === null ||
+      e1rmPointsKg.length < 3
+    )
+      return null;
+    if (standardsData.nextThresholdKg <= bestE1rmKg) return null;
+    const slope = linearRegressionSlope(e1rmPointsKg); // kg/day
+    if (slope <= 0) return null;
+    const daysTo = (standardsData.nextThresholdKg - bestE1rmKg) / slope;
+    const weeks = Math.round(daysTo / 7);
+    return weeks > 0 && weeks < 104 ? weeks : null;
+  }, [standardsData, bestE1rmKg, e1rmPointsKg]);
+
+  function saveBw() {
+    const raw = parseFloat(bwInput);
+    if (isNaN(raw) || raw <= 0) return;
+    const kg = unit === "lbs" ? displayToKg(raw, "lbs") : raw;
+    localStorage.setItem(BW_KEY, String(kg));
+    setBodyweightKg(kg);
+    setBwInput("");
+  }
 
   const exerciseName = exercise?.name ?? exerciseId.replace(/_/g, " ");
 
@@ -214,6 +291,127 @@ export default function ExerciseStatsPage() {
           />
         </div>
       </div>
+
+      {/* Strength standards */}
+      {standard !== null && (
+        <div className="border border-border rounded-lg p-4 space-y-4">
+          <SectionLabel>Strength standards</SectionLabel>
+
+          {bodyweightKg === null ? (
+            <div className="space-y-3">
+              <p className="text-xs text-muted">
+                Enter your bodyweight to see where you stand.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={bwInput}
+                  onChange={(e) => setBwInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && saveBw()}
+                  placeholder={unit === "kg" ? "e.g. 80" : "e.g. 176"}
+                  className="flex-1 bg-bg border border-border text-text text-sm rounded px-3 py-2 focus:border-accent focus:outline-none"
+                />
+                <button
+                  onClick={saveBw}
+                  className="bg-accent text-bg text-sm font-medium px-4 rounded"
+                >
+                  Set
+                </button>
+              </div>
+              <p className="text-[10px] text-muted/60">in {unit}</p>
+            </div>
+          ) : bestE1rmKg === null ? (
+            <p className="text-xs text-muted py-2">
+              Log some sets to see your standing.
+            </p>
+          ) : standardsData ? (
+            <div className="space-y-3">
+              {/* Tier chips */}
+              <div className="grid grid-cols-4 gap-1.5">
+                {TIER_ORDER.map((tier) => {
+                  const active = tier === standardsData.currentTier;
+                  const isNext = tier === standardsData.nextTier;
+                  const thresholdDisplay = kgToDisplay(
+                    standardsData.thresholds[tier],
+                    unit
+                  ).toFixed(0);
+                  return (
+                    <div
+                      key={tier}
+                      className={`text-center py-2 px-1 rounded border transition-colors ${
+                        active
+                          ? "border-accent/40 bg-accent/10 text-accent"
+                          : isNext
+                          ? "border-border text-muted"
+                          : "border-border text-muted/50"
+                      }`}
+                    >
+                      <p className={`text-[11px] font-medium ${active ? "text-accent" : isNext ? "text-muted" : "text-muted/50"}`}>
+                        {TIER_LABELS[tier]}
+                      </p>
+                      <p className={`text-[10px] mt-0.5 ${active ? "text-accent/70" : "text-muted/40"}`}>
+                        {thresholdDisplay}
+                        <span className="ml-0.5">{unit}</span>
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Narrative */}
+              <p className="text-xs text-muted leading-relaxed">
+                {standardsData.currentTier === null ? (
+                  <>
+                    Working toward{" "}
+                    <span className="text-text">Novice</span> —{" "}
+                    {kgToDisplay(standardsData.thresholds.novice, unit).toFixed(1)}{" "}
+                    {unit} target
+                    {projectionWeeks !== null && (
+                      <span className="text-accent">
+                        {" "}· ~{projectionWeeks} week{projectionWeeks !== 1 ? "s" : ""} at this pace
+                      </span>
+                    )}
+                  </>
+                ) : standardsData.nextTier === null ? (
+                  <span className="text-accent">
+                    Elite — you&apos;re in the top tier.
+                  </span>
+                ) : (
+                  <>
+                    <span className="text-text">
+                      {TIER_LABELS[standardsData.currentTier]}
+                    </span>
+                    {" · next: "}
+                    <span className="text-text">
+                      {TIER_LABELS[standardsData.nextTier]}
+                    </span>{" "}
+                    (
+                    {kgToDisplay(standardsData.nextThresholdKg!, unit).toFixed(1)}{" "}
+                    {unit})
+                    {projectionWeeks !== null && (
+                      <span className="text-accent">
+                        {" "}· ~{projectionWeeks} week{projectionWeeks !== 1 ? "s" : ""} at this pace
+                      </span>
+                    )}
+                  </>
+                )}
+              </p>
+
+              {/* Bodyweight edit */}
+              <button
+                onClick={() => {
+                  setBodyweightKg(null);
+                  setBwInput("");
+                }}
+                className="text-[10px] text-muted/50 hover:text-muted transition-colors"
+              >
+                bodyweight: {kgToDisplay(bodyweightKg, unit).toFixed(1)} {unit} · edit
+              </button>
+            </div>
+          ) : null}
+        </div>
+      )}
 
       {/* Explainer */}
       <div className="border-t border-border pt-4">

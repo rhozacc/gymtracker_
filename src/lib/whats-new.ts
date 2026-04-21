@@ -11,6 +11,10 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    area: "Strength standards",
+    text: "Each exercise now shows where your best lift sits versus Novice, Intermediate, Advanced, and Elite — and projects how many weeks until the next tier at your current pace.",
+  },
+  {
     area: "Warmup tracking",
     text: "Warmup sets are now saved to your session history (not counted in volume or stats). This fixes a bug where the first working set could show the wrong pre-filled weight if you had previously logged a light first set manually.",
   },

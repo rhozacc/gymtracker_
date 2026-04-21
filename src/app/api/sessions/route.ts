@@ -45,11 +45,15 @@ export async function POST(request: Request) {
 
   const body = await request.json();
 
+  const prefs = await prisma.userPreferences.findFirst({ where: { userId } });
+  const planSlug = prefs?.activePlan ?? null;
+
   const session = await prisma.session.create({
     data: {
       userId,
       date: new Date(body.date),
       dayType: body.dayType,
+      planSlug,
       notes: body.notes || null,
       startedAt: body.startedAt ? new Date(body.startedAt) : null,
       endedAt: body.endedAt ? new Date(body.endedAt) : null,

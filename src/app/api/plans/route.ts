@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PLANS } from "@/lib/program";
 import { requireSession } from "@/lib/api-auth";
+import { validateDays } from "@/lib/validate-plan";
+
+let builtInSynced = false;
 
 async function syncBuiltInPlans() {
+  if (builtInSynced) return;
   const ops = Object.values(PLANS).map(async (p) => {
     const existing = await prisma.plan.findUnique({ where: { slug: p.id } });
     if (!existing) {
@@ -24,6 +29,7 @@ async function syncBuiltInPlans() {
     }
   });
   await Promise.all(ops);
+  builtInSynced = true;
 }
 
 export async function GET() {
@@ -49,16 +55,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
-  const plan = await prisma.plan.create({
-    data: {
-      userId,
-      slug,
-      name,
-      description: description || "Custom plan",
-      builtIn: false,
-      days: days as object,
-    },
-  });
+  const daysError = validateDays(days);
+  if (daysError) {
+    return NextResponse.json({ error: daysError }, { status: 400 });
+  }
 
-  return NextResponse.json(plan);
+  try {
+    const plan = await prisma.plan.create({
+      data: {
+        userId,
+        slug,
+        name,
+        description: description || "Custom plan",
+        builtIn: false,
+        days: days as object,
+      },
+    });
+    return NextResponse.json(plan);
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      return NextResponse.json({ error: "A plan with this name already exists" }, { status: 409 });
+    }
+    throw e;
+  }
 }

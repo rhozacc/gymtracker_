@@ -11,6 +11,7 @@ interface DayState {
 }
 
 interface ExerciseState {
+  id?: string;
   name: string;
   sets: number;
   repMin: number;
@@ -69,6 +70,7 @@ export default function CustomPlanPage() {
             key,
             label: day.label.includes("—") ? day.label.split("—")[1].trim() : day.label,
             exercises: day.exercises.map((ex: Exercise) => ({
+              id: ex.id,
               name: ex.name,
               sets: ex.sets,
               repMin: ex.repRange[0],
@@ -92,6 +94,7 @@ export default function CustomPlanPage() {
         key,
         label: day.label.includes("—") ? day.label.split("—")[1].trim() : day.label,
         exercises: day.exercises.map((ex: Exercise) => ({
+          id: ex.id,
           name: ex.name,
           sets: ex.sets,
           repMin: ex.repRange[0],
@@ -190,7 +193,7 @@ export default function CustomPlanPage() {
     if (!isValid() || saving) return;
     setSaving(true);
 
-    const planSlug = editSlug || `custom_${slugify(planName)}_${Date.now().toString(36)}`;
+    const planSlug = editSlug || `custom_${slugify(planName)}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
     const planDays: Record<string, any> = {};
     days.forEach((day, i) => {
@@ -198,8 +201,8 @@ export default function CustomPlanPage() {
         ? day.key
         : `${slugify(planSlug)}_day${i + 1}`;
 
-      const exercises: Exercise[] = day.exercises.map((ex) => ({
-        id: `${dayKey}_${slugify(ex.name)}`,
+      const exercises: Exercise[] = day.exercises.map((ex, exIdx) => ({
+        id: ex.id || `${dayKey}_${slugify(ex.name)}_${exIdx}`,
         name: ex.name,
         sets: ex.sets,
         repRange: [ex.repMin, ex.repMax] as [number, number],

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/api-auth";
+import { validateDays } from "@/lib/validate-plan";
 
 export async function PUT(
   req: Request,
@@ -11,6 +12,13 @@ export async function PUT(
 
   const body = await req.json();
   const { name, description, days } = body;
+
+  if (days !== undefined) {
+    const daysError = validateDays(days);
+    if (daysError) {
+      return NextResponse.json({ error: daysError }, { status: 400 });
+    }
+  }
 
   const plan = await prisma.plan.findUnique({ where: { slug: params.slug } });
   if (!plan) return NextResponse.json({ error: "Not found" }, { status: 404 });

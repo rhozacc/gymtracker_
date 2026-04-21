@@ -13,6 +13,7 @@ model Session {
   userId    String?
   date      DateTime  @default(now())
   dayType   String
+  planSlug  String?
   notes     String?
   startedAt DateTime?
   endedAt   DateTime?

@@ -72,8 +72,8 @@ export function MomentumScore({ result }: Props) {
               className="h-2 flex-1 rounded-sm"
               style={
                 isActive
-                  ? { backgroundColor: "var(--accent)", opacity }
-                  : { backgroundColor: "var(--border)" }
+                  ? { backgroundColor: "var(--color-accent)", opacity }
+                  : { backgroundColor: "var(--color-border)" }
               }
             />
           );

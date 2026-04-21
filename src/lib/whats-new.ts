@@ -11,6 +11,10 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    area: "Momentum",
+    text: "A single 0–100 score on your dashboard that tracks consistency, progressive overload, and recovery quality over the last 28 days. Goes up when you are genuinely progressing, drops when spinning wheels or overtraining.",
+  },
+  {
     area: "Warmup tracking",
     text: "Warmup sets are now saved to your session history (not counted in volume or stats). This fixes a bug where the first working set could show the wrong pre-filled weight if you had previously logged a light first set manually.",
   },

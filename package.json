@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma db push --skip-generate && prisma generate && next build",
+    "build": "prisma migrate deploy && prisma generate && next build",
     "start": "next start",
     "postinstall": "prisma generate",
-    "db:push": "dotenv -e .env.local -- prisma db push"
+    "db:migrate": "dotenv -e .env.local -- prisma migrate dev"
   },
   "dependencies": {
     "@better-auth/prisma-adapter": "^1.6.2",

@@ -15,7 +15,7 @@ import { useTheme } from "@/lib/useTheme";
 import { kgToDisplay } from "@/lib/units";
 import { calculateStreak, formatDate } from "@/lib/utils";
 import { StreakCalendar } from "@/components/StreakCalendar";
-import { getMuscleGroup, MUSCLE_GROUPS } from "@/lib/muscleGroups";
+import { MUSCLE_GROUPS, MuscleGroup } from "@/lib/muscleGroups";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { computeMomentumScore } from "@/lib/momentum";
 import { MomentumScore } from "@/components/MomentumScore";
@@ -123,6 +123,11 @@ export default function Dashboard() {
     "/api/charts/data",
     fetcher
   );
+  const { data: contributions } = useSWR<Record<string, { group: string; weight: number }[]>>(
+    "/api/muscle-contributions",
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 3_600_000 }
+  );
   const { data: socialData } = useSWR<{
     totalUsers: number;
     activeThisWeek: number;
@@ -221,13 +226,16 @@ export default function Dashboard() {
         exerciseSets[s.exerciseId] = (exerciseSets[s.exerciseId] || 0) + 1;
       }
       for (const exId of Object.keys(exerciseSets)) {
-        const mg = getMuscleGroup(exId);
-        if (mg) counts[mg] += exerciseSets[exId];
+        const contribs = contributions?.[exId] ?? [];
+        for (const { group, weight } of contribs) {
+          counts[group as MuscleGroup] =
+            (counts[group as MuscleGroup] ?? 0) + exerciseSets[exId] * weight;
+        }
       }
     }
 
-    return MUSCLE_GROUPS.map((mg) => ({ muscle: mg, sets: counts[mg] }));
-  }, [chartData]);
+    return MUSCLE_GROUPS.map((mg) => ({ muscle: mg, sets: Math.round(counts[mg] ?? 0) }));
+  }, [chartData, contributions]);
 
   const sessionsWithVolume = useMemo(() => {
     if (!sessions) return [];

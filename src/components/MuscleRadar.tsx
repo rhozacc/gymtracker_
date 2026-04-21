@@ -127,11 +127,11 @@ export function MuscleRadarInner({ data }: MuscleRadarProps) {
           <Radar
             name="mev"
             dataKey="mev"
-            stroke="var(--color-border)"
+            stroke="var(--color-accent)"
             fill="none"
             strokeDasharray="3 4"
-            strokeWidth={1}
-            strokeOpacity={0.8}
+            strokeWidth={0.75}
+            strokeOpacity={0.28}
             dot={false}
           />
           {/* MAV ring — minimum for hypertrophy */}
@@ -159,7 +159,7 @@ export function MuscleRadarInner({ data }: MuscleRadarProps) {
       </ResponsiveContainer>
       <p className="text-[10px] text-muted text-center -mt-2 flex items-center justify-center gap-4">
         <span className="flex items-center gap-1.5">
-          <span className="inline-block w-4 border-t border-dashed" style={{ borderColor: "var(--color-border)" }} />
+          <span className="inline-block w-4 border-t border-dashed" style={{ borderColor: "var(--color-accent)", opacity: 0.35 }} />
           Atrophy floor
         </span>
         <span className="flex items-center gap-1.5">

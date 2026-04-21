@@ -10,7 +10,7 @@ import { useProgram } from "@/lib/useProgram";
 import { useUnit } from "@/lib/useUnit";
 import { kgToDisplay } from "@/lib/units";
 import { estimateE1RM } from "@/lib/e1rm";
-import { getMuscleGroup, MUSCLE_GROUPS } from "@/lib/muscleGroups";
+import { MUSCLE_GROUPS, MuscleGroup } from "@/lib/muscleGroups";
 import { StreakCalendar } from "@/components/StreakCalendar";
 import { ExerciseSelect } from "@/components/ExerciseSelect";
 import { KeyTrends } from "@/components/KeyTrends";
@@ -110,6 +110,11 @@ export default function ChartsPage() {
     "/api/charts/data",
     fetcher
   );
+  const { data: contributions } = useSWR<Record<string, { group: string; weight: number }[]>>(
+    "/api/muscle-contributions",
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 3_600_000 }
+  );
 
   // --- Derived data ---
 
@@ -181,8 +186,10 @@ export default function ChartsPage() {
         exerciseSets[s.exerciseId] = (exerciseSets[s.exerciseId] || 0) + 1;
       }
       for (const exId of Object.keys(exerciseSets)) {
-        const mg = getMuscleGroup(exId);
-        if (mg) entry[mg] = (entry[mg] || 0) + exerciseSets[exId];
+        const contribs = contributions?.[exId] ?? [];
+        for (const { group, weight } of contribs) {
+          entry[group as MuscleGroup] = (entry[group as MuscleGroup] || 0) + exerciseSets[exId] * weight;
+        }
       }
     }
 
@@ -193,7 +200,7 @@ export default function ChartsPage() {
         return row;
       })
       .sort((a, b) => a.week.localeCompare(b.week));
-  }, [chartSessions]);
+  }, [chartSessions, contributions]);
 
   const durationData = useMemo(() => {
     if (!chartSessions) return [];

@@ -11,8 +11,8 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
-    area: "Momentum",
-    text: "A single 0–100 score on your dashboard that tracks consistency, progressive overload, and recovery quality over the last 28 days. Goes up when you are genuinely progressing, drops when spinning wheels or overtraining.",
+    area: "Strength standards",
+    text: "Each exercise now shows where your best lift sits versus Novice, Intermediate, Advanced, and Elite — and projects how many weeks until the next tier at your current pace.",
   },
   {
     area: "Warmup tracking",

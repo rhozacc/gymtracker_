@@ -17,6 +17,8 @@ import { calculateStreak, formatDate } from "@/lib/utils";
 import { StreakCalendar } from "@/components/StreakCalendar";
 import { getMuscleGroup, MUSCLE_GROUPS } from "@/lib/muscleGroups";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { computeMomentumScore } from "@/lib/momentum";
+import { MomentumScore } from "@/components/MomentumScore";
 
 const MuscleRadar = dynamic(
   () => import("@/components/MuscleRadar").then((m) => m.MuscleRadarInner),
@@ -97,6 +99,7 @@ interface ChartSession {
   date: string;
   dayType: string;
   sets: { exerciseId: string; reps: number; weight: number; rir: number | null }[];
+  debrief: { energy: number; pump: number; mood: number } | null;
 }
 
 function getNextDayType(
@@ -285,6 +288,11 @@ export default function Dashboard() {
       (a.status === "go_up" ? -1 : 1) - (b.status === "go_up" ? -1 : 1)
     );
   }, [chartData, plan]);
+
+  const momentumResult = useMemo(() => {
+    if (!chartData) return null;
+    return computeMomentumScore(chartData);
+  }, [chartData]);
 
   return (
     <>
@@ -543,6 +551,10 @@ export default function Dashboard() {
             </svg>
           </span>
         </Link>
+
+        <div className="mb-4">
+          <MomentumScore result={momentumResult} />
+        </div>
 
         {sessions && sessions.length > 0 && (
           <div className="mb-4">

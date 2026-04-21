@@ -7,11 +7,13 @@ export interface MomentumInput {
 }
 
 export interface MomentumResult {
-  score: number;       // 0–100 integer
-  frequency: number;   // 0–1 raw component
-  progression: number; // 0–1 raw component
-  recovery: number;    // 0–1 raw component
+  score: number;            // 0–100 integer
+  frequency: number;        // 0–1 raw component
+  progression: number;      // 0–1 raw component
+  recovery: number;         // 0–1 raw component
   sessionCount: number;
+  exercisesTracked: number; // bilateral exercises (data in both 14-day halves)
+  exercisesImproving: number; // of those, how many have a higher recent E1RM
 }
 
 export function computeMomentumScore(sessions: MomentumInput[]): MomentumResult {
@@ -23,7 +25,7 @@ export function computeMomentumScore(sessions: MomentumInput[]): MomentumResult 
   const window = sessions.filter((s) => new Date(s.date).getTime() >= cutoff28);
 
   if (window.length === 0) {
-    return { score: 0, frequency: 0, progression: 0, recovery: 0, sessionCount: 0 };
+    return { score: 0, frequency: 0, progression: 0, recovery: 0, sessionCount: 0, exercisesTracked: 0, exercisesImproving: 0 };
   }
 
   // ── FREQUENCY (30%) ──────────────────────────────────────────────────────────
@@ -55,8 +57,11 @@ export function computeMomentumScore(sessions: MomentumInput[]): MomentumResult 
     (id) => olderE1rm[id] !== undefined && olderE1rm[id] > 0
   );
 
+  const exercisesTracked = commonExercises.length;
+  const exercisesImproving = commonExercises.filter((id) => recentE1rm[id] > olderE1rm[id]).length;
+
   let progression: number;
-  if (commonExercises.length === 0) {
+  if (exercisesTracked === 0) {
     progression = 0.45;
   } else {
     const scores = commonExercises.map((id) => {
@@ -97,5 +102,5 @@ export function computeMomentumScore(sessions: MomentumInput[]): MomentumResult 
   const raw = frequency * 0.3 + progression * 0.5 + recovery * 0.2;
   const score = Math.max(0, Math.min(100, Math.round(raw * 100)));
 
-  return { score, frequency, progression, recovery, sessionCount: window.length };
+  return { score, frequency, progression, recovery, sessionCount: window.length, exercisesTracked, exercisesImproving };
 }

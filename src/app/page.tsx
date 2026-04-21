@@ -19,6 +19,7 @@ import { MUSCLE_GROUPS, MuscleGroup } from "@/lib/muscleGroups";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { computeMomentumScore } from "@/lib/momentum";
 import { MomentumScore } from "@/components/MomentumScore";
+import { estimateE1RM } from "@/lib/e1rm";
 
 const MuscleRadar = dynamic(
   () => import("@/components/MuscleRadar").then((m) => m.MuscleRadarInner),
@@ -26,6 +27,16 @@ const MuscleRadar = dynamic(
     ssr: false,
     loading: () => (
       <div className="h-[260px] bg-surface rounded animate-pulse" />
+    ),
+  }
+);
+
+const MuscleBalanceChart = dynamic(
+  () => import("@/components/MuscleBalanceChart"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[180px] bg-surface rounded animate-pulse" />
     ),
   }
 );
@@ -235,6 +246,54 @@ export default function Dashboard() {
     }
 
     return MUSCLE_GROUPS.map((mg) => ({ muscle: mg, sets: Math.round(counts[mg] ?? 0) }));
+  }, [chartData, contributions]);
+
+  const muscleStrengthBalance = useMemo(():
+    | { muscle: string; delta: number }[]
+    | undefined => {
+    if (!chartData || !contributions) return undefined;
+
+    const now = new Date();
+    const cutoff = new Date(now);
+    cutoff.setDate(cutoff.getDate() - 90);
+
+    // Best E1RM per exercise in the 90-day window
+    const maxE1rm: Record<string, number> = {};
+    for (const session of chartData) {
+      if (new Date(session.date) < cutoff) continue;
+      for (const s of session.sets) {
+        const e1rm = estimateE1RM(s.weight, s.reps);
+        if (e1rm > (maxE1rm[s.exerciseId] ?? 0)) {
+          maxE1rm[s.exerciseId] = e1rm;
+        }
+      }
+    }
+
+    // Contribution-weighted E1RM per muscle group
+    const num: Record<string, number> = {};
+    const den: Record<string, number> = {};
+    for (const [exId, e1rm] of Object.entries(maxE1rm)) {
+      for (const { group, weight } of contributions[exId] ?? []) {
+        num[group] = (num[group] ?? 0) + e1rm * weight;
+        den[group] = (den[group] ?? 0) + weight;
+      }
+    }
+
+    const e1rmMap: Record<string, number> = {};
+    for (const mg of MUSCLE_GROUPS) {
+      if ((den[mg] ?? 0) > 0) e1rmMap[mg] = num[mg] / den[mg];
+    }
+
+    const vals = Object.values(e1rmMap);
+    if (vals.length < 2) return [];
+    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+
+    return MUSCLE_GROUPS.filter((mg) => e1rmMap[mg] !== undefined).map(
+      (mg) => ({
+        muscle: mg,
+        delta: Math.round(((e1rmMap[mg] - mean) / mean) * 100),
+      })
+    );
   }, [chartData, contributions]);
 
   const sessionsWithVolume = useMemo(() => {
@@ -578,6 +637,24 @@ export default function Dashboard() {
             Muscle groups (last 7 days)
           </div>
           <MuscleRadar data={muscleRadarData} />
+        </div>
+
+        <div>
+          <div className="text-muted text-xs mb-2">
+            Strength balance
+          </div>
+          {muscleStrengthBalance === undefined ? (
+            <div className="h-[180px] bg-surface rounded animate-pulse" />
+          ) : (
+            <>
+              <MuscleBalanceChart data={muscleStrengthBalance} />
+              {muscleStrengthBalance.length >= 2 && (
+                <p className="text-[10px] text-muted text-center -mt-2">
+                  vs your overall avg · 90 days
+                </p>
+              )}
+            </>
+          )}
         </div>
       </div>
 

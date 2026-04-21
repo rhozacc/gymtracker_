@@ -1,7 +1,6 @@
 import type { MomentumResult } from "@/lib/momentum";
 
-const RADIUS = 27;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+const SEGMENTS = 7;
 
 function getInsight(r: MomentumResult): string {
   const { score, frequency, progression, recovery, sessionCount, exercisesTracked, exercisesImproving } = r;
@@ -43,78 +42,51 @@ export function MomentumScore({ result }: Props) {
   if (result === null) {
     return (
       <div className="border border-border rounded-lg p-4 animate-pulse">
-        <div className="flex items-center gap-4">
-          <div className="rounded-full bg-surface flex-shrink-0" style={{ width: 72, height: 72 }} />
-          <div className="flex-1 space-y-2">
-            <div className="h-3 w-20 bg-surface rounded" />
-            <div className="h-4 w-16 bg-surface rounded" />
-            <div className="h-3 w-24 bg-surface rounded" />
-          </div>
+        <div className="h-4 w-24 bg-surface rounded mb-3" />
+        <div className="flex gap-1.5 mb-2">
+          {Array.from({ length: SEGMENTS }).map((_, i) => (
+            <div key={i} className="h-2 flex-1 rounded-sm bg-surface" />
+          ))}
         </div>
-        <div className="border-t border-border mt-3 pt-3">
-          <div className="h-3 w-48 bg-surface rounded" />
-        </div>
+        <div className="h-3 w-32 bg-surface rounded" />
       </div>
     );
   }
 
-  const offset = CIRCUMFERENCE * (1 - result.score / 100);
+  const activeCount = Math.round((result.score / 100) * SEGMENTS);
 
   return (
     <div className="border border-border rounded-lg p-4">
-      <div className="flex items-center gap-4">
-        {/* Arc gauge */}
-        <div className="relative flex-shrink-0" style={{ width: 72, height: 72 }}>
-          <svg width="72" height="72" viewBox="0 0 72 72">
-            <circle
-              cx="36" cy="36" r={RADIUS}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="5"
-              className="text-border"
-            />
-            <circle
-              cx="36" cy="36" r={RADIUS}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="5"
-              className="text-accent"
-              strokeDasharray={CIRCUMFERENCE}
-              strokeDashoffset={offset}
-              strokeLinecap="round"
-              transform="rotate(-90 36 36)"
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-xl font-bold tabular-nums text-accent leading-none">
-              {result.score}
-            </span>
-          </div>
-        </div>
+      <p className="text-base font-bold mb-3">Momentum</p>
 
-        {/* Label */}
-        <div>
-          <p className="text-[10px] font-medium uppercase tracking-widest text-muted">
-            Momentum
-          </p>
-          <p className="text-sm font-medium mt-0.5">
-            {result.score >= 75
-              ? "Strong week"
-              : result.score >= 50
-              ? "Building"
-              : result.score >= 25
-              ? "Gaining ground"
-              : "Getting started"}
-          </p>
-          <p className="text-[11px] text-muted mt-0.5">
-            {result.sessionCount} session{result.sessionCount !== 1 ? "s" : ""} · 28 days
-          </p>
-        </div>
+      <div className="flex gap-1.5 mb-2">
+        {Array.from({ length: SEGMENTS }).map((_, i) => {
+          const isActive = i < activeCount;
+          // Brightness fades left-to-right among active segments
+          const opacity = isActive
+            ? 1 - (i / (SEGMENTS - 1)) * 0.55
+            : undefined;
+          return (
+            <div
+              key={i}
+              className="h-2 flex-1 rounded-sm"
+              style={
+                isActive
+                  ? { backgroundColor: "var(--accent)", opacity }
+                  : { backgroundColor: "var(--border)" }
+              }
+            />
+          );
+        })}
       </div>
 
-      <div className="border-t border-border mt-3 pt-3">
-        <p className="text-xs text-muted">{getInsight(result)}</p>
-      </div>
+      <p className="text-[11px] text-muted">Based on last 4 weeks</p>
+
+      {result.sessionCount > 0 && (
+        <div className="border-t border-border mt-3 pt-3">
+          <p className="text-xs text-muted">{getInsight(result)}</p>
+        </div>
+      )}
     </div>
   );
 }

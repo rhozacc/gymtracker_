@@ -84,7 +84,7 @@ export function computeMomentumScore(sessions: MomentumInput[]): MomentumResult 
     window.map((s) => new Date(s.date).toISOString().split("T")[0])
   );
   let consecutivePairs = 0;
-  for (const dateStr of trainingDays) {
+  for (const dateStr of Array.from(trainingDays)) {
     const next = new Date(new Date(dateStr).getTime() + DAY_MS)
       .toISOString()
       .split("T")[0];

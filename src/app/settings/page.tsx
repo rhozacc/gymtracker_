@@ -304,6 +304,12 @@ function AccessSection() {
           </div>
         )}
       </div>
+      <div className="mt-3 border border-border rounded p-3">
+        <Link href="/admin/exercises" className="text-sm text-accent hover:opacity-80 transition-opacity">
+          Muscle contribution editor
+        </Link>
+        <p className="text-[11px] text-muted mt-0.5">Edit how each exercise credits muscle groups on the radar</p>
+      </div>
     </div>
   );
 }

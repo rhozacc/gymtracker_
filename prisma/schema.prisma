@@ -197,3 +197,22 @@ model Verification {
   @@index([identifier])
   @@map("verification")
 }
+
+model Exercise {
+  id            String               @id
+  name          String
+  contributions MuscleContribution[]
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+}
+
+model MuscleContribution {
+  id          String   @id @default(cuid())
+  exerciseId  String
+  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  muscleGroup String
+  weight      Float
+
+  @@unique([exerciseId, muscleGroup])
+  @@index([exerciseId])
+}

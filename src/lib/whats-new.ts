@@ -106,4 +106,8 @@ export const WHATS_NEW: WhatsNewEntry[] = [
     area: "Laser transitions",
     text: "Switching theme or accent fires a neon laser sweep across the screen. The laser color matches whatever you just picked.",
   },
+  {
+    area: "Auto-update",
+    text: "When a new version lands, the app silently reloads itself in the background — no more quitting and reopening to pick up the update.",
+  },
 ];

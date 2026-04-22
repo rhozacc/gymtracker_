@@ -24,6 +24,13 @@ export const LIGHT_ACCENTS = [
   { id: "terrano", name: "Terrano", value: "#be5a38" }, // deep terracotta
 ];
 
+export const COLOR_PAIRS = [
+  { key: "green",  name: "Green",  dark: DARK_ACCENTS[0], light: LIGHT_ACCENTS[0] },
+  { key: "violet", name: "Violet", dark: DARK_ACCENTS[1], light: LIGHT_ACCENTS[1] },
+  { key: "warm",   name: "Warm",   dark: DARK_ACCENTS[2], light: LIGHT_ACCENTS[2] },
+  { key: "rose",   name: "Rose",   dark: DARK_ACCENTS[3], light: LIGHT_ACCENTS[3] },
+] as const;
+
 function getSystemTheme(): ResolvedTheme {
   if (typeof window === "undefined") return "dark";
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";

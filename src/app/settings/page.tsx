@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTheme, DARK_ACCENTS, LIGHT_ACCENTS } from "@/lib/useTheme";
+import useSWR from "swr";
+import { useTheme, COLOR_PAIRS } from "@/lib/useTheme";
 import { useUnit } from "@/lib/useUnit";
 import { authClient } from "@/lib/auth-client";
 import { CURRENT_VERSION } from "@/components/UpdateSplash";
@@ -318,6 +319,11 @@ export default function Settings() {
   const router = useRouter();
   const { theme, preference: themePref, setTheme, darkAccent, lightAccent, setAccent } = useTheme();
   const { unit, setUnit } = useUnit();
+  const { data: meData } = useSWR<{ id: string; unlockedColors: string[] }>(
+    "/api/me",
+    (url: string) => fetch(url).then((r) => r.json()),
+  );
+  const unlockedColors: string[] = meData?.unlockedColors ?? [];
 
   // ── Notifications ──────────────────────────────────────────────────────────
   const [notifSupported, setNotifSupported] = useState<boolean | null>(null);
@@ -552,29 +558,45 @@ export default function Settings() {
                   {themePref === "system" ? "Dark accent" : "Accent"}
                 </p>
                 <div className="flex gap-4">
-                  {DARK_ACCENTS.map((a) => (
-                    <button
-                      key={a.id}
-                      onClick={() => setAccent(a.value, "dark")}
-                      title={a.name}
-                      className="flex flex-col items-center gap-1"
-                    >
-                      <div
-                        className={`w-8 h-8 rounded-full transition-all duration-200 ${
-                          darkAccent === a.value ? "scale-110" : "opacity-40 hover:opacity-70"
-                        }`}
-                        style={{
-                          backgroundColor: a.value,
-                          boxShadow: darkAccent === a.value
-                            ? `0 0 0 2px var(--color-bg), 0 0 0 3px ${a.value}`
-                            : "none",
-                        }}
-                      />
-                      <span className={`text-[10px] ${darkAccent === a.value ? "text-text" : "text-muted"}`}>
-                        {a.name}
-                      </span>
-                    </button>
-                  ))}
+                  {COLOR_PAIRS.map((pair) => {
+                    const a = pair.dark;
+                    const isUnlocked = pair.key === "green" || unlockedColors.includes(pair.key);
+                    const isActive = darkAccent === a.value;
+                    return (
+                      <button
+                        key={pair.key}
+                        onClick={() => isUnlocked && setAccent(a.value, "dark")}
+                        title={isUnlocked ? a.name : `${pair.name} (locked)`}
+                        className={`flex flex-col items-center gap-1 ${!isUnlocked ? "cursor-not-allowed" : ""}`}
+                      >
+                        <div
+                          className={`w-8 h-8 rounded-full transition-all duration-200 ${
+                            !isUnlocked
+                              ? "opacity-25"
+                              : isActive
+                              ? "scale-110"
+                              : "opacity-40 hover:opacity-70"
+                          }`}
+                          style={{
+                            backgroundColor: a.value,
+                            boxShadow: isActive && isUnlocked
+                              ? `0 0 0 2px var(--color-bg), 0 0 0 3px ${a.value}`
+                              : "none",
+                          }}
+                        />
+                        {isUnlocked ? (
+                          <span className={`text-[10px] ${isActive ? "text-text" : "text-muted"}`}>
+                            {a.name}
+                          </span>
+                        ) : (
+                          <svg width="10" height="12" viewBox="0 0 10 12" fill="none" className="text-muted opacity-50">
+                            <rect x="1.5" y="5" width="7" height="6.5" rx="1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M3 5V3.5a2 2 0 0 1 4 0V5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                          </svg>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -584,29 +606,45 @@ export default function Settings() {
                   {themePref === "system" ? "Light accent" : "Accent"}
                 </p>
                 <div className="flex gap-4">
-                  {LIGHT_ACCENTS.map((a) => (
-                    <button
-                      key={a.id}
-                      onClick={() => setAccent(a.value, "light")}
-                      title={a.name}
-                      className="flex flex-col items-center gap-1"
-                    >
-                      <div
-                        className={`w-8 h-8 rounded-full transition-all duration-200 ${
-                          lightAccent === a.value ? "scale-110" : "opacity-40 hover:opacity-70"
-                        }`}
-                        style={{
-                          backgroundColor: a.value,
-                          boxShadow: lightAccent === a.value
-                            ? `0 0 0 2px var(--color-bg), 0 0 0 3px ${a.value}`
-                            : "none",
-                        }}
-                      />
-                      <span className={`text-[10px] ${lightAccent === a.value ? "text-text" : "text-muted"}`}>
-                        {a.name}
-                      </span>
-                    </button>
-                  ))}
+                  {COLOR_PAIRS.map((pair) => {
+                    const a = pair.light;
+                    const isUnlocked = pair.key === "green" || unlockedColors.includes(pair.key);
+                    const isActive = lightAccent === a.value;
+                    return (
+                      <button
+                        key={pair.key}
+                        onClick={() => isUnlocked && setAccent(a.value, "light")}
+                        title={isUnlocked ? a.name : `${pair.name} (locked)`}
+                        className={`flex flex-col items-center gap-1 ${!isUnlocked ? "cursor-not-allowed" : ""}`}
+                      >
+                        <div
+                          className={`w-8 h-8 rounded-full transition-all duration-200 ${
+                            !isUnlocked
+                              ? "opacity-25"
+                              : isActive
+                              ? "scale-110"
+                              : "opacity-40 hover:opacity-70"
+                          }`}
+                          style={{
+                            backgroundColor: a.value,
+                            boxShadow: isActive && isUnlocked
+                              ? `0 0 0 2px var(--color-bg), 0 0 0 3px ${a.value}`
+                              : "none",
+                          }}
+                        />
+                        {isUnlocked ? (
+                          <span className={`text-[10px] ${isActive ? "text-text" : "text-muted"}`}>
+                            {a.name}
+                          </span>
+                        ) : (
+                          <svg width="10" height="12" viewBox="0 0 10 12" fill="none" className="text-muted opacity-50">
+                            <rect x="1.5" y="5" width="7" height="6.5" rx="1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M3 5V3.5a2 2 0 0 1 4 0V5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                          </svg>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}

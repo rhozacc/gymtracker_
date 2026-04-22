@@ -462,6 +462,8 @@ export default function LogPage() {
       if (res.ok) {
         const { id } = await res.json();
         clearBackup();
+        const prevCount = parseInt(localStorage.getItem("gym-session-count") ?? "0", 10);
+        localStorage.setItem("gym-session-count", String(prevCount + 1));
         const debriefDisabled = localStorage.getItem("gym-disable-debrief") === "true";
         if (debriefDisabled) {
           setSaving(false);

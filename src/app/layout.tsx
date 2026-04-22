@@ -7,6 +7,7 @@ import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { OrientationLockInit } from "@/components/OrientationLockInit";
 import { UpdateSplash } from "@/components/UpdateSplash";
 import { Analytics } from "@vercel/analytics/next";
+import DonationPopup from "@/components/DonationPopup";
 
 export const metadata: Metadata = {
   title: "gymtracker_",
@@ -49,6 +50,7 @@ export default function RootLayout({
         {hasDb ? (
           <AuthGuard>
             <UpdateSplash />
+            <DonationPopup />
             <main className="max-w-lg mx-auto px-4 pt-4 pb-8">{children}</main>
           </AuthGuard>
         ) : (

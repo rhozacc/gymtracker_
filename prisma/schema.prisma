@@ -138,15 +138,16 @@ model RestTimerPush {
 
 // Better Auth tables
 model User {
-  id            String      @id
-  name          String
-  email         String      @unique
-  emailVerified Boolean     @default(false)
-  image         String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  authSessions  AuthSession[]
-  accounts      Account[]
+  id             String      @id
+  name           String
+  email          String      @unique
+  emailVerified  Boolean     @default(false)
+  image          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  unlockedColors String[]    @default([])
+  authSessions   AuthSession[]
+  accounts       Account[]
 
   @@map("user")
 }

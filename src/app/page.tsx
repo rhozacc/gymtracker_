@@ -20,6 +20,8 @@ import { InstallPrompt } from "@/components/InstallPrompt";
 import { computeMomentumScore } from "@/lib/momentum";
 import { MomentumScore } from "@/components/MomentumScore";
 import { estimateE1RM } from "@/lib/e1rm";
+import { SupportPrompt } from "@/components/SupportPrompt";
+import { pickSupportMessage } from "@/lib/support-prompt";
 
 const MuscleRadar = dynamic(
   () => import("@/components/MuscleRadar").then((m) => m.MuscleRadarInner),
@@ -156,6 +158,8 @@ export default function Dashboard() {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [recoveredBackup, setRecoveredBackup] = useState<{ dayType: string; startedAt: string } | null>(null);
   const [showAbortConfirm, setShowAbortConfirm] = useState(false);
+  const [showSupportPrompt, setShowSupportPrompt] = useState(false);
+  const [supportMessage, setSupportMessage] = useState("");
   const effectiveSelected = selectedDay || nextDayType;
 
   // Pending session sync
@@ -217,6 +221,15 @@ export default function Dashboard() {
     syncAll();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessions, sessionsError]);
+
+  useEffect(() => {
+    const pending = localStorage.getItem("gym-support-pending");
+    if (pending) {
+      localStorage.removeItem("gym-support-pending");
+      setSupportMessage(pickSupportMessage());
+      setShowSupportPrompt(true);
+    }
+  }, []);
 
   const muscleRadarData = useMemo(() => {
     if (!chartData) return [];
@@ -364,6 +377,13 @@ export default function Dashboard() {
   return (
     <>
       <InstallPrompt />
+      {showSupportPrompt && (
+        <SupportPrompt
+          message={supportMessage}
+          stripeUrl={process.env.NEXT_PUBLIC_STRIPE_SUPPORT_URL ?? ""}
+          onClose={() => setShowSupportPrompt(false)}
+        />
+      )}
       {sessions === undefined && !sessionsError && <SessionLoadingScreen />}
     <div className="space-y-14">
       {sessionsError && (

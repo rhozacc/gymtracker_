@@ -23,6 +23,7 @@ import { useTheme } from "@/lib/useTheme";
 import { getJson, setJson } from "@/lib/storage";
 import { useSessionBackup } from "./hooks/useSessionBackup";
 import { savePendingSession } from "@/lib/pendingSessions";
+import { incrementSessionCount, shouldShowSupportPrompt, recordSupportPromptShown } from "@/lib/support-prompt";
 import { PostSessionFlow } from "./views/PostSessionFlow";
 import { StandardModeView } from "./views/StandardModeView";
 import type { ExerciseState } from "./types";
@@ -462,6 +463,11 @@ export default function LogPage() {
       if (res.ok) {
         const { id } = await res.json();
         clearBackup();
+        incrementSessionCount();
+        if (shouldShowSupportPrompt()) {
+          recordSupportPromptShown();
+          localStorage.setItem("gym-support-pending", "1");
+        }
         const debriefDisabled = localStorage.getItem("gym-disable-debrief") === "true";
         if (debriefDisabled) {
           setSaving(false);

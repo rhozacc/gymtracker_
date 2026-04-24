@@ -53,21 +53,7 @@ export const GOAL_INFO: Record<Goal, { label: string; desc: string }> = {
 export const EXTRA_CATEGORIES = ["abs", "cardio", "stretch"] as const;
 export type ExtraCategoryTuple = typeof EXTRA_CATEGORIES;
 
-export interface Preferences {
-  onboarded: boolean;
-  activePlan: string;
-  theme: string;
-  unit: string;
-  onboardingStep?: string | null;
-}
-
-export interface DbPlanRaw {
-  slug: string;
-  name: string;
-  description: string;
-  builtIn: boolean;
-  days: Record<string, { label: string; exercises: { id: string }[] }>;
-}
+export type { ApiPreferences as Preferences, ApiPlan as DbPlanRaw } from "@/lib/db-types";
 
 export interface EnrichedPlan {
   id: string;

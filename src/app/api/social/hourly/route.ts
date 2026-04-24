@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/api-auth";
+import { includeSets } from "@/lib/prisma-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ export async function GET() {
 
   const sessions = await prisma.session.findMany({
     where: { startedAt: { not: null, gte: cutoff } },
-    include: { sets: true },
+    include: includeSets,
   });
 
   const hourlyMap = new Map<number, number>();

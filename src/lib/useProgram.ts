@@ -4,18 +4,13 @@ import { useState, useCallback, useMemo } from "react";
 import useSWR from "swr";
 import { fetcher } from "./swr";
 import { PLANS, PlanDefinition, DayDefinition, registerPlans } from "./program";
+import type { ApiPlan, ApiPreferences } from "./db-types";
+import { usePreferencesSWR } from "./swr-hooks";
 
 const STORAGE_KEY = "gym-active-plan";
 const DEFAULT_PLAN = "upper_lower";
 
-interface DbPlan {
-  id: string;
-  slug: string;
-  name: string;
-  description: string;
-  builtIn: boolean;
-  days: Record<string, DayDefinition>;
-}
+type DbPlan = ApiPlan & { days: Record<string, DayDefinition> };
 
 function getStoredPlanSlug(): string {
   if (typeof window === "undefined") return DEFAULT_PLAN;
@@ -36,14 +31,12 @@ function dbPlanToDefinition(p: DbPlan): PlanDefinition {
   };
 }
 
-interface Preferences {
-  activePlan: string;
-}
-
 export function useProgram() {
   const [planSlug, setPlanSlugState] = useState<string>(getStoredPlanSlug);
+  // Plans come back as ApiPlan from /api/plans; we trust built-in plans to
+  // match the stricter DbPlan shape at runtime.
   const { data: dbPlans, mutate } = useSWR<DbPlan[]>("/api/plans", fetcher);
-  const { data: prefs, mutate: mutatePrefs } = useSWR<Preferences>("/api/preferences", fetcher);
+  const { data: prefs, mutate: mutatePrefs } = usePreferencesSWR();
 
   // Sync from DB preferences on load (DB is source of truth, localStorage is cache)
   const syncedFromDb = useMemo(() => {
@@ -76,7 +69,7 @@ export function useProgram() {
     localStorage.setItem(STORAGE_KEY, slug);
     setPlanSlugState(slug);
     // Optimistically update prefs cache so effectiveSlug reflects the change immediately
-    mutatePrefs((prev) => ({ ...prev, activePlan: slug } as Preferences), false);
+    mutatePrefs((prev) => ({ ...prev, activePlan: slug } as ApiPreferences), false);
     // Persist to DB; revalidate on failure so stale optimistic state doesn't linger
     fetch("/api/preferences", {
       method: "PUT",

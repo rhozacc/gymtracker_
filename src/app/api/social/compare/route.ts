@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/api-auth";
+import { selectSetsForVolume } from "@/lib/prisma-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -23,11 +24,7 @@ export async function GET() {
 
   const sessions = await prisma.session.findMany({
     where: { date: { gte: cutoff } },
-    select: {
-      userId: true,
-      date: true,
-      sets: { select: { reps: true, weight: true, isWarmup: true } },
-    },
+    select: { userId: true, date: true, ...selectSetsForVolume },
     orderBy: { date: "asc" },
   });
 

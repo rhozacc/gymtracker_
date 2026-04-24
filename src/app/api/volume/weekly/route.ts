@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/api-auth";
+import { includeSets } from "@/lib/prisma-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ export async function GET(request: Request) {
 
   const sessions = await prisma.session.findMany({
     where: { userId, date: { gte: cutoff } },
-    include: { sets: true },
+    include: includeSets,
     orderBy: { date: "asc" },
   });
 

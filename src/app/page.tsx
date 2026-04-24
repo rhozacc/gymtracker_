@@ -161,6 +161,7 @@ export default function Dashboard() {
   const [showSupportPrompt, setShowSupportPrompt] = useState(false);
   const [supportMessage, setSupportMessage] = useState("");
   const [supportMsgIndex, setSupportMsgIndex] = useState(0);
+  const [zapBtn, setZapBtn] = useState(false);
   const effectiveSelected = selectedDay || nextDayType;
 
   // Pending session sync
@@ -449,8 +450,17 @@ export default function Dashboard() {
               setSupportMessage(MESSAGES[supportMsgIndex]);
               setSupportMsgIndex((i) => (i + 1) % MESSAGES.length);
               setShowSupportPrompt(true);
+              setZapBtn(true);
+              setTimeout(() => setZapBtn(false), 500);
             }}
             className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-muted hover:border-accent hover:text-accent transition-colors"
+            style={zapBtn ? {
+              borderColor: "var(--accent)",
+              color: "var(--accent)",
+              boxShadow: "0 0 12px 3px var(--accent)",
+              transform: "scale(1.18)",
+              transition: "all 0.15s",
+            } : { transition: "all 0.3s" }}
             aria-label="Support gymtracker_"
           >
             {supportMsgIndex % MESSAGES.length === 0 ? (

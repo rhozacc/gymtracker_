@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/api-auth";
+import { includeSets } from "@/lib/prisma-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -11,9 +12,7 @@ export async function GET() {
   const sessions = await prisma.session.findMany({
     where: { userId },
     orderBy: { date: "desc" },
-    include: {
-      sets: true,
-    },
+    include: includeSets,
   });
 
   const result = sessions.map((s) => ({
@@ -73,7 +72,7 @@ export async function POST(request: Request) {
         ),
       },
     },
-    include: { sets: true },
+    include: includeSets,
   });
 
   return NextResponse.json({ id: session.id }, { status: 201 });

@@ -6,16 +6,8 @@ import { useProgram } from "@/lib/useProgram";
 import { useUnit } from "@/lib/useUnit";
 import { useExtras } from "@/lib/useExtras";
 import { PLANS, type Exercise } from "@/lib/program";
-import useSWR from "swr";
-import { fetcher } from "@/lib/swr";
-
-interface DbPlanRaw {
-  slug: string;
-  name: string;
-  description: string;
-  builtIn: boolean;
-  days: Record<string, { label: string; exercises: { id: string }[] }>;
-}
+import { usePlansSWR } from "@/lib/swr-hooks";
+import type { ApiPlan as DbPlanRaw } from "@/lib/db-types";
 
 interface DbPlanDay {
   label: string;
@@ -227,7 +219,7 @@ export default function PlanPage() {
   const { planId, plan, setPlan, refreshPlans } = useProgram();
   const { unit, setUnit } = useUnit();
   const { selectedExtras } = useExtras();
-  const { data: rawPlans, mutate } = useSWR<DbPlanRaw[]>("/api/plans", fetcher);
+  const { data: rawPlans, mutate } = usePlansSWR();
   const dbPlans = rawPlans ? enrichPlans(rawPlans) : undefined;
 
   const initialTab: CategoryTab =

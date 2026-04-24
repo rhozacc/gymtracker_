@@ -1,16 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import useSWR from "swr";
-import { fetcher } from "@/lib/swr";
+import { usePlansSWR, usePreferencesSWR } from "@/lib/swr-hooks";
 import {
   STEPS,
   NUMBERED_STEPS,
   type Step,
   type Gender,
   type Goal,
-  type Preferences,
-  type DbPlanRaw,
   type EnrichedPlan,
 } from "./types";
 import {
@@ -46,7 +43,7 @@ const VALID_RESUME_STEPS = new Set<Step>(
 );
 
 export function useOnboarded() {
-  const { data, isLoading } = useSWR<Preferences>("/api/preferences", fetcher);
+  const { data, isLoading } = usePreferencesSWR();
 
   let localOnboarded = false;
   let localStep: Step | null = null;
@@ -127,7 +124,7 @@ export function Welcome({ onDone, initialStep }: { onDone: () => void; initialSt
   const [savingState, setSavingState] = useState<"saving" | "done" | null>(null);
   const [notifResult, setNotifResult] = useState<"granted" | "denied" | "default" | null>(null);
 
-  const { data: rawPlans } = useSWR<DbPlanRaw[]>("/api/plans", fetcher);
+  const { data: rawPlans } = usePlansSWR();
   const dbPlans = rawPlans ? enrichDbPlans(rawPlans) : null;
 
   const recommended: EnrichedPlan[] = dbPlans

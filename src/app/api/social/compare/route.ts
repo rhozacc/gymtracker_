@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/api-auth";
+import { selectSetsForVolume } from "@/lib/prisma-queries";
 
 export const dynamic = "force-dynamic";
 

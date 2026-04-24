@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/api-auth";
+import { includeSets, includeSetsOrdered } from "@/lib/prisma-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -14,12 +15,7 @@ export async function GET(
 
   const session = await prisma.session.findUnique({
     where: { id: params.id, userId },
-    include: {
-      sets: {
-        orderBy: [{ exerciseId: "asc" }, { setNumber: "asc" }],
-      },
-      debrief: true,
-    },
+    include: { ...includeSetsOrdered, debrief: true },
   });
 
   if (!session) {
@@ -46,7 +42,7 @@ export async function PATCH(
 
   const session = await prisma.session.findUnique({
     where: { id: params.id, userId },
-    include: { sets: true },
+    include: includeSets,
   });
 
   if (!session) {

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireSession } from "@/lib/api-auth";
 
 export async function POST(req: Request) {
+  const { userId, res } = await requireSession();
+  if (res) return res;
+
   try {
     const { routineId, category, dayType } = await req.json();
 
@@ -10,7 +14,7 @@ export async function POST(req: Request) {
     }
 
     const entry = await prisma.extrasLog.create({
-      data: { routineId, category, dayType },
+      data: { userId, routineId, category, dayType },
     });
 
     return NextResponse.json(entry, { status: 201 });

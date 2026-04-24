@@ -1,30 +1,37 @@
 "use client";
 
-import { useState, useEffect, type MutableRefObject } from "react";
+import { useState, useEffect, useMemo, type MutableRefObject } from "react";
+import { authClient } from "@/lib/auth-client";
 import { getJson, setJson } from "@/lib/storage";
-import { BACKUP_KEY, type BackupData, type ExerciseState } from "../types";
+import { BACKUP_KEY_PREFIX, type BackupData, type ExerciseState } from "../types";
 
 export function useSessionBackup(
   dayType: string,
   startedAtRef: MutableRefObject<string>,
   guidedModeRef: MutableRefObject<boolean>
 ) {
+  const { data: session } = authClient.useSession();
+  const userId = session?.user?.id ?? "anon";
+  const backupKey = useMemo(() => `${BACKUP_KEY_PREFIX}:${userId}`, [userId]);
+
   const [backupFound, setBackupFound] = useState(false);
   const [backupStartedAt, setBackupStartedAt] = useState<string | null>(null);
 
-  // Check for a backup from a crashed session on mount
+  // Check for a backup from a crashed session whenever the active user changes
   useEffect(() => {
-    const backup = getJson<BackupData | null>(BACKUP_KEY, null);
+    const backup = getJson<BackupData | null>(backupKey, null);
     if (backup?.dayType === dayType) {
       setBackupFound(true);
       setBackupStartedAt(backup.startedAt);
+    } else {
+      setBackupFound(false);
+      setBackupStartedAt(null);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [backupKey, dayType]);
 
   function writeBackup(updatedExercises: ExerciseState[], position?: { exerciseIndex: number; setIndex: number }) {
     if (!guidedModeRef.current) return;
-    setJson<BackupData>(BACKUP_KEY, {
+    setJson<BackupData>(backupKey, {
       dayType,
       startedAt: startedAtRef.current,
       exercises: updatedExercises,
@@ -35,13 +42,13 @@ export function useSessionBackup(
 
   function patchPositionInBackup(pos: { exerciseIndex: number; setIndex: number }) {
     if (!guidedModeRef.current) return;
-    const existing = getJson<BackupData | null>(BACKUP_KEY, null);
+    const existing = getJson<BackupData | null>(backupKey, null);
     if (!existing || existing.dayType !== dayType) return;
-    setJson<BackupData>(BACKUP_KEY, { ...existing, exerciseIndex: pos.exerciseIndex, setIndex: pos.setIndex });
+    setJson<BackupData>(backupKey, { ...existing, exerciseIndex: pos.exerciseIndex, setIndex: pos.setIndex });
   }
 
   function restoreBackup(onRestore: (exercises: ExerciseState[]) => void): { exerciseIndex: number; setIndex: number } | null {
-    const backup = getJson<BackupData | null>(BACKUP_KEY, null);
+    const backup = getJson<BackupData | null>(backupKey, null);
     if (backup?.dayType === dayType && backup.exercises) {
       startedAtRef.current = backup.startedAt;
       onRestore(backup.exercises);
@@ -54,12 +61,12 @@ export function useSessionBackup(
   }
 
   function discardBackup() {
-    localStorage.removeItem(BACKUP_KEY);
+    localStorage.removeItem(backupKey);
     setBackupFound(false);
   }
 
   function clearBackup() {
-    localStorage.removeItem(BACKUP_KEY);
+    localStorage.removeItem(backupKey);
   }
 
   return { backupFound, backupStartedAt, writeBackup, patchPositionInBackup, restoreBackup, discardBackup, clearBackup };

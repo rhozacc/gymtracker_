@@ -8,14 +8,14 @@ type Phase = "in" | "show" | "out";
 
 const ICONS = [
   // shake
-  <svg key="shake" width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg key="shake" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M8 2h8l1 4H7L8 2z" />
     <rect x="6" y="6" width="12" height="14" rx="2" />
     <line x1="12" y1="10" x2="12" y2="16" />
     <line x1="9" y1="13" x2="15" y2="13" />
   </svg>,
   // coffee
-  <svg key="coffee" width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg key="coffee" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
     <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
     <line x1="6" y1="1" x2="6" y2="4" />
@@ -23,18 +23,18 @@ const ICONS = [
     <line x1="14" y1="1" x2="14" y2="4" />
   </svg>,
   // pizza
-  <svg key="pizza" width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg key="pizza" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 2L2 22h20L12 2z" />
-    <circle cx="12" cy="13" r="1.8" fill="var(--accent)" stroke="none" />
-    <circle cx="9" cy="17.5" r="1.2" fill="var(--accent)" stroke="none" />
-    <circle cx="15" cy="17.5" r="1.2" fill="var(--accent)" stroke="none" />
+    <circle cx="12" cy="13" r="1.8" fill="currentColor" stroke="none" />
+    <circle cx="9" cy="17.5" r="1.2" fill="currentColor" stroke="none" />
+    <circle cx="15" cy="17.5" r="1.2" fill="currentColor" stroke="none" />
   </svg>,
   // pre-workout / lightning
-  <svg key="zap" width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+  <svg key="zap" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
   </svg>,
   // lightbulb
-  <svg key="bulb" width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg key="bulb" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="9" y1="18" x2="15" y2="18" />
     <line x1="10" y1="22" x2="14" y2="22" />
     <path d="M12 2a7 7 0 0 1 7 7c0 3.17-2.11 5.86-5 6.72V17H10v-1.28C7.11 14.86 5 12.17 5 9a7 7 0 0 1 7-7z" />
@@ -111,14 +111,14 @@ export function SupportPrompt({ stripeUrl, onClose }: SupportPromptProps) {
           50%     { transform:translateY(-8px) scale(1.04); }
         }
         @keyframes sp-zap-out {
-          0%   { transform:scale(1);    opacity:1; filter:blur(0px)  drop-shadow(0 0 10px var(--accent)); }
-          45%  { transform:scale(0.18); opacity:1; filter:blur(4px)  drop-shadow(0 0 20px var(--accent)); }
-          100% { transform:scale(0.03); opacity:0; filter:blur(8px); }
+          0%   { transform:scale(1);    opacity:1; }
+          40%  { transform:scale(0.15); opacity:1; }
+          100% { transform:scale(0.03); opacity:0; }
         }
         @keyframes sp-zap-in {
-          0%   { transform:scale(0.03); opacity:0; filter:blur(8px); }
-          55%  { transform:scale(1.24); opacity:1; filter:blur(0px) drop-shadow(0 0 18px var(--accent)); }
-          100% { transform:scale(1);    opacity:1; filter:blur(0px) drop-shadow(0 0 8px var(--accent)); }
+          0%   { transform:scale(0.03); opacity:0; }
+          60%  { transform:scale(1.26); opacity:1; }
+          100% { transform:scale(1);    opacity:1; }
         }
         @keyframes sp-text-out {
           from { opacity:1; transform:translateY(0); }
@@ -191,7 +191,7 @@ export function SupportPrompt({ stripeUrl, onClose }: SupportPromptProps) {
                 animation: "sp-ring-pulse 2s ease-in-out infinite",
               }}
             >
-              <div style={{ animation: iconAnim }}>
+              <div style={{ animation: iconAnim, color: "var(--accent)" }}>
                 {ICONS[idx]}
               </div>
             </div>

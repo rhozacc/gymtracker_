@@ -7,16 +7,9 @@ export async function GET() {
   if (res) return res;
 
   try {
-    // First try by userId (correct path for established users)
     let prefs = await prisma.userPreferences.findFirst({ where: { userId } });
     if (!prefs) {
-      // Fallback: upsert the single "default" record (handles legacy userId=null
-      // records created before multi-user auth, and new users with no record yet)
-      prefs = await prisma.userPreferences.upsert({
-        where: { id: "default" },
-        update: { userId },
-        create: { userId },
-      });
+      prefs = await prisma.userPreferences.create({ data: { userId } });
     }
     return NextResponse.json(prefs);
   } catch {
@@ -45,13 +38,10 @@ export async function PUT(req: Request) {
     if (dayOrder !== undefined) data.dayOrder = dayOrder;
     if (onboardingStep !== undefined) data.onboardingStep = onboardingStep;
 
-    // Upsert by the fixed "default" id — works for legacy records (userId=null)
-    // and for users whose record hasn't been created yet
-    const prefs = await prisma.userPreferences.upsert({
-      where: { id: "default" },
-      update: { userId, ...data },
-      create: { userId, ...data },
-    });
+    const existing = await prisma.userPreferences.findFirst({ where: { userId } });
+    const prefs = existing
+      ? await prisma.userPreferences.update({ where: { id: existing.id }, data })
+      : await prisma.userPreferences.create({ data: { userId, ...data } });
 
     return NextResponse.json(prefs);
   } catch {

@@ -147,8 +147,8 @@ export default function Dashboard() {
     totalVolumeKg: number;
   }>("/api/social/overview", fetcher, { revalidateOnFocus: false });
   const dayKeys = Object.keys(plan.days).sort((a, b) => {
-    const numA = parseInt(plan.days[a].label.match(/Day (\d+)/)?.[1] ?? "0");
-    const numB = parseInt(plan.days[b].label.match(/Day (\d+)/)?.[1] ?? "0");
+    const numA = parseInt(plan.days[a].label.match(/Day (\d+)/)?.[1] ?? "0", 10);
+    const numB = parseInt(plan.days[b].label.match(/Day (\d+)/)?.[1] ?? "0", 10);
     return numA - numB;
   });
 

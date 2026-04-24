@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/api-auth";
 
@@ -59,42 +60,58 @@ export async function PATCH(
 
   if (body.sets && Array.isArray(body.sets)) {
     updateData.editedAt = new Date();
+    const existingSetIds = new Set(session.sets.map((s) => s.id));
     const incomingIds = new Set<string>();
 
+    const ops: Prisma.PrismaPromise<unknown>[] = [];
     for (const s of body.sets) {
       if (s.id) {
+        // Only allow updates to sets that belong to this session.
+        // Prevents a user from PATCHing their own session with another user's set ID.
+        if (!existingSetIds.has(s.id)) {
+          return NextResponse.json({ error: "Invalid set id" }, { status: 400 });
+        }
         incomingIds.add(s.id);
-        await prisma.set.update({
-          where: { id: s.id },
-          data: {
-            exerciseId: s.exerciseId,
-            setNumber: s.setNumber,
-            reps: s.reps,
-            weight: s.weight,
-            rir: s.rir ?? null,
-          },
-        });
+        ops.push(
+          prisma.set.update({
+            where: { id: s.id },
+            data: {
+              exerciseId: s.exerciseId,
+              setNumber: s.setNumber,
+              reps: s.reps,
+              weight: s.weight,
+              rir: s.rir ?? null,
+            },
+          })
+        );
       } else {
-        const created = await prisma.set.create({
-          data: {
-            sessionId: params.id,
-            exerciseId: s.exerciseId,
-            setNumber: s.setNumber,
-            reps: s.reps,
-            weight: s.weight,
-            rir: s.rir ?? null,
-          },
-        });
-        incomingIds.add(created.id);
+        ops.push(
+          prisma.set.create({
+            data: {
+              sessionId: params.id,
+              exerciseId: s.exerciseId,
+              setNumber: s.setNumber,
+              reps: s.reps,
+              weight: s.weight,
+              rir: s.rir ?? null,
+            },
+          })
+        );
       }
     }
 
     const toDelete = session.sets.filter((s) => !incomingIds.has(s.id));
     if (toDelete.length > 0) {
-      await prisma.set.deleteMany({
-        where: { id: { in: toDelete.map((s) => s.id) } },
-      });
+      ops.push(
+        prisma.set.deleteMany({
+          where: { id: { in: toDelete.map((s) => s.id) }, sessionId: params.id },
+        })
+      );
     }
+
+    ops.push(prisma.session.update({ where: { id: params.id }, data: updateData }));
+    await prisma.$transaction(ops);
+    return NextResponse.json({ id: params.id });
   }
 
   const updated = await prisma.session.update({

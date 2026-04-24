@@ -35,11 +35,18 @@ export function RestTimer({ seconds, onDismiss, onTimerEnd, nextExercise }: Rest
   useEffect(() => {
     setMounted(true);
 
-    // Wake lock to prevent screen sleep
+    // Wake lock to prevent screen sleep.
+    // Tracks a `cancelled` flag so a lock acquired after unmount is released instead of leaking.
     let wakeLock: WakeLockSentinel | null = null;
+    let cancelled = false;
     (async () => {
       try {
-        wakeLock = await navigator.wakeLock.request("screen");
+        const lock = await navigator.wakeLock.request("screen");
+        if (cancelled) {
+          lock.release().catch(() => {});
+        } else {
+          wakeLock = lock;
+        }
       } catch {
         // Degrade gracefully if not supported
       }
@@ -74,10 +81,11 @@ export function RestTimer({ seconds, onDismiss, onTimerEnd, nextExercise }: Rest
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
+      cancelled = true;
       clearInterval(interval);
       if (autoDismissRef.current) clearTimeout(autoDismissRef.current);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      wakeLock?.release();
+      wakeLock?.release().catch(() => {});
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

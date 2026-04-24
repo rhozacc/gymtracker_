@@ -3,7 +3,7 @@ import { getJson, setJson } from "./storage";
 const SESSION_THRESHOLD = 5;
 const COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
 
-const MESSAGES = [
+export const MESSAGES = [
   "Buy me a protein shake",
   "Buy me a coffee",
   "Buy me a pizza slice",

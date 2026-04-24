@@ -21,7 +21,7 @@ import { computeMomentumScore } from "@/lib/momentum";
 import { MomentumScore } from "@/components/MomentumScore";
 import { estimateE1RM } from "@/lib/e1rm";
 import { SupportPrompt } from "@/components/SupportPrompt";
-import { pickSupportMessage } from "@/lib/support-prompt";
+import { pickSupportMessage, MESSAGES } from "@/lib/support-prompt";
 
 const MuscleRadar = dynamic(
   () => import("@/components/MuscleRadar").then((m) => m.MuscleRadarInner),
@@ -160,6 +160,7 @@ export default function Dashboard() {
   const [showAbortConfirm, setShowAbortConfirm] = useState(false);
   const [showSupportPrompt, setShowSupportPrompt] = useState(false);
   const [supportMessage, setSupportMessage] = useState("");
+  const [supportMsgIndex, setSupportMsgIndex] = useState(0);
   const effectiveSelected = selectedDay || nextDayType;
 
   // Pending session sync
@@ -440,6 +441,42 @@ export default function Dashboard() {
             ) : (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            )}
+          </button>
+          <button
+            onClick={() => {
+              setSupportMessage(MESSAGES[supportMsgIndex]);
+              setSupportMsgIndex((i) => (i + 1) % MESSAGES.length);
+              setShowSupportPrompt(true);
+            }}
+            className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-muted hover:border-accent hover:text-accent transition-colors"
+            aria-label="Support gymtracker_"
+          >
+            {supportMsgIndex % MESSAGES.length === 0 ? (
+              /* shake */
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 2h8l1 4H7L8 2z" /><rect x="6" y="6" width="12" height="14" rx="2" /><line x1="9" y1="11" x2="9" y2="11" strokeWidth="3" strokeLinecap="round" /><line x1="12" y1="11" x2="12" y2="11" strokeWidth="3" strokeLinecap="round" /><line x1="15" y1="11" x2="15" y2="11" strokeWidth="3" strokeLinecap="round" />
+              </svg>
+            ) : supportMsgIndex % MESSAGES.length === 1 ? (
+              /* coffee */
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8h1a4 4 0 0 1 0 8h-1" /><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" /><line x1="6" y1="1" x2="6" y2="4" /><line x1="10" y1="1" x2="10" y2="4" /><line x1="14" y1="1" x2="14" y2="4" />
+              </svg>
+            ) : supportMsgIndex % MESSAGES.length === 2 ? (
+              /* pizza */
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L2 22h20L12 2z" /><circle cx="12" cy="13" r="1.5" fill="currentColor" stroke="none" /><circle cx="9" cy="17" r="1" fill="currentColor" stroke="none" /><circle cx="15" cy="17" r="1" fill="currentColor" stroke="none" />
+              </svg>
+            ) : supportMsgIndex % MESSAGES.length === 3 ? (
+              /* pre-workout / lightning */
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+            ) : (
+              /* keep lights on / bulb */
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="9" y1="18" x2="15" y2="18" /><line x1="10" y1="22" x2="14" y2="22" /><path d="M12 2a7 7 0 0 1 7 7c0 3.17-2.11 5.86-5 6.72V17H10v-1.28C7.11 14.86 5 12.17 5 9a7 7 0 0 1 7-7z" />
               </svg>
             )}
           </button>

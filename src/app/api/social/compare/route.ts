@@ -19,12 +19,16 @@ export async function GET() {
   if (res) return res;
 
   const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 8 * 7);
+  cutoff.setUTCDate(cutoff.getUTCDate() - 8 * 7);
   cutoff.setUTCHours(0, 0, 0, 0);
 
   const sessions = await prisma.session.findMany({
-    where: { date: { gte: cutoff } },
-    select: { userId: true, date: true, ...selectSetsForVolume },
+    where: { date: { gte: cutoff }, userId: { not: null } },
+    select: {
+      userId: true,
+      date: true,
+      sets: { select: { reps: true, weight: true, isWarmup: true } },
+    },
     orderBy: { date: "asc" },
   });
 
@@ -32,12 +36,12 @@ export async function GET() {
   const weekUserVol = new Map<string, Map<string, number>>();
 
   for (const session of sessions) {
+    if (!session.userId) continue;
     const week = getWeekKey(session.date);
     const vol = session.sets.filter((s) => !s.isWarmup).reduce((sum, s) => sum + s.reps * s.weight, 0);
-    const uid = session.userId ?? "anon";
     if (!weekUserVol.has(week)) weekUserVol.set(week, new Map());
     const userMap = weekUserVol.get(week)!;
-    userMap.set(uid, (userMap.get(uid) ?? 0) + vol);
+    userMap.set(session.userId, (userMap.get(session.userId) ?? 0) + vol);
   }
 
   const weeks = Array.from(weekUserVol.entries())

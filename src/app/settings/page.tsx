@@ -7,7 +7,6 @@ import { useTheme, DARK_ACCENTS, LIGHT_ACCENTS } from "@/lib/useTheme";
 import { useUnit } from "@/lib/useUnit";
 import { authClient } from "@/lib/auth-client";
 import { CURRENT_VERSION } from "@/components/UpdateSplash";
-import { ExerciseLinksSection } from "@/components/ExerciseLinksSection";
 
 const NOTIF_OPTED_OUT = "gym-notifications-off";
 const ORIENT_LOCK_KEY = "gym-orientation-lock";
@@ -685,9 +684,6 @@ export default function Settings() {
 
       {/* Access — only visible to owner */}
       <AccessSection />
-
-      {/* Exercise links — only visible to owner */}
-      <ExerciseLinksSection />
 
       {/* Account */}
       <div>

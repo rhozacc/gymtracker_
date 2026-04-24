@@ -109,6 +109,30 @@ model ExtrasLog {
   completedAt DateTime @default(now())
 }
 
+model BlendInvite {
+  id                  String   @id @default(cuid())
+  token               String   @unique
+  hostId              String
+  hostName            String
+  guestId             String?
+  guestName           String?
+  hostDayType         String?
+  guestDayType        String?
+  hostDay             Json?
+  guestDay            Json?
+  hostKnownExercises  String[] @default([])
+  guestKnownExercises String[] @default([])
+  blendedDay          Json?
+  hostProgress        Json?
+  guestProgress       Json?
+  hostConfirmed       Boolean  @default(false)
+  guestConfirmed      Boolean  @default(false)
+  shuffleSeed         Int      @default(0)
+  status              String   @default("pending")
+  expiresAt           DateTime
+  createdAt           DateTime @default(now())
+}
+
 model PushSubscription {
   id        String   @id @default(cuid())
   userId    String

@@ -572,23 +572,38 @@ export default function Dashboard() {
             );
           })}
         </div>
-        <button
-          onClick={() => router.push(`/log/${effectiveSelected}?guided=true`)}
-          className={`w-full h-12 mt-3 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-all ${
-            recoveredBackup ? "shadow-[0_0_24px_rgba(57,255,20,0.35)]" : ""
-          }`}
-        >
-          {recoveredBackup ? (
-            <span className="flex items-center justify-center gap-2">
-              <span>Continue unfinished session</span>
-              <span className="text-[10px] font-medium uppercase tracking-wider bg-bg/20 rounded-full px-2 py-0.5 leading-none">
-                In Progress
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={() => router.push(`/log/${effectiveSelected}?guided=true`)}
+            className={`flex-1 h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-all ${
+              recoveredBackup ? "shadow-[0_0_24px_rgba(57,255,20,0.35)]" : ""
+            }`}
+          >
+            {recoveredBackup ? (
+              <span className="flex items-center justify-center gap-2">
+                <span>Continue session</span>
+                <span className="text-[10px] font-medium uppercase tracking-wider bg-bg/20 rounded-full px-2 py-0.5 leading-none">
+                  In Progress
+                </span>
               </span>
-            </span>
-          ) : (
-            `Start ${getDayLabel(effectiveSelected)} Session`
-          )}
-        </button>
+            ) : (
+              `Start ${getDayLabel(effectiveSelected)} Session`
+            )}
+          </button>
+          <button
+            onClick={() => router.push("/blend")}
+            className="h-12 px-4 border border-border text-muted rounded-lg text-sm hover:border-accent hover:text-accent transition-colors flex items-center gap-1.5 flex-shrink-0"
+            title="Blend session with a friend"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            <span>Blend</span>
+          </button>
+        </div>
 
         {recoveredBackup && !showAbortConfirm && (
           <button

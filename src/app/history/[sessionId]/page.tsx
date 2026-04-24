@@ -8,7 +8,6 @@ import { getExerciseById, getDayLabel, getDayDefinition } from "@/lib/program";
 import { useUnit } from "@/lib/useUnit";
 import { kgToDisplay, displayToKg } from "@/lib/units";
 import { formatDate, calculateVolume, formatDuration } from "@/lib/utils";
-import { useExerciseLinkFn } from "@/hooks/useExerciseLinkFn";
 
 interface SetDetail {
   id: string;
@@ -50,7 +49,6 @@ interface EditableSet {
 export default function SessionDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const getLink = useExerciseLinkFn();
   const { unit } = useUnit();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -291,25 +289,11 @@ export default function SessionDetailPage() {
             const exVolume = calculateVolume(exSets);
             const topOfRange = ex?.repRange[1] || 0;
             const allHitTop = ex && exSets.every((s) => s.reps >= topOfRange);
-            const exerciseInfoLink = getLink(ex?.name || id);
 
             return (
               <div key={id} className="border border-border rounded p-3">
                 <div className="flex justify-between items-baseline mb-2">
-                  <div className="flex items-center gap-1.5">
-                    {exerciseInfoLink && (
-                      <a
-                        href={exerciseInfoLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-3.5 h-3.5 rounded-full border border-muted/40 flex items-center justify-center text-muted hover:border-accent hover:text-accent transition-colors flex-shrink-0"
-                        aria-label="Exercise guide"
-                      >
-                        <span className="text-[8px] font-medium leading-none">i</span>
-                      </a>
-                    )}
-                    <h2 className="text-sm font-medium">{ex?.name || id}</h2>
-                  </div>
+                  <h2 className="text-sm font-medium">{ex?.name || id}</h2>
                   <div className="flex items-center gap-2">
                     {allHitTop && (
                       <span className="text-green-400 text-[10px]">

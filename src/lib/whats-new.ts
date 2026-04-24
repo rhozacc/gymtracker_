@@ -32,23 +32,15 @@ export const WHATS_NEW: WhatsNewEntry[] = [
   },
   {
     area: "Weight nudges",
-    text: "The in-session weight suggestion now gently pulses so the 'tap' hint is easier to spot without being loud.",
+    text: "Between sets the app suggests going up or down based on your reps and RIR — tap the chip to apply it, or ignore it. The suggestion gently pulses so the 'tap' hint is easy to spot without being loud.",
   },
   {
     area: "Social",
     text: "Social stats are here! See who's training live, global activity, peak gym hours, and how your weekly volume compares to everyone else.",
   },
   {
-    area: "Weight nudges",
-    text: "Between sets the app now suggests going up or down based on your reps and RIR. Tap the chip to apply it instantly — or ignore it.",
-  },
-  {
     area: "Guided session",
     text: "Navigate forward and back between sets with the arrow button. Switching to list view and back now resumes exactly where you left off — no more teleporting to the first exercise.",
-  },
-  {
-    area: "Rest timer",
-    text: "Notifications no longer double-fire. If the app is open when rest ends, only the in-app beep plays — no system notification. Warmup sets show a Done button even while the rest timer counts down so you can log the warmup without waiting.",
   },
   {
     area: "Warmup weight",
@@ -72,11 +64,11 @@ export const WHATS_NEW: WhatsNewEntry[] = [
   },
   {
     area: "Rest timer",
-    text: "Progress bar now drains instead of filling — shows time remaining at a glance. Tapping 'Skip Rest' triggers a full-screen flash so you always know it registered.",
+    text: "Progress bar now drains instead of filling — time remaining at a glance. Tapping 'Skip Rest' triggers a full-screen flash so you always know it registered. Notifications no longer double-fire; only the in-app beep plays when the app is open. Warmup sets show a Done button mid-countdown so you can log them without waiting.",
   },
   {
     area: "Stats",
-    text: "Exercise stats now show your actual max weight (solid dot) alongside the estimated 1RM (lighter dot), so you see real numbers first. If you're ready to load up, the target weight appears as a dashed line on the chart.",
+    text: "New per-exercise Stats page — tap any exercise in Load up (or open Stats from the home screen) to see your strength over time. Each session shows your actual max weight (solid dot) alongside the estimated 1RM (lighter dot), and when you're ready to load up the target weight appears as a dashed line plus a projected trend.",
   },
   {
     area: "Activity",
@@ -87,16 +79,8 @@ export const WHATS_NEW: WhatsNewEntry[] = [
     text: "Muscle radar now uses the trailing 7 days instead of the calendar week, so Monday doesn't wipe your weekly view.",
   },
   {
-    area: "Stats",
-    text: "New per-exercise Stats page — tap any exercise in Load up (or open Stats from the home screen) to see your strength over time with dots for past sessions and a projected trend line.",
-  },
-  {
     area: "Load up",
     text: "Load up exercises are now tappable and link directly to their stats page. Tap the northeast arrow to browse all exercises.",
-  },
-  {
-    area: "Exercise guide",
-    text: "Tap the (i) next to any exercise name during a session or in history to open a how-to guide on Muscle & Strength.",
   },
   {
     area: "Accent colors",

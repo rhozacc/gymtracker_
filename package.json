@@ -10,7 +10,6 @@
     "db:migrate": "dotenv -e .env.local -- prisma migrate dev"
   },
   "dependencies": {
-    "@better-auth/prisma-adapter": "^1.6.2",
     "@prisma/client": "^5.22.0",
     "@simplewebauthn/browser": "^13.3.0",
     "@simplewebauthn/server": "^13.3.0",

@@ -164,6 +164,12 @@ export default function Dashboard() {
   const [zapBtn, setZapBtn] = useState(false);
   const effectiveSelected = selectedDay || nextDayType;
 
+  // Left-handed mode flips Blend/Start order on home; default is Blend-left/Start-right.
+  const [leftHanded, setLeftHanded] = useState(false);
+  useEffect(() => {
+    setLeftHanded(localStorage.getItem("gym-left-handed") === "1");
+  }, []);
+
   // Pending session sync
   const [syncState, setSyncState] = useState<"idle" | "success">("idle");
   const [syncCount, setSyncCount] = useState(0);
@@ -572,26 +578,9 @@ export default function Dashboard() {
             );
           })}
         </div>
-        <div className="flex gap-2 mt-3">
+        <div className={`flex gap-2 mt-3 ${leftHanded ? "flex-row-reverse" : ""}`}>
           <button
-            onClick={() => router.push(`/log/${effectiveSelected}?guided=true`)}
-            className={`flex-1 h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-all ${
-              recoveredBackup ? "shadow-[0_0_24px_rgba(57,255,20,0.35)]" : ""
-            }`}
-          >
-            {recoveredBackup ? (
-              <span className="flex items-center justify-center gap-2">
-                <span>Continue session</span>
-                <span className="text-[10px] font-medium uppercase tracking-wider bg-bg/20 rounded-full px-2 py-0.5 leading-none">
-                  In Progress
-                </span>
-              </span>
-            ) : (
-              `Start ${getDayLabel(effectiveSelected)} Session`
-            )}
-          </button>
-          <button
-            onClick={() => router.push("/blend")}
+            onClick={() => router.push(`/blend?day=${effectiveSelected}`)}
             className="h-12 px-4 border border-border text-muted rounded-lg text-sm hover:border-accent hover:text-accent transition-colors flex items-center gap-1.5 flex-shrink-0"
             title="Blend session with a friend"
           >
@@ -603,6 +592,10 @@ export default function Dashboard() {
             </svg>
             <span>Blend</span>
           </button>
+          <StartButton
+            onClick={() => router.push(`/log/${effectiveSelected}?guided=true`)}
+            recoveredBackup={!!recoveredBackup}
+          />
         </div>
 
         {recoveredBackup && !showAbortConfirm && (
@@ -772,5 +765,81 @@ export default function Dashboard() {
 
     </div>
     </>
+  );
+}
+
+// ── Cycling Start button ─────────────────────────────────────────────────────
+// Swaps between a rotating set of phrases with a zap/bob animation,
+// same aesthetic as the support prompt.
+
+const START_PHRASES = [
+  "Start now",
+  "Let's go",
+  "Pump time",
+  "Make it count",
+  "Stack gains",
+  "Time to lift",
+];
+
+function StartButton({
+  onClick,
+  recoveredBackup,
+}: {
+  onClick: () => void;
+  recoveredBackup: boolean;
+}) {
+  const [idx, setIdx] = useState(0);
+  const [phase, setPhase] = useState<"in" | "show" | "out">("in");
+
+  useEffect(() => {
+    if (recoveredBackup) return;
+    const durations = { in: 380, show: 2800, out: 240 };
+    const t = setTimeout(() => {
+      if (phase === "in") setPhase("show");
+      else if (phase === "show") setPhase("out");
+      else {
+        setIdx((i) => (i + 1) % START_PHRASES.length);
+        setPhase("in");
+      }
+    }, durations[phase]);
+    return () => clearTimeout(t);
+  }, [phase, recoveredBackup]);
+
+  const anim =
+    phase === "out"
+      ? "sb-zap-out 0.24s ease-in forwards"
+      : phase === "in"
+      ? "sb-zap-in 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards"
+      : "sb-bob 2.4s ease-in-out infinite";
+
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-1 h-12 bg-accent text-bg font-medium rounded-lg text-sm hover:opacity-90 transition-all ${
+        recoveredBackup ? "shadow-[0_0_24px_rgba(57,255,20,0.35)]" : ""
+      }`}
+    >
+      {recoveredBackup ? (
+        <span className="flex items-center justify-center gap-2">
+          <span>Continue session</span>
+          <span className="text-[10px] font-medium uppercase tracking-wider bg-bg/20 rounded-full px-2 py-0.5 leading-none">
+            In Progress
+          </span>
+        </span>
+      ) : (
+        <span
+          key={`${idx}-${phase}`}
+          className="inline-block"
+          style={{ animation: anim }}
+        >
+          {START_PHRASES[idx]}
+        </span>
+      )}
+      <style>{`
+        @keyframes sb-zap-in  { 0% { transform: scale(0.03); opacity: 0; } 60% { transform: scale(1.18); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes sb-zap-out { 0% { transform: scale(1);    opacity: 1; } 40% { transform: scale(0.18); opacity: 1; } 100% { transform: scale(0.03); opacity: 0; } }
+        @keyframes sb-bob     { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-2px) scale(1.02); } }
+      `}</style>
+    </button>
   );
 }

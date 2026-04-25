@@ -254,13 +254,17 @@ export default function BlendSessionPage() {
     };
 
     setSaving(true);
+    let savedSessionId: string | null = null;
     try {
       const res = await fetch("/api/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) {
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        savedSessionId = data?.id ?? null;
+      } else {
         savePendingSession(payload);
       }
     } catch {
@@ -268,7 +272,22 @@ export default function BlendSessionPage() {
     }
     clearInterval(progressPollRef.current!);
     setSaving(false);
-    router.replace("/");
+
+    // Tell the blend invite which session belongs to this user, then route
+    // to the comparison summary
+    if (savedSessionId) {
+      try {
+        await fetch(`/api/blend/${token}/finish`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: savedSessionId }),
+        });
+      } catch { /* non-critical */ }
+      router.replace(`/blend/${token}/summary`);
+    } else {
+      // Save failed (offline) — go home, regular pending-session sync will pick it up
+      router.replace("/");
+    }
   }
 
   if (loadState === "loading") {

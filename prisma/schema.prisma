@@ -127,6 +127,8 @@ model BlendInvite {
   guestProgress       Json?
   hostConfirmed       Boolean  @default(false)
   guestConfirmed      Boolean  @default(false)
+  hostSessionId       String?
+  guestSessionId      String?
   shuffleSeed         Int      @default(0)
   status              String   @default("pending")
   expiresAt           DateTime

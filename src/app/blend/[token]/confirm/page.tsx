@@ -163,36 +163,57 @@ export default function BlendConfirmPage() {
           className="space-y-1 animate-blend-list"
           style={{ animation: "blend-list-in 500ms ease-out" }}
         >
-          {exercises.map((ex, i) => (
+          {exercises.map((ex, i) => {
+            const isHero = ex.isHero || ex.owner === "shared";
+            return (
             <div
               key={`${i}-${ex.id}`}
-              className="flex items-center justify-between py-2.5 px-3 border border-border rounded-md"
+              className={`flex items-center justify-between py-2.5 px-3 rounded-md border ${
+                isHero
+                  ? "border-accent bg-accent/5"
+                  : "border-border"
+              }`}
               style={{
                 animation: `blend-row-in 500ms ease-out ${i * 40}ms both`,
+                ...(isHero
+                  ? { boxShadow: "0 0 16px rgba(57,255,20,0.12)" }
+                  : {}),
               }}
             >
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium truncate">{ex.name}</p>
-                <p className="text-[10px] text-muted">
+                <div className="flex items-center gap-1.5">
+                  {isHero && (
+                    <span className="text-[8px] font-bold uppercase tracking-widest text-bg bg-accent rounded px-1.5 py-0.5 leading-none">
+                      H2H
+                    </span>
+                  )}
+                  <p className="text-sm font-medium truncate">{ex.name}</p>
+                </div>
+                <p className="text-[10px] text-muted mt-0.5">
                   {ex.sets} × {ex.repRange[0]}-{ex.repRange[1]}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-0.5 ml-2">
                 <span
                   className={`text-[10px] font-medium uppercase tracking-widest ${
-                    ex.owner === "host" ? "text-accent" : "text-muted"
+                    isHero
+                      ? "text-accent"
+                      : ex.owner === "host"
+                        ? "text-accent"
+                        : "text-muted"
                   }`}
                 >
-                  {ex.ownerName}
+                  {isHero ? "Both" : ex.ownerName}
                 </span>
-                {ex.newForPartner && (
+                {ex.newForPartner && !isHero && (
                   <span className="text-[9px] font-medium uppercase tracking-widest text-accent/70">
                     new to {ex.owner === "host" ? partnerName : state.hostName}
                   </span>
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Confirmation status row */}

@@ -1,9 +1,11 @@
 import type { Exercise, DayDefinition } from "@/lib/program";
 
 export interface BlendedExercise extends Exercise {
-  owner: "host" | "guest";
+  owner: "host" | "guest" | "shared";
   ownerName: string;
-  // true when the "other" user has never done this exercise in their history
+  /** Featured shared lift — both users do the same exercise as a head-to-head. */
+  isHero?: boolean;
+  /** True when the partner has never done this exercise in their history. */
   newForPartner?: boolean;
 }
 
@@ -11,6 +13,11 @@ export interface BlendedDayDefinition {
   label: string;
   exercises: BlendedExercise[];
 }
+
+// Output caps — keep blended sessions punchy, not the sum of two whole days
+const TOTAL_CAP = 7;
+const HERO_CAP = 2;
+const PRIMARY_COMPOUND_CAP = 2;
 
 const EXERCISE_MUSCLE: Record<string, string> = {
   squat: "quads",
@@ -60,7 +67,15 @@ const COMPOUND_IDS = new Set([
   "incline_db_press",
 ]);
 
-// Deterministic PRNG (mulberry32) for seed-based shuffle
+function muscleOf(ex: Exercise): string {
+  return EXERCISE_MUSCLE[ex.id] ?? ex.id;
+}
+
+function isCompound(ex: Exercise): boolean {
+  return COMPOUND_IDS.has(ex.id);
+}
+
+// Deterministic PRNG (mulberry32) for seed-based variation
 function mulberry32(seed: number) {
   let t = seed >>> 0;
   return () => {
@@ -84,8 +99,8 @@ function seededShuffle<T>(arr: T[], seed: number): T[] {
 
 function sortByPriority(exercises: Exercise[]): Exercise[] {
   return [
-    ...exercises.filter((e) => COMPOUND_IDS.has(e.id)),
-    ...exercises.filter((e) => !COMPOUND_IDS.has(e.id)),
+    ...exercises.filter(isCompound),
+    ...exercises.filter((e) => !isCompound(e)),
   ];
 }
 
@@ -99,6 +114,21 @@ export interface BlendOptions {
   shuffleSeed?: number;
 }
 
+/**
+ * Blend two planned days into a curated shared session.
+ *
+ * The output is NOT a 1:1 zip of both days. It's three layered picks:
+ *
+ *   1. **Heroes (≤2)** — exercises both users have on their day. Both users
+ *      do them — head-to-head moments. Tagged `owner: "shared"`.
+ *   2. **Primary compounds (≤2)** — biggest unique compounds from each side,
+ *      one per owner if available. Tagged `owner: "host"` / `"guest"`.
+ *   3. **Variety accessories** — fill remaining slots up to TOTAL_CAP=7,
+ *      scored by new-muscle-coverage and partner-familiarity. Owner-balanced
+ *      so neither side dominates.
+ *
+ * Final pass smooths same-muscle adjacents.
+ */
 export function blendDays(
   hostExercises: Exercise[],
   guestExercises: Exercise[],
@@ -117,55 +147,134 @@ export function blendDays(
   const hostKnown = new Set(hostKnownExercises);
   const guestKnown = new Set(guestKnownExercises);
 
-  // Filter out exercises neither user has done. A user's own planned exercise
-  // is always "known-by-owner" even when absent from their raw history — new
-  // plans aren't history yet, but the user clearly intends to do them.
-  const hostFiltered = hostExercises.filter(
-    (e) => true || hostKnown.has(e.id) || guestKnown.has(e.id)
-  );
-  const guestFiltered = guestExercises.filter(
-    (e) => true || hostKnown.has(e.id) || guestKnown.has(e.id)
-  );
-  // (The `true ||` keeps own-plan exercises; it's explicit rather than dropping
-  // them on blank history. We only drop when we have strong signal — below.)
+  const used = new Set<string>();
 
-  const A: BlendedExercise[] = sortByPriority(hostFiltered).map((e) => ({
-    ...e,
-    owner: "host" as const,
-    ownerName: hostName,
-    // New for partner (the guest) if guest's history lacks this exercise
-    newForPartner: guestKnownExercises.length > 0 && !guestKnown.has(e.id),
-  }));
-
-  const B: BlendedExercise[] = sortByPriority(guestFiltered).map((e) => ({
-    ...e,
-    owner: "guest" as const,
-    ownerName: guestName,
-    newForPartner: hostKnownExercises.length > 0 && !hostKnown.has(e.id),
-  }));
-
-  // Apply seeded shuffle to each list (keeps compounds-first ordering only
-  // when seed === 0; otherwise the shuffle randomizes the lot).
-  const Ashuf = seededShuffle(A, shuffleSeed);
-  const Bshuf = seededShuffle(B, shuffleSeed ^ 0x9e3779b9);
-
-  // Interleave A, B, A, B...
-  const result: BlendedExercise[] = [];
-  const maxLen = Math.max(Ashuf.length, Bshuf.length);
-  for (let i = 0; i < maxLen; i++) {
-    if (i < Ashuf.length) result.push(Ashuf[i]);
-    if (i < Bshuf.length) result.push(Bshuf[i]);
+  // ── 1. HEROES ──────────────────────────────────────────────────────────
+  // Exercises both users have on their day. Both do them as a head-to-head.
+  const hostIds = new Set(hostExercises.map((e) => e.id));
+  const sharedExercises = guestExercises.filter((e) => hostIds.has(e.id));
+  const sharedSorted = seededShuffle(sortByPriority(sharedExercises), shuffleSeed);
+  const heroes: BlendedExercise[] = [];
+  for (const ex of sharedSorted) {
+    if (heroes.length >= HERO_CAP) break;
+    heroes.push({
+      ...ex,
+      owner: "shared",
+      ownerName: `${hostName} & ${guestName}`,
+      isHero: true,
+    });
+    used.add(ex.id);
   }
 
-  // Smoothing: swap adjacent pairs that hit the same muscle group
+  // ── 2. PRIMARY COMPOUNDS ───────────────────────────────────────────────
+  // Pick 1 unique compound per side, alternating, up to PRIMARY_COMPOUND_CAP.
+  const hostUniqCompounds = seededShuffle(
+    hostExercises.filter((e) => !used.has(e.id) && isCompound(e)),
+    shuffleSeed ^ 0x9e3779b9
+  );
+  const guestUniqCompounds = seededShuffle(
+    guestExercises.filter((e) => !used.has(e.id) && isCompound(e)),
+    shuffleSeed ^ 0x517cc1b7
+  );
+  const primary: BlendedExercise[] = [];
+  let h = 0;
+  let g = 0;
+  while (
+    primary.length < PRIMARY_COMPOUND_CAP &&
+    (h < hostUniqCompounds.length || g < guestUniqCompounds.length)
+  ) {
+    if (h < hostUniqCompounds.length && primary.length < PRIMARY_COMPOUND_CAP) {
+      const ex = hostUniqCompounds[h++];
+      if (!used.has(ex.id)) {
+        primary.push({
+          ...ex,
+          owner: "host",
+          ownerName: hostName,
+          newForPartner: guestKnownExercises.length > 0 && !guestKnown.has(ex.id),
+        });
+        used.add(ex.id);
+      }
+    }
+    if (g < guestUniqCompounds.length && primary.length < PRIMARY_COMPOUND_CAP) {
+      const ex = guestUniqCompounds[g++];
+      if (!used.has(ex.id)) {
+        primary.push({
+          ...ex,
+          owner: "guest",
+          ownerName: guestName,
+          newForPartner: hostKnownExercises.length > 0 && !hostKnown.has(ex.id),
+        });
+        used.add(ex.id);
+      }
+    }
+  }
+
+  // ── 3. VARIETY ACCESSORIES ─────────────────────────────────────────────
+  // Score remaining unique exercises by:
+  //   +10 if their muscle group isn't yet represented (variety bonus)
+  //   +1  if the partner has done this exercise before (familiar)
+  //   +small seeded jitter for shuffle-driven variation
+  const remainingSlots = Math.max(0, TOTAL_CAP - heroes.length - primary.length);
+  const muscleSeen = new Set<string>();
+  [...heroes, ...primary].forEach((e) => muscleSeen.add(muscleOf(e)));
+
+  type Candidate = { ex: Exercise; owner: "host" | "guest"; score: number };
+  const rng = mulberry32(shuffleSeed ^ 0x85ebca6b);
+  const candidates: Candidate[] = [];
+  for (const ex of hostExercises) {
+    if (used.has(ex.id)) continue;
+    let score = muscleSeen.has(muscleOf(ex)) ? 0 : 10;
+    if (guestKnown.has(ex.id)) score += 1;
+    score += rng() * 0.5;
+    candidates.push({ ex, owner: "host", score });
+  }
+  for (const ex of guestExercises) {
+    if (used.has(ex.id)) continue;
+    let score = muscleSeen.has(muscleOf(ex)) ? 0 : 10;
+    if (hostKnown.has(ex.id)) score += 1;
+    score += rng() * 0.5;
+    candidates.push({ ex, owner: "guest", score });
+  }
+  candidates.sort((a, b) => b.score - a.score);
+
+  const accessories: BlendedExercise[] = [];
+  const ownerCount = { host: 0, guest: 0 };
+  for (const c of candidates) {
+    if (accessories.length >= remainingSlots) break;
+    if (used.has(c.ex.id)) continue;
+    // Balance: don't let one side dominate by more than 1
+    const otherOwner = c.owner === "host" ? "guest" : "host";
+    if (ownerCount[c.owner] > ownerCount[otherOwner] + 1) continue;
+
+    const newForPartner =
+      c.owner === "host"
+        ? guestKnownExercises.length > 0 && !guestKnown.has(c.ex.id)
+        : hostKnownExercises.length > 0 && !hostKnown.has(c.ex.id);
+
+    accessories.push({
+      ...c.ex,
+      owner: c.owner,
+      ownerName: c.owner === "host" ? hostName : guestName,
+      newForPartner,
+    });
+    used.add(c.ex.id);
+    muscleSeen.add(muscleOf(c.ex));
+    ownerCount[c.owner]++;
+  }
+
+  // ── Order: heroes → primary → accessories ─────────────────────────────
+  const result: BlendedExercise[] = [...heroes, ...primary, ...accessories];
+
+  // Smoothing: nudge same-muscle adjacents apart
   for (let i = 0; i < result.length - 1; i++) {
-    const curr = EXERCISE_MUSCLE[result[i].id] ?? result[i].id;
-    const next = EXERCISE_MUSCLE[result[i + 1].id] ?? result[i + 1].id;
+    const curr = muscleOf(result[i]);
+    const next = muscleOf(result[i + 1]);
     if (curr === next && i + 2 < result.length) {
       [result[i + 1], result[i + 2]] = [result[i + 2], result[i + 1]];
     }
   }
 
+  // ── Label ──────────────────────────────────────────────────────────────
   const hostShort = hostDayLabel.includes("—")
     ? hostDayLabel.split("—")[1].trim()
     : hostDayLabel;

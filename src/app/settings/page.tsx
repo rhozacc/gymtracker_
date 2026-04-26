@@ -83,17 +83,22 @@ function DevSection() {
 
   const [accessOpen, setAccessOpen] = useState(false);
   const [emails, setEmails] = useState<AllowedEmail[]>([]);
+  const [emailsLoaded, setEmailsLoaded] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [addError, setAddError] = useState("");
   const [addLoading, setAddLoading] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isOwner || !accessOpen) return;
+    if (!accessOpen) {
+      setConfirmDeleteId(null);
+      return;
+    }
+    if (!isOwner) return;
     fetch("/api/admin/allowed-emails")
       .then((r) => r.json())
-      .then(setEmails)
-      .catch(() => {});
+      .then((data) => { setEmails(data); setEmailsLoaded(true); })
+      .catch(() => setEmailsLoaded(true));
   }, [isOwner, accessOpen]);
 
   if (!isOwner) return null;
@@ -109,9 +114,9 @@ function DevSection() {
       body: JSON.stringify({ email: trimmed }),
     });
     if (res.ok) {
+      const entry = (await res.json()) as AllowedEmail;
+      setEmails((prev) => [...prev, entry]);
       setNewEmail("");
-      const data = await fetch("/api/admin/allowed-emails").then((r) => r.json());
-      setEmails(data);
     } else {
       const data = await res.json();
       setAddError(data.error || "Failed to add");
@@ -211,7 +216,9 @@ function DevSection() {
                 )}
               </div>
               {addError && <p className="text-red-400 text-xs">{addError}</p>}
-              {emails.length === 0 ? (
+              {!emailsLoaded ? (
+                <p className="text-xs text-muted">Loading...</p>
+              ) : emails.length === 0 ? (
                 <p className="text-xs text-muted italic">No emails added yet</p>
               ) : (
                 <ul className="space-y-2">
@@ -645,9 +652,12 @@ export default function Settings() {
         <div className="border border-border rounded p-3 space-y-3">
           <button
             onClick={() => router.push("/onboarding")}
-            className="w-full text-left text-sm text-text"
+            className="w-full flex items-center justify-between text-left"
           >
-            Onboarding
+            <span className="text-sm text-text">Onboarding</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted flex-shrink-0 ml-3">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
           </button>
           <div className="border-t border-border" />
           <button

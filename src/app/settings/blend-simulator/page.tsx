@@ -166,7 +166,7 @@ export default function BlendSimulatorPage() {
 
   function handleBack() {
     if (step === 1) {
-      router.back();
+      router.push("/settings");
     } else {
       setStep((s) => (s - 1) as 1 | 2 | 3);
     }
@@ -245,7 +245,7 @@ export default function BlendSimulatorPage() {
                 Reshake
               </button>
               <button
-                onClick={() => router.back()}
+                onClick={() => router.push("/settings")}
                 className="flex-1 h-12 bg-accent text-bg font-bold rounded-lg text-sm"
               >
                 Done

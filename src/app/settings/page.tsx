@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme, DARK_ACCENTS, LIGHT_ACCENTS } from "@/lib/useTheme";
 import { useUnit } from "@/lib/useUnit";
 import { authClient } from "@/lib/auth-client";
 import { CURRENT_VERSION } from "@/components/UpdateSplash";
+import { PLANS } from "@/lib/program";
+import { blendDays } from "@/lib/blend";
+import type { BlendedDayDefinition, BlendedExercise } from "@/lib/blend";
 
 const NOTIF_OPTED_OUT = "gym-notifications-off";
 const ORIENT_LOCK_KEY = "gym-orientation-lock";
@@ -71,8 +74,6 @@ function Toggle({
   );
 }
 
-type AccessPhase = "locked" | "entering-pin" | "unlocked";
-
 interface AllowedEmail {
   id: string;
   email: string;
@@ -83,65 +84,21 @@ function AccessSection() {
   const { data: session } = authClient.useSession();
   const isOwner = session?.user?.email === process.env.NEXT_PUBLIC_OWNER_EMAIL;
 
-  const [phase, setPhase] = useState<AccessPhase>("locked");
-  const [pin, setPin] = useState(["", "", "", ""]);
-  const [pinError, setPinError] = useState(false);
-  const [pinLoading, setPinLoading] = useState(false);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
   const [emails, setEmails] = useState<AllowedEmail[]>([]);
   const [newEmail, setNewEmail] = useState("");
   const [addError, setAddError] = useState("");
   const [addLoading, setAddLoading] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!isOwner) return;
+    fetch("/api/admin/allowed-emails")
+      .then((r) => r.json())
+      .then(setEmails)
+      .catch(() => {});
+  }, [isOwner]);
+
   if (!isOwner) return null;
-
-  async function verifyPin(fullPin: string) {
-    setPinLoading(true);
-    setPinError(false);
-    const res = await fetch("/api/auth/verify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pin: fullPin }),
-    });
-    const data = await res.json();
-    if (data.valid) {
-      await loadEmails();
-      setPhase("unlocked");
-    } else {
-      setPinError(true);
-      setPin(["", "", "", ""]);
-      inputRefs.current[0]?.focus();
-    }
-    setPinLoading(false);
-  }
-
-  function handleDigit(index: number, value: string) {
-    if (!/^\d*$/.test(value)) return;
-    const digit = value.slice(-1);
-    const next = [...pin];
-    next[index] = digit;
-    setPin(next);
-    setPinError(false);
-    if (digit && index < 3) inputRefs.current[index + 1]?.focus();
-    if (digit && index === 3) {
-      const fullPin = next.join("");
-      if (fullPin.length === 4) verifyPin(fullPin);
-    }
-  }
-
-  function handleKeyDown(index: number, e: React.KeyboardEvent) {
-    if (e.key === "Backspace" && !pin[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  }
-
-  async function loadEmails() {
-    const res = await fetch("/api/admin/allowed-emails");
-    const data = await res.json();
-    setEmails(data);
-  }
 
   async function handleAdd() {
     const trimmed = newEmail.trim().toLowerCase();
@@ -155,7 +112,8 @@ function AccessSection() {
     });
     if (res.ok) {
       setNewEmail("");
-      await loadEmails();
+      const data = await fetch("/api/admin/allowed-emails").then((r) => r.json());
+      setEmails(data);
     } else {
       const data = await res.json();
       setAddError(data.error || "Failed to add");
@@ -176,131 +134,75 @@ function AccessSection() {
   return (
     <div>
       <SectionLabel>Access</SectionLabel>
-      <div className="border border-border rounded p-3">
-        {phase === "locked" && (
-          <button
-            onClick={() => setPhase("entering-pin")}
-            className="w-full text-left text-sm text-muted hover:text-text transition-colors"
-          >
-            Manage access list
-            <span className="text-[11px] text-muted block mt-0.5">Enter PIN to view and edit</span>
-          </button>
-        )}
-
-        {phase === "entering-pin" && (
-          <div className="flex flex-col items-center gap-4 py-2">
-            <p className="text-sm text-muted">Enter PIN to unlock</p>
-            <div className="flex gap-3">
-              {pin.map((digit, i) => (
-                <input
-                  key={i}
-                  ref={(el) => { inputRefs.current[i] = el; }}
-                  type="password"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleDigit(i, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(i, e)}
-                  disabled={pinLoading}
-                  className="w-12 h-12 bg-surface border border-border text-text text-center text-xl font-bold rounded focus:border-accent focus:outline-none disabled:opacity-50"
-                  autoFocus={i === 0}
-                />
-              ))}
-            </div>
-            {pinError && <p className="text-red-400 text-xs">Wrong PIN</p>}
-            {pinLoading && (
-              <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-            )}
+      <div className="border border-border rounded p-3 space-y-3">
+        <p className="text-xs text-muted">Friends who can sign in</p>
+        <div className="flex gap-2">
+          <input
+            type="email"
+            value={newEmail}
+            onChange={(e) => { setNewEmail(e.target.value); setAddError(""); }}
+            onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
+            placeholder="friend@gmail.com"
+            className="flex-1 h-9 bg-bg border border-border text-text text-sm rounded px-3 focus:border-accent focus:outline-none"
+          />
+          {newEmail.trim() ? (
             <button
-              onClick={() => { setPhase("locked"); setPin(["", "", "", ""]); setPinError(false); }}
-              className="text-xs text-muted"
+              onClick={handleAdd}
+              disabled={addLoading}
+              className="h-9 px-4 bg-accent text-bg text-sm font-medium rounded disabled:opacity-50"
             >
-              Cancel
+              {addLoading ? "..." : "Add"}
             </button>
-          </div>
-        )}
-
-        {phase === "unlocked" && (
-          <div className="space-y-3">
-            <p className="text-xs text-muted">Friends who can sign in with their Google account</p>
-
-            <div className="flex gap-2">
-              <input
-                type="email"
-                value={newEmail}
-                onChange={(e) => { setNewEmail(e.target.value); setAddError(""); }}
-                onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
-                placeholder="friend@gmail.com"
-                className="flex-1 h-9 bg-bg border border-border text-text text-sm rounded px-3 focus:border-accent focus:outline-none"
-              />
-              {newEmail.trim() ? (
-                <button
-                  onClick={handleAdd}
-                  disabled={addLoading}
-                  className="h-9 px-4 bg-accent text-bg text-sm font-medium rounded disabled:opacity-50"
-                >
-                  {addLoading ? "..." : "Add"}
-                </button>
-              ) : (
-                <button
-                  onClick={async () => {
-                    try {
-                      const text = await navigator.clipboard.readText();
-                      const trimmed = text.trim();
-                      if (trimmed) { setNewEmail(trimmed); setAddError(""); }
-                    } catch { /* clipboard denied */ }
-                  }}
-                  className="h-9 px-4 border border-border text-muted text-sm rounded hover:border-accent hover:text-accent transition-colors"
-                >
-                  Paste
-                </button>
-              )}
-            </div>
-            {addError && <p className="text-red-400 text-xs">{addError}</p>}
-
-            {emails.length === 0 ? (
-              <p className="text-xs text-muted italic">No emails added yet</p>
-            ) : (
-              <ul className="space-y-2">
-                {emails.map((e) => (
-                  <li key={e.id} className="flex items-center justify-between gap-2">
-                    <span className="text-sm truncate">{e.email}</span>
-                    {confirmDeleteId === e.id ? (
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          onClick={() => handleDelete(e.id)}
-                          className="text-xs text-red-400 font-medium hover:text-red-300 transition-colors"
-                        >
-                          Confirm
-                        </button>
-                        <button
-                          onClick={() => setConfirmDeleteId(null)}
-                          className="text-xs text-muted hover:text-text transition-colors"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setConfirmDeleteId(e.id)}
-                        className="text-muted hover:text-red-400 transition-colors flex-shrink-0 text-lg leading-none"
-                        aria-label={`Remove ${e.email}`}
-                      >
-                        ×
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-
+          ) : (
             <button
-              onClick={() => { setPhase("locked"); setPin(["", "", "", ""]); }}
-              className="text-xs text-muted pt-1"
+              onClick={async () => {
+                try {
+                  const text = await navigator.clipboard.readText();
+                  const trimmed = text.trim();
+                  if (trimmed) { setNewEmail(trimmed); setAddError(""); }
+                } catch { /* clipboard denied */ }
+              }}
+              className="h-9 px-4 border border-border text-muted text-sm rounded hover:border-accent hover:text-accent transition-colors"
             >
-              Lock
+              Paste
             </button>
-          </div>
+          )}
+        </div>
+        {addError && <p className="text-red-400 text-xs">{addError}</p>}
+        {emails.length === 0 ? (
+          <p className="text-xs text-muted italic">No emails added yet</p>
+        ) : (
+          <ul className="space-y-2">
+            {emails.map((e) => (
+              <li key={e.id} className="flex items-center justify-between gap-2">
+                <span className="text-sm truncate">{e.email}</span>
+                {confirmDeleteId === e.id ? (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => handleDelete(e.id)}
+                      className="text-xs text-red-400 font-medium hover:text-red-300 transition-colors"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      onClick={() => setConfirmDeleteId(null)}
+                      className="text-xs text-muted hover:text-text transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmDeleteId(e.id)}
+                    className="text-muted hover:text-red-400 transition-colors flex-shrink-0 text-lg leading-none"
+                    aria-label={`Remove ${e.email}`}
+                  >
+                    ×
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
         )}
       </div>
       <div className="mt-3 border border-border rounded p-3">
@@ -310,6 +212,289 @@ function AccessSection() {
         <p className="text-[11px] text-muted mt-0.5">Edit how each exercise credits muscle groups on the radar</p>
       </div>
     </div>
+  );
+}
+
+// ── Blend Simulator ──────────────────────────────────────────────────────────
+
+type SimPick = { planId: string; dayType: string; label: string };
+
+function DayPicker({
+  title,
+  selected,
+  onSelect,
+}: {
+  title: string;
+  selected: SimPick | null;
+  onSelect: (pick: SimPick) => void;
+}) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  return (
+    <div className="flex-1 flex flex-col min-h-0">
+      <p className="text-[10px] font-medium uppercase tracking-widest text-muted mb-3">{title}</p>
+      <div className="flex-1 overflow-y-auto space-y-2 pr-0.5">
+        {Object.values(PLANS).map((plan) => (
+          <div key={plan.id} className="border border-border rounded">
+            <button
+              onClick={() => setExpanded(expanded === plan.id ? null : plan.id)}
+              className="w-full flex items-center justify-between px-3 py-2.5 text-left"
+            >
+              <span className="text-sm font-medium">{plan.name}</span>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-muted transition-transform"
+                style={{ transform: expanded === plan.id ? "rotate(180deg)" : "rotate(0deg)" }}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {expanded === plan.id && (
+              <div className="border-t border-border divide-y divide-border/50">
+                {Object.entries(plan.days).map(([dayType, day]) => {
+                  const isSelected = selected?.planId === plan.id && selected?.dayType === dayType;
+                  return (
+                    <button
+                      key={dayType}
+                      onClick={() => onSelect({ planId: plan.id, dayType, label: day.label })}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-left transition-colors ${
+                        isSelected ? "bg-accent/10" : "hover:bg-surface"
+                      }`}
+                    >
+                      <div>
+                        <p className={`text-sm ${isSelected ? "text-accent font-medium" : "text-text"}`}>
+                          {day.label}
+                        </p>
+                        <p className="text-[10px] text-muted mt-0.5">{day.exercises.length} exercises</p>
+                      </div>
+                      {isSelected && (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-accent flex-shrink-0">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BlendResultView({
+  result,
+  youPick,
+  partnerPick,
+}: {
+  result: BlendedDayDefinition;
+  youPick: SimPick;
+  partnerPick: SimPick;
+}) {
+  const exercises = result.exercises as BlendedExercise[];
+  return (
+    <div className="flex-1 flex flex-col min-h-0">
+      <div className="text-center space-y-0.5 mb-4">
+        <p className="text-accent font-medium">{result.label}</p>
+        <p className="text-muted text-xs">{exercises.length} exercises</p>
+      </div>
+      <div className="flex-1 overflow-y-auto space-y-1 pr-0.5">
+        {exercises.map((ex, i) => {
+          const isHero = ex.isHero || ex.owner === "shared";
+          return (
+            <div
+              key={`${i}-${ex.id}`}
+              className={`flex items-center justify-between py-2.5 px-3 rounded-md border ${
+                isHero ? "border-accent bg-accent/5" : "border-border"
+              }`}
+              style={isHero ? { boxShadow: "0 0 16px rgba(57,255,20,0.12)" } : {}}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  {isHero && (
+                    <span className="text-[8px] font-bold uppercase tracking-widest text-bg bg-accent rounded px-1.5 py-0.5 leading-none">
+                      H2H
+                    </span>
+                  )}
+                  <p className="text-sm font-medium truncate">{ex.name}</p>
+                </div>
+                <p className="text-[10px] text-muted mt-0.5">
+                  {ex.sets} × {ex.repRange[0]}–{ex.repRange[1]}
+                </p>
+              </div>
+              <div className="flex flex-col items-end gap-0.5 ml-2">
+                <span className={`text-[10px] font-medium uppercase tracking-widest ${isHero ? "text-accent" : "text-muted"}`}>
+                  {isHero ? "Both" : ex.ownerName}
+                </span>
+                {ex.newForPartner && !isHero && (
+                  <span className="text-[9px] text-accent/70 uppercase tracking-widest">new</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-3 pt-3 border-t border-border text-center">
+        <p className="text-[10px] text-muted">
+          {youPick.label.split("—")[1]?.trim() ?? youPick.label} × {partnerPick.label.split("—")[1]?.trim() ?? partnerPick.label}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function BlendSimulator({ onClose }: { onClose: () => void }) {
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [youPick, setYouPick] = useState<SimPick | null>(null);
+  const [partnerPick, setPartnerPick] = useState<SimPick | null>(null);
+  const [result, setResult] = useState<BlendedDayDefinition | null>(null);
+
+  function computeBlend(partner: SimPick) {
+    if (!youPick) return;
+    const yourDay = PLANS[youPick.planId]?.days[youPick.dayType];
+    const partnerDay = PLANS[partner.planId]?.days[partner.dayType];
+    if (!yourDay || !partnerDay) return;
+    const blended = blendDays(yourDay.exercises, partnerDay.exercises, {
+      hostName: "You",
+      guestName: "Partner",
+      hostDayLabel: youPick.label,
+      guestDayLabel: partner.label,
+      shuffleSeed: Math.floor(Math.random() * 0xffffffff),
+    });
+    setResult(blended);
+    setStep(3);
+  }
+
+  return (
+    <div className="fixed inset-0 bg-bg z-[500] flex flex-col">
+      {/* Header */}
+      <div className="flex items-center gap-3 p-4 border-b border-border flex-shrink-0">
+        <button
+          onClick={step === 1 ? onClose : () => setStep((s) => (s - 1) as 1 | 2 | 3)}
+          className="text-muted hover:text-text transition-colors"
+          aria-label="Back"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <div className="flex-1">
+          <p className="text-xs font-medium uppercase tracking-widest text-muted">
+            Blend Simulator · {step}/3
+          </p>
+        </div>
+        <button onClick={onClose} className="text-muted hover:text-text transition-colors text-xl leading-none">×</button>
+      </div>
+
+      {/* Progress dots */}
+      <div className="flex items-center justify-center gap-2 py-3 flex-shrink-0">
+        {[1, 2, 3].map((s) => (
+          <div
+            key={s}
+            className={`rounded-full transition-all duration-300 ${
+              s === step ? "w-4 h-1.5 bg-accent" : s < step ? "w-1.5 h-1.5 bg-accent/50" : "w-1.5 h-1.5 bg-border"
+            }`}
+          />
+        ))}
+      </div>
+
+      {/* Step content */}
+      <div className="flex-1 flex flex-col min-h-0 px-4 pb-4 max-w-sm mx-auto w-full">
+        {step === 1 && (
+          <>
+            <DayPicker title="Your day" selected={youPick} onSelect={setYouPick} />
+            <div className="pt-4 flex-shrink-0">
+              <button
+                onClick={() => { if (youPick) setStep(2); }}
+                disabled={!youPick}
+                className="w-full h-12 bg-accent text-bg font-bold rounded-lg text-sm disabled:opacity-40 transition-opacity"
+              >
+                Next — pick partner&apos;s day
+              </button>
+            </div>
+          </>
+        )}
+
+        {step === 2 && (
+          <>
+            <DayPicker title="Partner's day" selected={partnerPick} onSelect={setPartnerPick} />
+            <div className="pt-4 flex-shrink-0">
+              <button
+                onClick={() => {
+                  if (partnerPick) {
+                    setPartnerPick(partnerPick);
+                    computeBlend(partnerPick);
+                  }
+                }}
+                disabled={!partnerPick}
+                className="w-full h-12 bg-accent text-bg font-bold rounded-lg text-sm disabled:opacity-40 transition-opacity"
+              >
+                Preview blend
+              </button>
+            </div>
+          </>
+        )}
+
+        {step === 3 && result && youPick && partnerPick && (
+          <>
+            <BlendResultView result={result} youPick={youPick} partnerPick={partnerPick} />
+            <div className="pt-4 flex gap-2 flex-shrink-0">
+              <button
+                onClick={() => {
+                  setResult(null);
+                  setStep(2);
+                }}
+                className="flex-1 h-10 border border-border text-muted rounded-lg text-sm hover:border-accent hover:text-accent transition-colors"
+              >
+                Reshake
+              </button>
+              <button
+                onClick={onClose}
+                className="flex-1 h-10 bg-accent text-bg font-bold rounded-lg text-sm"
+              >
+                Done
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DevSection() {
+  const { data: session } = authClient.useSession();
+  const isOwner = session?.user?.email === process.env.NEXT_PUBLIC_OWNER_EMAIL;
+  const [simOpen, setSimOpen] = useState(false);
+
+  if (!isOwner) return null;
+
+  return (
+    <>
+      <div>
+        <SectionLabel>Dev</SectionLabel>
+        <div className="border border-border rounded p-3">
+          <button
+            onClick={() => setSimOpen(true)}
+            className="w-full text-left text-sm text-accent hover:opacity-80 transition-opacity"
+          >
+            Blend Simulator
+          </button>
+          <p className="text-[11px] text-muted mt-0.5">Preview blended sessions without a second device</p>
+        </div>
+      </div>
+
+      {simOpen && <BlendSimulator onClose={() => setSimOpen(false)} />}
+    </>
   );
 }
 
@@ -685,6 +870,9 @@ export default function Settings() {
       {/* Access — only visible to owner */}
       <AccessSection />
 
+      {/* Dev tools — only visible to owner */}
+      <DevSection />
+
       {/* Account */}
       <div>
         <SectionLabel>Account</SectionLabel>
@@ -712,7 +900,6 @@ export default function Settings() {
       </div>
 
       <p className="text-center text-[10px] text-muted/40 pt-2">v{CURRENT_VERSION}</p>
-
     </div>
   );
 }

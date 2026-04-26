@@ -372,7 +372,7 @@ function DayPickScreen({
         </div>
       </div>
 
-      <div className="flex gap-2 pt-2">
+      <div className="flex gap-2 pt-2 pb-8">
         <button
           onClick={onBack}
           className="h-12 px-5 border border-border text-muted rounded-lg text-sm hover:border-muted transition-colors"
@@ -491,7 +491,7 @@ function ChallengeScreen({
         </div>
       </div>
 
-      <div className="pt-2">
+      <div className="pt-2 pb-8">
         <button
           onClick={onSubmit}
           disabled={sequence.length !== SEQUENCE_LENGTH}

@@ -29,6 +29,20 @@ export interface WorstExercise {
   deltaPct: number; // signed, e.g. -0.07 = down 7%
 }
 
+export interface ExerciseDelta {
+  id: string;
+  deltaPct: number;     // signed, e.g. -0.07 = down 7%
+  recentE1rm: number;   // best E1RM in the recent (0–14d) window
+  olderE1rm: number;    // best E1RM in the older (14–28d) window
+}
+
+export interface RecoverySummary {
+  avgEnergy: number | null;   // 1–10 scale, null when no debriefs in window
+  avgMood: number | null;     // 1–10 scale, null when no debriefs in window
+  debriefCount: number;       // debriefs counted toward the average (≤8)
+  consecutivePairs: number;   // back-to-back training-day pairs in window
+}
+
 export interface MomentumResult {
   // Two primary axes (drive the meter + tier)
   volume: number;          // 0–1
@@ -50,6 +64,8 @@ export interface MomentumResult {
   exercisesTracked: number;
   exercisesImproving: number;
   worstExercise: WorstExercise | null;
+  exerciseDeltas: ExerciseDelta[]; // every common exercise, sorted by delta asc
+  recovery: RecoverySummary;
 
   // Stats kept for back-compat / sorting
   sessionCount: number;
@@ -137,6 +153,8 @@ export function computeMomentumScore(
       exercisesTracked: 0,
       exercisesImproving: 0,
       worstExercise: null,
+      exerciseDeltas: [],
+      recovery: { avgEnergy: null, avgMood: null, debriefCount: 0, consecutivePairs: 0 },
       sessionCount: 0,
       score: 0,
     };
@@ -177,6 +195,7 @@ export function computeMomentumScore(
 
   let progression: number;
   let worstExercise: WorstExercise | null = null;
+  let exerciseDeltas: ExerciseDelta[] = [];
 
   if (exercisesTracked === 0) {
     progression = 0.45;
@@ -196,6 +215,15 @@ export function computeMomentumScore(
 
     const lowest = deltas.reduce((a, b) => (b.delta < a.delta ? b : a));
     worstExercise = { id: lowest.id, deltaPct: lowest.delta };
+
+    exerciseDeltas = deltas
+      .map(({ id, delta }) => ({
+        id,
+        deltaPct: delta,
+        recentE1rm: recentE1rm[id],
+        olderE1rm: olderE1rm[id],
+      }))
+      .sort((a, b) => a.deltaPct - b.deltaPct);
   }
 
   // ── SUSTAINABILITY (modifier only) ─────────────────────────────────────────
@@ -209,6 +237,15 @@ export function computeMomentumScore(
       ? debriefs.reduce((sum, d) => sum + (d.energy + d.mood) / 20, 0) / debriefs.length
       : 0.6;
 
+  const avgEnergy =
+    debriefs.length > 0
+      ? debriefs.reduce((sum, d) => sum + d.energy, 0) / debriefs.length
+      : null;
+  const avgMood =
+    debriefs.length > 0
+      ? debriefs.reduce((sum, d) => sum + d.mood, 0) / debriefs.length
+      : null;
+
   const trainingDays = new Set(
     window.map((s) => new Date(s.date).toISOString().split("T")[0]),
   );
@@ -221,6 +258,13 @@ export function computeMomentumScore(
   }
   const consecutivePenalty = Math.min(consecutivePairs * 0.03, 0.15);
   const sustainability = Math.max(0, debriefScore - consecutivePenalty);
+
+  const recovery: RecoverySummary = {
+    avgEnergy,
+    avgMood,
+    debriefCount: debriefs.length,
+    consecutivePairs,
+  };
 
   // ── TIER ───────────────────────────────────────────────────────────────────
   const tierLabel = classify(V, progression, sustainability);
@@ -254,6 +298,8 @@ export function computeMomentumScore(
     exercisesTracked,
     exercisesImproving,
     worstExercise,
+    exerciseDeltas,
+    recovery,
     sessionCount: window.length,
     score,
   };

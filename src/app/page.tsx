@@ -18,6 +18,7 @@ import { StreakCalendar } from "@/components/StreakCalendar";
 import { MUSCLE_GROUPS, MuscleGroup } from "@/lib/muscleGroups";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { computeMomentumScore } from "@/lib/momentum";
+import { computeMuscleVolume } from "@/lib/muscle-volume";
 import { MomentumScore } from "@/components/MomentumScore";
 import { estimateE1RM } from "@/lib/e1rm";
 import { SupportPrompt } from "@/components/SupportPrompt";
@@ -241,32 +242,9 @@ export default function Dashboard() {
 
   const muscleRadarData = useMemo(() => {
     if (!chartData) return [];
-    const now = new Date();
     // Trailing 7 days — avoids empty chart on Mondays due to calendar-week reset
-    const sevenDaysAgo = new Date(now);
-    sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7);
-    sevenDaysAgo.setUTCHours(0, 0, 0, 0);
-
-    const counts: Record<string, number> = {};
-    for (const mg of MUSCLE_GROUPS) counts[mg] = 0;
-
-    for (const session of chartData) {
-      const d = new Date(session.date);
-      if (d < sevenDaysAgo) continue;
-      const exerciseSets: Record<string, number> = {};
-      for (const s of session.sets) {
-        exerciseSets[s.exerciseId] = (exerciseSets[s.exerciseId] || 0) + 1;
-      }
-      for (const exId of Object.keys(exerciseSets)) {
-        const contribs = contributions?.[exId] ?? [];
-        for (const { group, weight } of contribs) {
-          counts[group as MuscleGroup] =
-            (counts[group as MuscleGroup] ?? 0) + exerciseSets[exId] * weight;
-        }
-      }
-    }
-
-    return MUSCLE_GROUPS.map((mg) => ({ muscle: mg, sets: Math.round(counts[mg] ?? 0) }));
+    const totals = computeMuscleVolume(chartData, contributions ?? {}, 7);
+    return MUSCLE_GROUPS.map((mg) => ({ muscle: mg, sets: Math.round(totals[mg]) }));
   }, [chartData, contributions]);
 
   const muscleStrengthBalance = useMemo(():
@@ -379,8 +357,17 @@ export default function Dashboard() {
 
   const momentumResult = useMemo(() => {
     if (!chartData) return null;
-    return computeMomentumScore(chartData);
-  }, [chartData]);
+    const nameById: Record<string, string> = {};
+    for (const day of Object.values(plan.days)) {
+      for (const ex of day.exercises) {
+        if (!nameById[ex.id]) nameById[ex.id] = ex.name;
+      }
+    }
+    return computeMomentumScore(chartData, {
+      contributions: contributions ?? {},
+      exerciseName: (id) => nameById[id],
+    });
+  }, [chartData, contributions, plan]);
 
   return (
     <>
@@ -410,7 +397,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Link
             href="/settings"
@@ -497,10 +484,7 @@ export default function Dashboard() {
             )}
           </button>
         </div>
-        <div className="text-right">
-          <span className="text-3xl font-bold">{streak}</span>
-          <span className="text-muted text-sm ml-1">week streak</span>
-        </div>
+        <MomentumScore result={momentumResult} />
       </div>
 
       {/* ── Last Session ── */}
@@ -694,9 +678,19 @@ export default function Dashboard() {
           </span>
         </Link>
 
-        <div className="mb-4">
-          <MomentumScore result={momentumResult} />
-        </div>
+        {streak > 0 && (
+          <div className="border border-border rounded p-3 mb-4 flex items-baseline justify-between">
+            <span className="text-[10px] text-muted uppercase tracking-widest">
+              Week streak
+            </span>
+            <span>
+              <span className="text-2xl font-bold">{streak}</span>
+              <span className="text-muted text-xs ml-1.5">
+                {streak === 1 ? "week" : "weeks"}
+              </span>
+            </span>
+          </div>
+        )}
 
         {sessions && sessions.length > 0 && (
           <div className="mb-4">

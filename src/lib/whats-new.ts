@@ -11,15 +11,11 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
-    area: "Blend handshake",
-    text: "No codes, no QR, no typing. Agree on any 3 icons with your friend, both tap them here in the same order — you're paired.",
+    area: "New Momentum",
+    text: "Your training state now headlines the home screen. Volume vs targets and lift progress, side by side — read your last 4 weeks at a glance, with a one-line diagnosis pointing at the actual bottleneck.",
   },
   {
-    area: "Same workout, own weights",
-    text: "Your plans merge into one shared session. Each of you sees the same exercises but tracks your own loads.",
-  },
-  {
-    area: "Shake it up",
-    text: "Don't love the mix? Tap Shake to reshuffle before starting. History-aware — no random exercises neither of you has touched.",
+    area: "Blended sessions",
+    text: "Train together, no setup. Pick three icons with a friend and tap them in the same order — your plans merge into one shared session. Same exercises, your own loads.",
   },
 ];

@@ -11,11 +11,11 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
-    area: "New Momentum",
-    text: "Your training state now headlines the home screen. Volume vs targets and lift progress, side by side — read your last 4 weeks at a glance, with a one-line diagnosis pointing at the actual bottleneck.",
+    area: "Momentum, refined",
+    text: "Cleaner bars for Volume and Lifts, with triangle markers for the Atrophy / Maintenance / Hypertrophy thresholds. See your training state at a glance.",
   },
   {
-    area: "Blended sessions",
-    text: "Train together, no setup. Pick three icons with a friend and tap them in the same order — your plans merge into one shared session. Same exercises, your own loads.",
+    area: "Tidier home screen",
+    text: "Last Session moved below Progress so the Momentum headline and your next workout sit side by side at the top.",
   },
 ];

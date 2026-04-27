@@ -484,43 +484,11 @@ export default function Dashboard() {
             )}
           </button>
         </div>
-        <MomentumScore result={momentumResult} />
-      </div>
-
-      {/* ── Last Session ── */}
-      {lastSession && (
         <div>
-          <Link href="/history" className="flex items-center justify-between mb-3 group">
-            <h2 className="text-lg font-medium">Last Session</h2>
-            <span className="flex items-center gap-1.5 text-muted group-hover:text-text transition-colors">
-              <span className="text-xs">Log</span>
-              <svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M2 10L10 2M10 2H4.5M10 2V7.5"/>
-              </svg>
-            </span>
-          </Link>
-          <Link
-            href={`/history/${lastSession.id}`}
-            className="block border border-border rounded p-3 hover:border-muted transition-colors"
-          >
-            <div className="flex justify-between items-baseline">
-              <span className="text-sm">
-                {getDayLabel(lastSession.dayType)}
-              </span>
-              <span className="text-muted text-xs">
-                {formatDate(lastSession.date)}
-              </span>
-            </div>
-            <div className="text-muted text-xs mt-1">
-              {lastSession.setCount} sets &middot;{" "}
-              {Math.round(
-                kgToDisplay(lastSession.totalVolume, unit)
-              ).toLocaleString()}{" "}
-              {unit} volume
-            </div>
-          </Link>
+          <h2 className="text-lg font-medium mb-3">Momentum</h2>
+          <MomentumScore result={momentumResult} />
         </div>
-      )}
+      </div>
 
       {/* ── Start Session ── */}
       <div>
@@ -726,6 +694,41 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* ── Last Session ── */}
+      {lastSession && (
+        <div>
+          <Link href="/history" className="flex items-center justify-between mb-3 group">
+            <h2 className="text-lg font-medium">Last Session</h2>
+            <span className="flex items-center gap-1.5 text-muted group-hover:text-text transition-colors">
+              <span className="text-xs">Log</span>
+              <svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 10L10 2M10 2H4.5M10 2V7.5"/>
+              </svg>
+            </span>
+          </Link>
+          <Link
+            href={`/history/${lastSession.id}`}
+            className="block border border-border rounded p-3 hover:border-muted transition-colors"
+          >
+            <div className="flex justify-between items-baseline">
+              <span className="text-sm">
+                {getDayLabel(lastSession.dayType)}
+              </span>
+              <span className="text-muted text-xs">
+                {formatDate(lastSession.date)}
+              </span>
+            </div>
+            <div className="text-muted text-xs mt-1">
+              {lastSession.setCount} sets &middot;{" "}
+              {Math.round(
+                kgToDisplay(lastSession.totalVolume, unit)
+              ).toLocaleString()}{" "}
+              {unit} volume
+            </div>
+          </Link>
+        </div>
+      )}
 
       {/* ── Social ── */}
       <div>

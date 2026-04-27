@@ -1,8 +1,15 @@
 import type { MomentumResult } from "@/lib/momentum";
 
-const SEGMENTS = 10;
+// Threshold positions on the 0–1 axis (mirrors the quadrant boundaries
+// used by `classify` in lib/momentum.ts).
+const THRESHOLDS = [0.4, 0.7] as const;
+const ZONE_LABELS = ["Atrophy", "Maintenance", "Hypertrophy"] as const;
 
-function Meter({
+// Centers of each zone — used to position labels.
+// Atrophy 0–40 → 20%, Maintenance 40–70 → 55%, Hypertrophy 70–100 → 85%
+const ZONE_CENTERS = [0.2, 0.55, 0.85];
+
+function StateBar({
   label,
   value,
   readout,
@@ -11,32 +18,39 @@ function Meter({
   value: number;
   readout: string;
 }) {
-  const filled = Math.max(0, Math.min(SEGMENTS, Math.round(value * SEGMENTS)));
+  const pct = Math.max(0, Math.min(1, value)) * 100;
   return (
-    <div className="flex items-center gap-3 text-[10px]">
-      <span className="text-muted uppercase tracking-widest w-12 shrink-0">
-        {label}
-      </span>
-      <div className="flex gap-0.5 flex-1 min-w-0">
-        {Array.from({ length: SEGMENTS }).map((_, i) => {
-          const isOn = i < filled;
-          const opacity = isOn ? 1 - (i / (SEGMENTS - 1)) * 0.4 : undefined;
-          return (
-            <div
-              key={i}
-              className="h-1.5 flex-1 rounded-sm"
-              style={
-                isOn
-                  ? { backgroundColor: "var(--color-accent)", opacity }
-                  : { backgroundColor: "var(--color-border)" }
-              }
-            />
-          );
-        })}
+    <div>
+      <div className="flex items-baseline justify-between mb-2">
+        <span className="text-[10px] font-medium uppercase tracking-widest text-muted">
+          {label}
+        </span>
+        <span className="text-[10px] text-muted">{readout}</span>
       </div>
-      <span className="text-muted text-right shrink-0 tabular-nums" style={{ minWidth: "5.25rem" }}>
-        {readout}
-      </span>
+      <div
+        className="relative h-1 rounded-full"
+        style={{ backgroundColor: "var(--color-border)" }}
+      >
+        <div
+          className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+          style={{ width: `${pct}%`, backgroundColor: "var(--color-accent)" }}
+        />
+      </div>
+      <div className="relative h-1.5 mt-1">
+        {THRESHOLDS.map((t) => (
+          <svg
+            key={t}
+            className="absolute top-0"
+            style={{ left: `${t * 100}%`, transform: "translateX(-50%)" }}
+            width="6"
+            height="5"
+            viewBox="0 0 6 5"
+            aria-hidden="true"
+          >
+            <polygon points="3,0 6,5 0,5" fill="var(--color-muted)" />
+          </svg>
+        ))}
+      </div>
     </div>
   );
 }
@@ -48,37 +62,47 @@ interface Props {
 export function MomentumScore({ result }: Props) {
   if (result === null) {
     return (
-      <div className="border border-border rounded-lg p-4 animate-pulse">
-        <div className="h-7 w-40 bg-surface rounded mb-2" />
-        <div className="h-3 w-56 bg-surface rounded mb-4" />
-        <div className="h-1.5 w-full bg-surface rounded mb-2" />
-        <div className="h-1.5 w-full bg-surface rounded mb-3" />
+      <div className="border border-border rounded-lg p-4 animate-pulse space-y-4">
+        <div className="space-y-2">
+          <div className="h-3 w-full bg-surface rounded" />
+          <div className="h-1 w-full bg-surface rounded" />
+        </div>
+        <div className="space-y-2">
+          <div className="h-3 w-full bg-surface rounded" />
+          <div className="h-1 w-full bg-surface rounded" />
+        </div>
         <div className="h-3 w-44 bg-surface rounded" />
       </div>
     );
   }
 
-  const { tier, limiter, volume, progression, volumeReadout, progressionReadout } = result;
+  const { limiter, volume, progression, volumeReadout, progressionReadout } = result;
 
   return (
     <div className="border border-border rounded-lg p-4">
-      <p className="text-2xl font-bold uppercase tracking-tight leading-none">
-        {tier.label}
-      </p>
-      <p className="text-xs text-muted mt-1.5 mb-4">
-        <span className="text-text">{tier.subtitle}</span>
-        <span className="mx-1.5">—</span>
-        <span>{limiter}</span>
-      </p>
-
-      <div className="space-y-1.5">
-        <Meter label="Volume" value={volume} readout={volumeReadout} />
-        <Meter label="Lifts" value={progression} readout={progressionReadout} />
+      <div className="space-y-4">
+        <StateBar label="Volume" value={volume} readout={volumeReadout} />
+        <StateBar label="Lifts" value={progression} readout={progressionReadout} />
       </div>
 
-      <p className="text-[10px] text-muted mt-3">
-        Last 4 weeks: training volume vs targets, lift progress, recovery.
-      </p>
+      <div className="relative h-3 mt-3">
+        {ZONE_LABELS.map((zone, i) => (
+          <span
+            key={zone}
+            className="absolute top-0 text-[9px] uppercase tracking-wider text-muted"
+            style={{ left: `${ZONE_CENTERS[i] * 100}%`, transform: "translateX(-50%)" }}
+          >
+            {zone}
+          </span>
+        ))}
+      </div>
+
+      <div className="border-t border-border mt-4 pt-3 space-y-1">
+        <p className="text-xs text-text">{limiter}</p>
+        <p className="text-[10px] text-muted">
+          Last 4 weeks: training volume vs targets, lift progress, recovery.
+        </p>
+      </div>
     </div>
   );
 }

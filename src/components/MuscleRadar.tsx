@@ -9,22 +9,8 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-
-// Weekly set targets per muscle group (RP Strength / meta-analysis consensus)
-const MEV_TARGETS: Record<string, number> = {
-  Chest: 10,
-  Back: 12,
-  Shoulders: 10,
-  Legs: 14,
-  Arms: 8,
-};
-const MAV_TARGETS: Record<string, number> = {
-  Chest: 12,
-  Back: 14,
-  Shoulders: 12,
-  Legs: 18,
-  Arms: 10,
-};
+import { MEV_TARGETS, MAV_TARGETS } from "@/lib/volume-targets";
+import type { MuscleGroup } from "@/lib/muscleGroups";
 
 interface MuscleRadarProps {
   data: { muscle: string; sets: number }[];
@@ -75,8 +61,8 @@ function RadarTooltip({ active, payload }: { active?: boolean; payload?: { paylo
   if (!active || !payload?.length) return null;
   const d = payload[0]?.payload;
   if (!d) return null;
-  const mev = MEV_TARGETS[d.muscle] ?? 10;
-  const mav = MAV_TARGETS[d.muscle] ?? 12;
+  const mev = MEV_TARGETS[d.muscle as MuscleGroup] ?? 10;
+  const mav = MAV_TARGETS[d.muscle as MuscleGroup] ?? 12;
   return (
     <div className="bg-surface border border-border rounded px-3 py-2 text-xs space-y-0.5">
       <p className="font-medium text-text">{d.muscle}</p>
@@ -101,8 +87,8 @@ export function MuscleRadarInner({ data }: MuscleRadarProps) {
   const axisMax = Math.max(maxMAV, maxActual) / 0.9;
 
   const normalized = data.map((d) => {
-    const mev = MEV_TARGETS[d.muscle] ?? 10;
-    const mav = MAV_TARGETS[d.muscle] ?? 12;
+    const mev = MEV_TARGETS[d.muscle as MuscleGroup] ?? 10;
+    const mav = MAV_TARGETS[d.muscle as MuscleGroup] ?? 12;
     return {
       muscle: d.muscle,
       actual: d.sets / axisMax,

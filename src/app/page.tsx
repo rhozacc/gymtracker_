@@ -485,7 +485,15 @@ export default function Dashboard() {
           </button>
         </div>
         <div>
-          <h2 className="text-lg font-medium mb-3">Momentum</h2>
+          <Link href="/momentum" className="flex items-center justify-between mb-3 group">
+            <h2 className="text-lg font-medium">Momentum</h2>
+            <span className="flex items-center gap-1.5 text-muted group-hover:text-text transition-colors">
+              <span className="text-xs">Breakdown</span>
+              <svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 10L10 2M10 2H4.5M10 2V7.5"/>
+              </svg>
+            </span>
+          </Link>
           <MomentumScore result={momentumResult} />
         </div>
       </div>

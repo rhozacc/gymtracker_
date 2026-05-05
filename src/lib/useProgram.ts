@@ -69,7 +69,14 @@ export function useProgram() {
     localStorage.setItem(STORAGE_KEY, slug);
     setPlanSlugState(slug);
     // Optimistically update prefs cache so effectiveSlug reflects the change immediately
-    mutatePrefs((prev) => ({ ...prev, activePlan: slug } as ApiPreferences), false);
+    mutatePrefs((prev) => ({
+      onboarded: prev?.onboarded ?? false,
+      activePlan: slug,
+      theme: prev?.theme ?? "dark",
+      unit: prev?.unit ?? "kg",
+      dayOrder: prev?.dayOrder,
+      onboardingStep: prev?.onboardingStep,
+    }), false);
     // Persist to DB; revalidate on failure so stale optimistic state doesn't linger
     fetch("/api/preferences", {
       method: "PUT",

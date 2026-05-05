@@ -11,6 +11,10 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    area: "Plan switching",
+    text: "Sorry Jakob — fixed a bug where plan selection would revert to default. You can now switch training types without them reverting. That was our bad.",
+  },
+  {
     area: "Momentum breakdown",
     text: "Tap Momentum on the home page to see the receipts: every muscle group vs MEV / MAV, every repeated lift's 14-day E1RM delta, and your recovery signal.",
   },

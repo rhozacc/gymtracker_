@@ -12,7 +12,7 @@ export interface WhatsNewEntry {
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
     area: "Plan switching",
-    text: "Sorry Jakob — fixed a bug where plan selection would revert to default. You can now switch training types without them reverting. That was our bad.",
+    text: "Sorry again Jakob — the previous attempt missed the actual bug. Switching plans was failing at the database layer because all users were sharing one preferences row. Each user now gets their own row, and switching actually persists.",
   },
   {
     area: "Momentum breakdown",

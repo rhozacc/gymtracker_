@@ -22,15 +22,12 @@ export async function PUT(req: Request) {
     const body = await req.json();
     const { abs, cardio, stretch } = body;
 
-    const existing = await prisma.extrasConfig.findFirst({ where: { userId } });
-    const config = existing
-      ? await prisma.extrasConfig.update({
-          where: { id: existing.id },
-          data: { abs: abs ?? null, cardio: cardio ?? null, stretch: stretch ?? null },
-        })
-      : await prisma.extrasConfig.create({
-          data: { userId, abs: abs ?? null, cardio: cardio ?? null, stretch: stretch ?? null },
-        });
+    const data = { abs: abs ?? null, cardio: cardio ?? null, stretch: stretch ?? null };
+    const config = await prisma.extrasConfig.upsert({
+      where: { userId },
+      update: data,
+      create: { userId, ...data },
+    });
 
     return NextResponse.json(config);
   } catch {

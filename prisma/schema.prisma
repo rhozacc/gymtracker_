@@ -46,8 +46,8 @@ model Debrief {
 }
 
 model ExtrasConfig {
-  id      String  @id @default("default")
-  userId  String?
+  id      String  @id @default(cuid())
+  userId  String? @unique
   abs     String?
   cardio  String?
   stretch String?
@@ -71,8 +71,8 @@ model WebAuthnChallenge {
 }
 
 model UserPreferences {
-  id             String   @id @default("default")
-  userId         String?
+  id             String   @id @default(cuid())
+  userId         String?  @unique
   onboarded      Boolean  @default(false)
   activePlan     String   @default("upper_lower")
   theme          String   @default("dark")

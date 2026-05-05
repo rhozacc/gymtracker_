@@ -7,18 +7,14 @@ export async function GET() {
   if (res) return res;
 
   try {
-    let prefs = await prisma.userPreferences.findFirst({ where: { userId } });
-    if (!prefs) {
-      prefs = await prisma.userPreferences.create({ data: { userId } });
-    }
+    const prefs = await prisma.userPreferences.upsert({
+      where: { userId },
+      update: {},
+      create: { userId },
+    });
     return NextResponse.json(prefs);
   } catch {
-    return NextResponse.json({
-      onboarded: false,
-      activePlan: "upper_lower",
-      theme: "dark",
-      unit: "kg",
-    });
+    return NextResponse.json({ error: "Failed to load preferences" }, { status: 500 });
   }
 }
 
@@ -38,10 +34,11 @@ export async function PUT(req: Request) {
     if (dayOrder !== undefined) data.dayOrder = dayOrder;
     if (onboardingStep !== undefined) data.onboardingStep = onboardingStep;
 
-    const existing = await prisma.userPreferences.findFirst({ where: { userId } });
-    const prefs = existing
-      ? await prisma.userPreferences.update({ where: { id: existing.id }, data })
-      : await prisma.userPreferences.create({ data: { userId, ...data } });
+    const prefs = await prisma.userPreferences.upsert({
+      where: { userId },
+      update: data,
+      create: { userId, ...data },
+    });
 
     return NextResponse.json(prefs);
   } catch {

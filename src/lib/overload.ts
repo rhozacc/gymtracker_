@@ -13,6 +13,7 @@ export interface OverloadResult {
   status: OverloadStatus;
   suggestedWeight: number;
   lastWeight: number;
+  lastWeights: number[];
   lastReps: number[];
 }
 
@@ -21,17 +22,24 @@ export function checkOverload(
   lastSets: SetData[]
 ): OverloadResult {
   if (lastSets.length === 0) {
-    return { ready: false, status: "none", suggestedWeight: 0, lastWeight: 0, lastReps: [] };
+    return { ready: false, status: "none", suggestedWeight: 0, lastWeight: 0, lastWeights: [], lastReps: [] };
   }
 
-  const lastWeight = Math.max(...lastSets.map((s) => s.weight));
+  const lastWeights = lastSets.map((s) => s.weight);
   const lastReps = lastSets.map((s) => s.reps);
-  const topOfRange = exercise.repRange[1];
-  const allHitTop = lastSets.every((s) => s.reps >= topOfRange);
+  const [bottomOfRange, topOfRange] = exercise.repRange;
 
-  // Determine status using RIR when available
+  // Find the effective set: highest weight where reps stayed within the rep range minimum.
+  // This prevents a failed heavy attempt from inflating the suggestion.
+  const setsInRange = lastSets.filter((s) => s.reps >= bottomOfRange);
+  const pool = setsInRange.length > 0 ? setsInRange : lastSets;
+  const effectiveSet = pool.reduce((best, s) => (s.weight > best.weight ? s : best));
+  const lastWeight = effectiveSet.weight;
+
+  const hitTop = effectiveSet.reps >= topOfRange;
+
   let status: OverloadStatus;
-  if (!allHitTop) {
+  if (!hitTop) {
     status = "none";
   } else {
     const rirValues = lastSets.map((s) => s.rir).filter((r): r is number => r != null);
@@ -50,6 +58,7 @@ export function checkOverload(
     status,
     suggestedWeight: status === "go_up" ? lastWeight + exercise.increment : lastWeight,
     lastWeight,
+    lastWeights,
     lastReps,
   };
 }

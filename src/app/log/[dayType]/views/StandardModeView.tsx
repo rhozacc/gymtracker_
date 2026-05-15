@@ -110,11 +110,16 @@ export function StandardModeView({
 
             {ol?.lastWeight > 0 && (
               <div className="text-muted text-xs mb-2">
-                Last: {kgToDisplay(ol.lastWeight, unit)} {unit} &times; [{ol.lastReps.join(", ")}]
+                Last: {
+                  ol.lastWeights.every(w => w === ol.lastWeights[0])
+                    ? kgToDisplay(ol.lastWeight, unit)
+                    : `[${ol.lastWeights.map(w => kgToDisplay(w, unit)).join(", ")}]`
+                } {unit} &times; [{ol.lastReps.join(", ")}]
               </div>
             )}
 
-            {(ol?.status === "go_up" || ol?.status === "almost_ready") && (
+            {(ol?.status === "go_up" || ol?.status === "almost_ready") &&
+              !exState.sets.some(s => !s.isWarmup && s.weight && parseFloat(s.weight) >= kgToDisplay(ol.suggestedWeight, unit)) && (
               <OverloadBanner suggestedWeight={kgToDisplay(ol.suggestedWeight, unit)} unit={unit} variant={ol.status} />
             )}
 

@@ -52,6 +52,29 @@ function guidedReducer(state: GuidedState, action: GuidedAction): GuidedState {
   }
 }
 
+// Returns the next undone set position, checking remaining sets in the current exercise,
+// then subsequent exercises in order, then wrapping back to any skipped earlier exercises.
+function findNextUndone(
+  exercises: ExerciseState[],
+  currentExIdx: number,
+  currentSetIdx: number
+): { exerciseIndex: number; setIndex: number } | null {
+  const currentEx = exercises[currentExIdx];
+  for (let si = currentSetIdx + 1; si < currentEx.sets.length; si++) {
+    if (!currentEx.sets[si].done) return { exerciseIndex: currentExIdx, setIndex: si };
+  }
+  for (let ei = currentExIdx + 1; ei < exercises.length; ei++) {
+    const fi = exercises[ei].sets.findIndex((s) => !s.done);
+    if (fi >= 0) return { exerciseIndex: ei, setIndex: fi };
+  }
+  // Wrap: pick up any exercises that were skipped earlier in the session
+  for (let ei = 0; ei < currentExIdx; ei++) {
+    const fi = exercises[ei].sets.findIndex((s) => !s.done);
+    if (fi >= 0) return { exerciseIndex: ei, setIndex: fi };
+  }
+  return null;
+}
+
 export function GuidedSession({
   day,
   exercises,
@@ -202,23 +225,40 @@ export function GuidedSession({
     initAudio();
     updateSet(state.exerciseIndex, state.setIndex, { ...currentSetData, done: true });
 
-    const isLastExercise = state.exerciseIndex >= day.exercises.length - 1;
-    const isLastSet = state.setIndex >= (currentExState?.sets.length ?? 1) - 1;
+    // Compute exercises with current set marked done (updateSet is async, state won't reflect yet)
+    const updatedExercises = exercises.map((ex, ei) =>
+      ei !== state.exerciseIndex ? ex : {
+        ...ex,
+        sets: ex.sets.map((s, si) =>
+          si !== state.setIndex ? s : { ...currentSetData, done: true }
+        ),
+      }
+    );
 
-    if (isLastExercise && isLastSet) {
-      onFinish();
-      return;
-    }
-
-    const next = getNextInfo();
+    const next = findNextUndone(updatedExercises, state.exerciseIndex, state.setIndex);
     if (!next) {
       onFinish();
       return;
     }
 
+    // Build next-set info for rest timer display
+    const nextDayEx = day.exercises[next.exerciseIndex];
+    const nextExName = exerciseNameOverrides[nextDayEx.id] ?? nextDayEx.name;
+    const nextSetData = exercises[next.exerciseIndex]?.sets[next.setIndex];
+    const nextExSets = exercises[next.exerciseIndex]?.sets ?? [];
+    const nextHasWarmup = nextExSets[0]?.isWarmup ?? false;
+    const nextWarmupOffset = nextHasWarmup ? 1 : 0;
+    const isNextWarmup = nextExSets[next.setIndex]?.isWarmup ?? false;
+    const nextInfo = {
+      name: nextExName,
+      weight: nextSetData?.weight || "",
+      reps: `${nextDayEx.repRange[0]}–${nextDayEx.repRange[1]}`,
+      setNumber: isNextWarmup ? 0 : next.setIndex - nextWarmupOffset + 1,
+      totalSets: nextExSets.length > 0 ? nextExSets.length - nextWarmupOffset : nextDayEx.sets,
+    };
+
     // Copy weight forward immediately (same exercise → same weight, but not from warmup)
     if (!currentSetData.isWarmup && next.exerciseIndex === state.exerciseIndex && currentSetData.weight) {
-      const nextSetData = exercises[next.exerciseIndex]?.sets[next.setIndex];
       if (nextSetData) {
         updateSet(next.exerciseIndex, next.setIndex, {
           ...nextSetData,
@@ -269,10 +309,10 @@ export function GuidedSession({
       const endsAt = Date.now() + restSecs * 1000;
       restDurationRef.current = restSecs;
       setRestEndsAt(endsAt);
-      startRestTimer(restSecs, next.info);
+      startRestTimer(restSecs, nextInfo);
       onRestStart?.(endsAt, restSecs);
     }
-  }, [currentSetData, state.exerciseIndex, state.setIndex, updateSet, day.exercises.length, currentExState, onFinish, currentExercise, getNextInfo, exercises, startRestTimer]);
+  }, [currentSetData, state.exerciseIndex, state.setIndex, updateSet, onFinish, currentExercise, exercises, exerciseNameOverrides, day.exercises, startRestTimer]);
 
   const handleSkipRest = useCallback(() => {
     cancelRestTimer();

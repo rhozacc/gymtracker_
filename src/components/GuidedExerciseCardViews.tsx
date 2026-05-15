@@ -355,7 +355,7 @@ export function MainView({
       )}
 
       {(overload?.status === "go_up" || overload?.status === "almost_ready") &&
-        !(setData.weight && parseFloat(setData.weight) >= kgToDisplay(overload.suggestedWeight, unit)) && (
+        !(setData.weight && parseFloat(setData.weight) > kgToDisplay(overload.suggestedWeight, unit)) && (
         <div className="mt-2 w-full max-w-xs">
           <OverloadBanner
             suggestedWeight={kgToDisplay(overload.suggestedWeight, unit)}
@@ -385,7 +385,11 @@ export function MainView({
 
       {/* Intra-session weight recommendation */}
       {!setData.isWarmup && setRec && onApplyRec &&
-        !(setData.weight && parseFloat(setData.weight) >= parseFloat(setRec.suggestedWeight)) && (
+        !(setData.weight && (
+          setRec.direction === "up"
+            ? parseFloat(setData.weight) >= parseFloat(setRec.suggestedWeight)
+            : parseFloat(setData.weight) <= parseFloat(setRec.suggestedWeight)
+        )) && (
         <button
           onClick={onApplyRec}
           className="tap-pulse mt-1.5 flex items-center gap-1 text-xs text-accent hover:opacity-100 transition-colors"

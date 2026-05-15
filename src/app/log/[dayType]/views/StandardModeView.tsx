@@ -119,7 +119,7 @@ export function StandardModeView({
             )}
 
             {(ol?.status === "go_up" || ol?.status === "almost_ready") &&
-              !exState.sets.some(s => !s.isWarmup && s.weight && parseFloat(s.weight) >= kgToDisplay(ol.suggestedWeight, unit)) && (
+              !exState.sets.some(s => !s.isWarmup && s.weight && parseFloat(s.weight) > kgToDisplay(ol.suggestedWeight, unit)) && (
               <OverloadBanner suggestedWeight={kgToDisplay(ol.suggestedWeight, unit)} unit={unit} variant={ol.status} />
             )}
 

@@ -23,7 +23,7 @@ import { useTheme } from "@/lib/useTheme";
 import { getJson, setJson } from "@/lib/storage";
 import { useSessionBackup } from "./hooks/useSessionBackup";
 import { savePendingSession } from "@/lib/pendingSessions";
-import { incrementSessionCount, shouldShowSupportPrompt, recordSupportPromptShown } from "@/lib/support-prompt";
+import { authClient } from "@/lib/auth-client";
 import { PostSessionFlow } from "./views/PostSessionFlow";
 import { StandardModeView } from "./views/StandardModeView";
 import type { ExerciseState } from "./types";
@@ -34,6 +34,8 @@ export default function LogPage() {
   const searchParams = useSearchParams();
   const { plan, planId, refreshPlans } = useProgram();
   const { unit } = useUnit();
+  const { data: session } = authClient.useSession();
+  const isOwner = session?.user?.email === process.env.NEXT_PUBLIC_OWNER_EMAIL;
   const dayType = params.dayType as string;
   const day = plan.days[dayType];
 
@@ -186,13 +188,11 @@ export default function LogPage() {
 
     async function fetchOverloads() {
       const results: Record<string, OverloadResult> = {};
-      const rawSets: Record<string, { reps: number; weight: number; rir: number | null }[]> = {};
 
       await Promise.all(
         day.exercises.map(async (ex) => {
           const res = await fetch(`/api/sets/${ex.id}`);
           const lastSetData = await res.json();
-          rawSets[ex.id] = lastSetData;
           const result = checkOverload(ex, lastSetData);
           results[ex.id] = result;
         })
@@ -202,20 +202,12 @@ export default function LogPage() {
       setExercises((prev) =>
         prev.map((exState) => {
           const ol = results[exState.exerciseId];
-          const raw = rawSets[exState.exerciseId] || [];
           if (!ol || ol.lastWeight === 0) return exState;
 
-          const warmupCount = exState.sets.filter((s) => s.isWarmup).length;
           return {
             ...exState,
-            sets: exState.sets.map((s, i) => {
-              const workingIdx = i - warmupCount;
-              const rawIdx = s.isWarmup ? -1 : Math.min(workingIdx, raw.length - 1);
-              const rawSet = rawIdx >= 0 ? raw[rawIdx] : null;
-
+            sets: exState.sets.map((s) => {
               if (s.isWarmup) {
-                // Warmup always uses last actual weight — never the suggested progression weight.
-                // rawIdx is -1 for warmup (i=0) so rawSet is always null here; use lastWeight.
                 const warmupKg = Math.floor((ol.lastWeight * 0.5) / 2.5) * 2.5;
                 return {
                   ...s,
@@ -223,20 +215,14 @@ export default function LogPage() {
                 };
               }
 
-              // Working sets: use suggested weight when overload target is set
-              let baseKg: number;
-              if (ol.status === "go_up" || ol.status === "almost_ready") {
-                // Use suggestedWeight so the prefilled value always matches the banner
-                baseKg = ol.suggestedWeight;
-              } else {
-                baseKg = rawSet?.weight ?? ol.lastWeight;
-              }
+              // Working sets: single suggested weight for all sets this session
+              const baseKg = ol.status === "go_up" ? ol.suggestedWeight : ol.lastWeight;
 
               return {
                 ...s,
                 weight: s.weight || kgToDisplay(baseKg, unit).toString(),
-                reps: s.reps || (rawSet?.reps?.toString() ?? ""),
-                rir: s.rir || (rawSet?.rir?.toString() ?? ""),
+                reps: s.reps || "",
+                rir: s.rir || "",
               };
             }),
           };
@@ -463,9 +449,8 @@ export default function LogPage() {
       if (res.ok) {
         const { id } = await res.json();
         clearBackup();
-        incrementSessionCount();
-        if (shouldShowSupportPrompt()) {
-          recordSupportPromptShown();
+        const supportDisabled = isOwner && localStorage.getItem("gym-support-disabled") === "true";
+        if (!supportDisabled) {
           localStorage.setItem("gym-support-pending", "1");
         }
         const debriefDisabled = localStorage.getItem("gym-disable-debrief") === "true";

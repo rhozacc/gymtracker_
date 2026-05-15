@@ -88,6 +88,7 @@ function DevSection() {
   const [addError, setAddError] = useState("");
   const [addLoading, setAddLoading] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [supportDisabled, setSupportDisabled] = useState(false);
 
   useEffect(() => {
     if (!accessOpen) {
@@ -100,6 +101,17 @@ function DevSection() {
       .then((data) => { setEmails(data); setEmailsLoaded(true); })
       .catch(() => setEmailsLoaded(true));
   }, [isOwner, accessOpen]);
+
+  useEffect(() => {
+    setSupportDisabled(localStorage.getItem("gym-support-disabled") === "true");
+  }, []);
+
+  function handleSupportToggle() {
+    const next = !supportDisabled;
+    setSupportDisabled(next);
+    if (next) localStorage.setItem("gym-support-disabled", "true");
+    else localStorage.removeItem("gym-support-disabled");
+  }
 
   if (!isOwner) return null;
 
@@ -269,6 +281,11 @@ function DevSection() {
             <polyline points="9 18 15 12 9 6" />
           </svg>
         </Link>
+
+        <div className="border-t border-border" />
+        <Row label="Donation popup" description="Show support prompt after sessions">
+          <Toggle enabled={!supportDisabled} onToggle={handleSupportToggle} />
+        </Row>
 
       </div>
     </div>

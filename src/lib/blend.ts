@@ -71,6 +71,12 @@ function muscleOf(ex: Exercise): string {
   return EXERCISE_MUSCLE[ex.id] ?? ex.id;
 }
 
+// Same physical movement appears under different ids across plans/alternatives
+// (leg_press vs alt_leg_press, triceps vs triceps_pushdown, …). Dedup by name.
+function normName(name: string): string {
+  return name.trim().toLowerCase();
+}
+
 function isCompound(ex: Exercise): boolean {
   return COMPOUND_IDS.has(ex.id);
 }
@@ -148,32 +154,39 @@ export function blendDays(
   const guestKnown = new Set(guestKnownExercises);
 
   const used = new Set<string>();
+  const usedNames = new Set<string>();
+  const claim = (ex: Exercise) => {
+    used.add(ex.id);
+    usedNames.add(normName(ex.name));
+  };
 
   // ── 1. HEROES ──────────────────────────────────────────────────────────
   // Exercises both users have on their day. Both do them as a head-to-head.
-  const hostIds = new Set(hostExercises.map((e) => e.id));
-  const sharedExercises = guestExercises.filter((e) => hostIds.has(e.id));
+  // Match by normalized name so the same movement under different ids counts.
+  const hostNames = new Set(hostExercises.map((e) => normName(e.name)));
+  const sharedExercises = guestExercises.filter((e) => hostNames.has(normName(e.name)));
   const sharedSorted = seededShuffle(sortByPriority(sharedExercises), shuffleSeed);
   const heroes: BlendedExercise[] = [];
   for (const ex of sharedSorted) {
     if (heroes.length >= HERO_CAP) break;
+    if (usedNames.has(normName(ex.name))) continue;
     heroes.push({
       ...ex,
       owner: "shared",
       ownerName: `${hostName} & ${guestName}`,
       isHero: true,
     });
-    used.add(ex.id);
+    claim(ex);
   }
 
   // ── 2. PRIMARY COMPOUNDS ───────────────────────────────────────────────
   // Pick 1 unique compound per side, alternating, up to PRIMARY_COMPOUND_CAP.
   const hostUniqCompounds = seededShuffle(
-    hostExercises.filter((e) => !used.has(e.id) && isCompound(e)),
+    hostExercises.filter((e) => !used.has(e.id) && !usedNames.has(normName(e.name)) && isCompound(e)),
     shuffleSeed ^ 0x9e3779b9
   );
   const guestUniqCompounds = seededShuffle(
-    guestExercises.filter((e) => !used.has(e.id) && isCompound(e)),
+    guestExercises.filter((e) => !used.has(e.id) && !usedNames.has(normName(e.name)) && isCompound(e)),
     shuffleSeed ^ 0x517cc1b7
   );
   const primary: BlendedExercise[] = [];
@@ -185,26 +198,26 @@ export function blendDays(
   ) {
     if (h < hostUniqCompounds.length && primary.length < PRIMARY_COMPOUND_CAP) {
       const ex = hostUniqCompounds[h++];
-      if (!used.has(ex.id)) {
+      if (!used.has(ex.id) && !usedNames.has(normName(ex.name))) {
         primary.push({
           ...ex,
           owner: "host",
           ownerName: hostName,
           newForPartner: guestKnownExercises.length > 0 && !guestKnown.has(ex.id),
         });
-        used.add(ex.id);
+        claim(ex);
       }
     }
     if (g < guestUniqCompounds.length && primary.length < PRIMARY_COMPOUND_CAP) {
       const ex = guestUniqCompounds[g++];
-      if (!used.has(ex.id)) {
+      if (!used.has(ex.id) && !usedNames.has(normName(ex.name))) {
         primary.push({
           ...ex,
           owner: "guest",
           ownerName: guestName,
           newForPartner: hostKnownExercises.length > 0 && !hostKnown.has(ex.id),
         });
-        used.add(ex.id);
+        claim(ex);
       }
     }
   }
@@ -222,14 +235,14 @@ export function blendDays(
   const rng = mulberry32(shuffleSeed ^ 0x85ebca6b);
   const candidates: Candidate[] = [];
   for (const ex of hostExercises) {
-    if (used.has(ex.id)) continue;
+    if (used.has(ex.id) || usedNames.has(normName(ex.name))) continue;
     let score = muscleSeen.has(muscleOf(ex)) ? 0 : 10;
     if (guestKnown.has(ex.id)) score += 1;
     score += rng() * 0.5;
     candidates.push({ ex, owner: "host", score });
   }
   for (const ex of guestExercises) {
-    if (used.has(ex.id)) continue;
+    if (used.has(ex.id) || usedNames.has(normName(ex.name))) continue;
     let score = muscleSeen.has(muscleOf(ex)) ? 0 : 10;
     if (hostKnown.has(ex.id)) score += 1;
     score += rng() * 0.5;
@@ -241,7 +254,7 @@ export function blendDays(
   const ownerCount = { host: 0, guest: 0 };
   for (const c of candidates) {
     if (accessories.length >= remainingSlots) break;
-    if (used.has(c.ex.id)) continue;
+    if (used.has(c.ex.id) || usedNames.has(normName(c.ex.name))) continue;
     // Balance: don't let one side dominate by more than 1
     const otherOwner = c.owner === "host" ? "guest" : "host";
     if (ownerCount[c.owner] > ownerCount[otherOwner] + 1) continue;
@@ -257,7 +270,7 @@ export function blendDays(
       ownerName: c.owner === "host" ? hostName : guestName,
       newForPartner,
     });
-    used.add(c.ex.id);
+    claim(c.ex);
     muscleSeen.add(muscleOf(c.ex));
     ownerCount[c.owner]++;
   }

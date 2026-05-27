@@ -45,7 +45,7 @@ export default function BlendSessionPage() {
 
   const startedAtRef = useRef(new Date().toISOString());
   const guidedPositionRef = useRef({ exerciseIndex: 0, setIndex: 0 });
-  const progressPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     setNavVisible(false);
@@ -139,18 +139,46 @@ export default function BlendSessionPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  // Poll partner progress every 5 seconds
+  // Stream partner progress over SSE (auto-reconnects; pauses when backgrounded)
   useEffect(() => {
     if (loadState !== "ready") return;
-    progressPollRef.current = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/blend/${token}/progress`);
-        const data = await res.json();
-        if (data.partner) setPartnerProgress(data.partner as PartnerProgress);
-        if (data.partnerName) setPartnerName(data.partnerName);
-      } catch { /* non-critical */ }
-    }, 5000);
-    return () => clearInterval(progressPollRef.current!);
+
+    const connect = () => {
+      if (eventSourceRef.current || document.hidden) return;
+      const es = new EventSource(`/api/blend/${token}/progress/stream`);
+      eventSourceRef.current = es;
+
+      es.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.partner) setPartnerProgress(data.partner as PartnerProgress);
+          if (data.partnerName) setPartnerName(data.partnerName);
+        } catch { /* ignore malformed frame */ }
+      };
+      // Server closes the stream when the blend is no longer active.
+      es.addEventListener("done", () => {
+        es.close();
+        if (eventSourceRef.current === es) eventSourceRef.current = null;
+      });
+      // On error EventSource auto-reconnects; nothing to do here.
+    };
+
+    const disconnect = () => {
+      eventSourceRef.current?.close();
+      eventSourceRef.current = null;
+    };
+
+    const onVisibility = () => {
+      if (document.hidden) disconnect();
+      else connect();
+    };
+
+    connect();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      disconnect();
+    };
   }, [loadState, token]);
 
   const postProgress = useCallback(
@@ -270,7 +298,8 @@ export default function BlendSessionPage() {
     } catch {
       savePendingSession(payload);
     }
-    clearInterval(progressPollRef.current!);
+    eventSourceRef.current?.close();
+    eventSourceRef.current = null;
     setSaving(false);
 
     // Tell the blend invite which session belongs to this user, then route
@@ -440,7 +469,8 @@ export default function BlendSessionPage() {
         <EndSessionModal
           saving={saving}
           onAbandon={() => {
-            clearInterval(progressPollRef.current!);
+            eventSourceRef.current?.close();
+            eventSourceRef.current = null;
             router.replace("/");
           }}
           onRecord={async () => {

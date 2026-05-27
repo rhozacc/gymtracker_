@@ -11,6 +11,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    area: "Blend",
+    text: "Blended sessions no longer list the same exercise twice when you and your partner train it under different program variations.",
+  },
+  {
+    area: "Blend",
+    text: "Live partner progress now streams in real time instead of polling, for smoother updates and lighter battery and data use.",
+  },
+  {
     area: "Weight suggestion",
     text: "Smarter starting weight for next session: the app now bases its suggestion on the heaviest set you actually kept in your rep range — so a failed attempt at a new weight no longer inflates what gets loaded next time.",
   },
